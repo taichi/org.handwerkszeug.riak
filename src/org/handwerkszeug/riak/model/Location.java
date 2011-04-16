@@ -1,11 +1,11 @@
 package org.handwerkszeug.riak.model;
 
-public class Key {
+public class Location {
 
 	final String bucket;
 	final String key;
 
-	public Key(String bucket, String key) {
+	public Location(String bucket, String key) {
 		this.bucket = bucket;
 		this.key = key;
 	}

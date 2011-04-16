@@ -1,7 +1,7 @@
 package org.handwerkszeug.riak.op;
 
 import org.handwerkszeug.riak._;
-import org.handwerkszeug.riak.model.Key;
+import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakObject;
 
@@ -39,33 +39,33 @@ import org.handwerkszeug.riak.model.RiakObject;
  */
 public interface ObjectKeyOperations {
 
-	RiakResponse<RiakObject<byte[]>> get(Key key);
+	RiakResponse<RiakObject<byte[]>> get(Location key);
 
-	RiakResponse<RiakObject<byte[]>> get(Key key, GetOptions options);
+	RiakResponse<RiakObject<byte[]>> get(Location key, GetOptions options);
 
-	RiakResponse<RiakObject<byte[]>> get(Key key, GetOptions options,
+	RiakResponse<RiakObject<byte[]>> get(Location key, GetOptions options,
 			SiblingHandler handler);
 
 	/**
 	 * @see <a href="http://wiki.basho.com/Luwak.html">Luwak</a>
 	 */
-	void getStream(Key key, GetOptions options, InputStreamHandler handler);
+	void getStream(Location key, GetOptions options, InputStreamHandler handler);
 
-	RiakResponse<_> put(Key key, RiakObject<byte[]> content);
+	RiakResponse<_> put(Location key, RiakObject<byte[]> content);
 
-	RiakResponse<_> put(Key key, RiakObject<byte[]> content, PutOptions options);
+	RiakResponse<_> put(Location key, RiakObject<byte[]> content, PutOptions options);
 
 	/**
 	 * @see <a href="http://wiki.basho.com/Luwak.html">Luwak</a>
 	 */
-	RiakResponse<Key> putStream(String bucket,
+	RiakResponse<Location> putStream(String bucket,
 			RiakObject<OutputStreamHandler> content);
 
-	RiakResponse<_> putStream(Key key, RiakObject<OutputStreamHandler> content);
+	RiakResponse<_> putStream(Location key, RiakObject<OutputStreamHandler> content);
 
-	RiakResponse<_> delete(Key key);
+	RiakResponse<_> delete(Location key);
 
-	RiakResponse<_> delete(Key key, int quorum);
+	RiakResponse<_> delete(Location key, int quorum);
 
-	RiakResponse<_> delete(Key key, Quorum quorum);
+	RiakResponse<_> delete(Location key, Quorum quorum);
 }
