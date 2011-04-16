@@ -5,4 +5,5 @@ package org.handwerkszeug.riak.model;
  */
 public interface Bucket {
 
+	String getName();
 }

@@ -16,5 +16,5 @@ public interface BucketOperations {
 
 	RiakResponse<Bucket> getBucket(String bucket);
 
-	RiakResponse<_> setBucket(String bucket, Bucket props);
+	RiakResponse<_> setBucket(Bucket bucket);
 }
