@@ -2,6 +2,8 @@ package org.handwerkszeug.riak.op;
 
 import java.util.Date;
 
+import org.handwerkszeug.riak.model.Quorum;
+
 /**
  * not support manual siblings.
  * 
@@ -14,7 +16,7 @@ public interface GetOptions {
 	 * values include ‘default’, ‘one’, ‘quorum’, ‘all’, or any integer <= N
 	 * (default is defined per the bucket)
 	 */
-	int getReadQuorum();
+	Quorum getReadQuorum();
 
 	/**
 	 * when accessing an object with siblings, which sibling to retrieve. Scroll

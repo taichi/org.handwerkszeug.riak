@@ -53,7 +53,8 @@ public interface ObjectKeyOperations {
 
 	RiakResponse<_> put(Location key, RiakObject<byte[]> content);
 
-	RiakResponse<_> put(Location key, RiakObject<byte[]> content, PutOptions options);
+	RiakResponse<_> put(Location key, RiakObject<byte[]> content,
+			PutOptions options);
 
 	/**
 	 * @see <a href="http://wiki.basho.com/Luwak.html">Luwak</a>
@@ -61,11 +62,17 @@ public interface ObjectKeyOperations {
 	RiakResponse<Location> putStream(String bucket,
 			RiakObject<OutputStreamHandler> content);
 
-	RiakResponse<_> putStream(Location key, RiakObject<OutputStreamHandler> content);
+	RiakResponse<_> putStream(Location key,
+			RiakObject<OutputStreamHandler> content);
 
 	RiakResponse<_> delete(Location key);
 
-	RiakResponse<_> delete(Location key, int quorum);
-
+	/**
+	 * @param key
+	 * @param quorum
+	 *            quorum for both operations (get and put) involved in deleting
+	 *            an object. (default is set at the bucket level)
+	 * @return
+	 */
 	RiakResponse<_> delete(Location key, Quorum quorum);
 }

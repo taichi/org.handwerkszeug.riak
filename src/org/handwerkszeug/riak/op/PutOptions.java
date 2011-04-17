@@ -2,6 +2,8 @@ package org.handwerkszeug.riak.op;
 
 import java.util.Date;
 
+import org.handwerkszeug.riak.model.Quorum;
+
 /**
  * 
  * @author taichi
@@ -19,14 +21,14 @@ public interface PutOptions {
 	 * possible values include ‘default’, ‘one’, ‘quorum’, ‘all’, or any integer
 	 * <= N (default is defined per the bucket)
 	 */
-	int getWriteQuorum();
+	Quorum getWriteQuorum();
 
 	/**
 	 * how many replicas to commit to durable storage before returning a
 	 * successful response; possible values include ‘default’, ‘one’, ‘quorum’,
 	 * ‘all’, or any integer <= N (default is defined per the bucket)
 	 */
-	int getDurableWriteQuorum();
+	Quorum getDurableWriteQuorum();
 
 	/**
 	 * whether to return the contents of the stored object. Defaults to false.
