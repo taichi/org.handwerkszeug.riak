@@ -72,22 +72,26 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 		this.timeout = 0L;
 	}
 
+	static final String FIELD_INPUTS = "inputs";
+	static final String FIELD_QUERY = "query";
+	static final String FIELD_TIMEOUT = "timeout";
+
 	protected ObjectNode prepare() {
 		ObjectMapper om = new ObjectMapper();
 		ObjectNode root = om.createObjectNode();
 		if (this.bucket != null && this.bucket.isEmpty() == false) {
-			root.put("inputs", this.bucket);
+			root.put(FIELD_INPUTS, this.bucket);
 		} else if (this.search != null) {
-			ObjectNode node = root.putObject("inputs");
+			ObjectNode node = root.putObject(FIELD_INPUTS);
 			this.search.appendTo(node);
 		} else {
-			add(root.putArray("inputs"), this.inputs);
+			add(root.putArray(FIELD_INPUTS), this.inputs);
 		}
 
-		add(root.putArray("query"), this.queries);
+		add(root.putArray(FIELD_QUERY), this.queries);
 
 		if (0 < this.timeout) {
-			root.put("timeout", this.timeout);
+			root.put(FIELD_TIMEOUT, this.timeout);
 		}
 		return root;
 	}
