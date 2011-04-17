@@ -12,7 +12,7 @@ public interface BucketOperations {
 
 	RiakResponse<List<String>> listBuckets();
 
-	RiakResponse<Iterable<String>> listKeys(String bucket);
+	void listKeys(String bucket, KeyHandler handler);
 
 	RiakResponse<Bucket> getBucket(String bucket);
 
