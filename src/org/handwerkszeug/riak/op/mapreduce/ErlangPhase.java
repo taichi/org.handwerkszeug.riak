@@ -2,13 +2,13 @@ package org.handwerkszeug.riak.op.mapreduce;
 
 import org.codehaus.jackson.node.ObjectNode;
 
-public class Erlang extends FunctionPhase {
+public class ErlangPhase extends FunctionPhase {
 
 	protected final String module;
 
 	protected final String function;
 
-	protected Erlang(PhaseType phase, String module, String function) {
+	protected ErlangPhase(PhaseType phase, String module, String function) {
 		super(phase, "erlang");
 		this.module = module;
 		this.function = function;
