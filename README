@@ -1,3 +1,7 @@
 connection pooling.
 
 stateless objects.
+
+for developer
+  execute mvnhack-0.0.3.jar.
+  then download dependencies from maven repositories.
