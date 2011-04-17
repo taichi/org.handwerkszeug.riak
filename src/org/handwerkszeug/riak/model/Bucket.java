@@ -33,15 +33,10 @@ public interface Bucket {
 	void setLastWriteWins(boolean is);
 
 	/**
-	 * 
-	 * @param name
-	 *            Javascript function name.
 	 * @see <a href="http://wiki.basho.com/Pre--and-Post-Commit-Hooks.html">Pre
 	 *      and Post Commit Hooks</a>
 	 */
-	void setPrecommit(String name);
-
-	void setPrecommit(Erlang erlang);
+	void setPrecommit(Function erlang);
 
 	void setPostcommit(Erlang erlang);
 

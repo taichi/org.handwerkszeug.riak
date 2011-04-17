@@ -1,11 +1,13 @@
 package org.handwerkszeug.riak.model;
 
+import org.codehaus.jackson.node.ObjectNode;
+
 /**
  * JSON node key is different between M/R and pre/post commit operation.
  * 
  * @author taichi
  */
-public class Erlang {
+public class Erlang implements Function {
 
 	final String module;
 	final String function;
@@ -21,5 +23,11 @@ public class Erlang {
 
 	public String getFunction() {
 		return this.function;
+	}
+
+	@Override
+	public void appendTo(ObjectNode json) {
+		json.put("mod", this.getModule());
+		json.put("fun", this.getFunction());
 	}
 }
