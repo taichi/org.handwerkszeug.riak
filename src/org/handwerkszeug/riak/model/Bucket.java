@@ -108,5 +108,11 @@ public interface Bucket {
 
 	void setDefaultReadWriteQuorum();
 
-	// backend
+	/**
+	 * when using riak_kv_multi_backend, which named backend to use for the
+	 * bucket
+	 */
+	String getBackend();
+
+	void setBackend(String name);
 }
