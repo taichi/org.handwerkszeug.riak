@@ -3,7 +3,7 @@ package org.handwerkszeug.riak.op.mapreduce;
 import org.codehaus.jackson.node.ObjectNode;
 import org.codehaus.jackson.node.POJONode;
 
-public abstract class JavaScriptFunction extends FunctionPhase {
+public abstract class JavaScriptPhase extends FunctionPhase {
 
 	/**
 	 * Map phases may also be passed static arguments by using the “arg” spec
@@ -11,11 +11,11 @@ public abstract class JavaScriptFunction extends FunctionPhase {
 	 */
 	protected Object arg;
 
-	public JavaScriptFunction(PhaseType phase) {
+	public JavaScriptPhase(PhaseType phase) {
 		super(phase, "javascript");
 	}
 
-	public JavaScriptFunction(PhaseType phase, Object arg) {
+	public JavaScriptPhase(PhaseType phase, Object arg) {
 		this(phase);
 		this.arg = arg;
 	}

@@ -5,7 +5,7 @@ import org.codehaus.jackson.node.ObjectNode;
 /**
  * @author taichi
  */
-public class AdHocJavaScript extends JavaScriptFunction {
+public class AdHocJavaScriptPhase extends JavaScriptPhase {
 
 	enum BuiltInType {
 		/**
@@ -31,37 +31,37 @@ public class AdHocJavaScript extends JavaScriptFunction {
 	protected BuiltInType builtIn;
 	protected String source;
 
-	protected AdHocJavaScript(PhaseType phase, BuiltInType type, String source,
+	protected AdHocJavaScriptPhase(PhaseType phase, BuiltInType type, String source,
 			Object arg) {
 		super(phase, arg);
 		this.source = source;
 	}
 
-	public static JavaScriptFunction map(String source) {
-		return new AdHocJavaScript(PhaseType.map, BuiltInType.anonymous,
+	public static JavaScriptPhase map(String source) {
+		return new AdHocJavaScriptPhase(PhaseType.map, BuiltInType.anonymous,
 				source, null);
 	}
 
-	public static JavaScriptFunction map(String source, Object arg) {
-		return new AdHocJavaScript(PhaseType.map, BuiltInType.anonymous,
+	public static JavaScriptPhase map(String source, Object arg) {
+		return new AdHocJavaScriptPhase(PhaseType.map, BuiltInType.anonymous,
 				source, arg);
 	}
 
-	public JavaScriptFunction reduce(String source) {
-		return new AdHocJavaScript(PhaseType.reduce, BuiltInType.anonymous,
+	public JavaScriptPhase reduce(String source) {
+		return new AdHocJavaScriptPhase(PhaseType.reduce, BuiltInType.anonymous,
 				source, null);
 	}
 
-	public static JavaScriptFunction mapByBuiltIn(String name) {
-		return new AdHocJavaScript(PhaseType.map, BuiltInType.named, name, null);
+	public static JavaScriptPhase mapByBuiltIn(String name) {
+		return new AdHocJavaScriptPhase(PhaseType.map, BuiltInType.named, name, null);
 	}
 
-	public static JavaScriptFunction mapByBuiltIn(String name, Object arg) {
-		return new AdHocJavaScript(PhaseType.map, BuiltInType.named, name, arg);
+	public static JavaScriptPhase mapByBuiltIn(String name, Object arg) {
+		return new AdHocJavaScriptPhase(PhaseType.map, BuiltInType.named, name, arg);
 	}
 
-	public JavaScriptFunction reduceByBuiltIn(String name) {
-		return new AdHocJavaScript(PhaseType.reduce, BuiltInType.named, name,
+	public JavaScriptPhase reduceByBuiltIn(String name) {
+		return new AdHocJavaScriptPhase(PhaseType.reduce, BuiltInType.named, name,
 				null);
 	}
 
