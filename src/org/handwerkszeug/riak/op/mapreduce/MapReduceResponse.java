@@ -1,5 +1,7 @@
 package org.handwerkszeug.riak.op.mapreduce;
 
+import org.codehaus.jackson.JsonNode;
+
 /**
  * @author taichi
  */
@@ -10,5 +12,5 @@ public interface MapReduceResponse {
 	 */
 	Integer getPhase();
 
-	byte[] getResponse();
+	JsonNode getResponse();
 }

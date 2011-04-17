@@ -8,12 +8,15 @@ import org.handwerkszeug.riak.op.mapreduce.MapReduceResponseHandler;
  */
 public interface Querying {
 
+	/**
+	 * only support json.
+	 */
 	static final String JobEncoding = "application/json";
 
 	/**
 	 * @see <a href="http://wiki.basho.com/Links.html">Links</a>
 	 */
-	void link(String request); // XXX???
+	void link(String request); // TODO ???
 
 	/**
 	 * @see <a href="http://wiki.basho.com/MapReduce.html">MapReduce</a>

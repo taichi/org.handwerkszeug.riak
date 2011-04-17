@@ -10,5 +10,5 @@ public interface RiakObject<T> {
 
 	T getContent();
 
-	// TODO XXX ???
+	// TODO ???
 }
