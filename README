@@ -1,6 +1,7 @@
 connection pooling.
-
-stateless objects.
+interface driven and stateless design.
+  tranceport switchable.
+  resource safety.
 
 for developer
   execute mvnhack-0.0.3.jar.
