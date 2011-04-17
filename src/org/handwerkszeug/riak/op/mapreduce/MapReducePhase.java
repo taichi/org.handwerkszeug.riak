@@ -1,7 +1,8 @@
 package org.handwerkszeug.riak.op.mapreduce;
 
-import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
+import org.handwerkszeug.riak.JsonAppender;
 
 /**
  * 
@@ -9,7 +10,7 @@ import org.codehaus.jackson.node.ObjectNode;
  * @see <a
  *      href="https://github.com/basho/riak_kv/blob/master/src/riak_kv_mapred_json.erl">riak_kv_mapred_json.erl</a>
  */
-public abstract class MapReducePhase {
+public abstract class MapReducePhase implements JsonAppender<ArrayNode> {
 
 	public enum PhaseType {
 		map, reduce, link;
@@ -28,15 +29,13 @@ public abstract class MapReducePhase {
 		this.keep = keep;
 	}
 
-	public ObjectNode toJson() {
-		// TODO use streaming API ? JsonGenerator....
-		ObjectMapper om = new ObjectMapper();
-		ObjectNode rootNode = om.createObjectNode();
-		ObjectNode phaseNode = om.createObjectNode();
+	// TODO use streaming API ? JsonGenerator....
+	@Override
+	public void appendTo(ArrayNode json) {
+		ObjectNode rootNode = json.addObject();
+		ObjectNode phaseNode = rootNode.putObject(this.phase.name());
 		appendPhase(phaseNode);
 		phaseNode.put("keep", this.keep);
-		rootNode.put(phase.name(), phaseNode);
-		return rootNode;
 	}
 
 	protected abstract void appendPhase(ObjectNode json);

@@ -11,7 +11,7 @@ public interface KeyHandler {
 	 * @param key
 	 * @return true : continue key iteration
 	 */
-	boolean handleKey(RiakResponse<Iterable<String>> current);
+	boolean handle(RiakResponse<Iterable<String>> current);
 
 	void handleDone(RiakResponse<_> response);
 }
