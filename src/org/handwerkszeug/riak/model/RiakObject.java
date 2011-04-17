@@ -9,4 +9,6 @@ package org.handwerkszeug.riak.model;
 public interface RiakObject<T> {
 
 	T getContent();
+
+	// TODO XXX ???
 }
