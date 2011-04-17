@@ -1,22 +1,20 @@
 package org.handwerkszeug.riak.op.mapreduce;
 
 import org.codehaus.jackson.node.ObjectNode;
+import org.handwerkszeug.riak.model.Erlang;
 
 public class ErlangPhase extends FunctionPhase {
 
-	protected final String module;
+	final Erlang erlang;
 
-	protected final String function;
-
-	protected ErlangPhase(PhaseType phase, String module, String function) {
+	public ErlangPhase(PhaseType phase, Erlang erlang) {
 		super(phase, "erlang");
-		this.module = module;
-		this.function = function;
+		this.erlang = erlang;
 	}
 
 	@Override
 	protected void appendFunction(ObjectNode json) {
-		json.put("module", this.module);
-		json.put("function", this.function);
+		json.put("module", this.erlang.getModule());
+		json.put("function", this.erlang.getFunction());
 	}
 }

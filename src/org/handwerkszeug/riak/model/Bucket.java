@@ -41,37 +41,13 @@ public interface Bucket {
 	 */
 	void setPrecommit(String name);
 
-	/**
-	 * @param module
-	 *            Erlang module name
-	 * @param name
-	 *            Erlang function name
-	 */
-	void setPrecommit(String module, String name);
+	void setPrecommit(Erlang erlang);
 
-	/**
-	 * @param module
-	 *            Erlang module name
-	 * @param name
-	 *            Erlang function name
-	 */
-	void setPostcommit(String module, String name);
+	void setPostcommit(Erlang erlang);
 
-	/**
-	 * @param module
-	 *            Erlang module name
-	 * @param name
-	 *            Erlang function name
-	 */
-	void setKeyHashFunction(String module, String name);
+	void setKeyHashFunction(Erlang erlang);
 
-	/**
-	 * @param module
-	 *            Erlang module name
-	 * @param name
-	 *            Erlang function name
-	 */
-	void setLinkFunction(String module, String name);
+	void setLinkFunction(Erlang erlang);
 
 	/**
 	 * how many replicas need to agree when retrieving the object; possible

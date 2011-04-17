@@ -11,11 +11,11 @@ public abstract class JavaScriptPhase extends FunctionPhase {
 	 */
 	protected Object arg;
 
-	public JavaScriptPhase(PhaseType phase) {
+	protected JavaScriptPhase(PhaseType phase) {
 		super(phase, "javascript");
 	}
 
-	public JavaScriptPhase(PhaseType phase, Object arg) {
+	protected JavaScriptPhase(PhaseType phase, Object arg) {
 		this(phase);
 		this.arg = arg;
 	}
