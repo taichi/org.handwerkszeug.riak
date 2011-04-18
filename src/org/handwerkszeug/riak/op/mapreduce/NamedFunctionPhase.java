@@ -3,6 +3,9 @@ package org.handwerkszeug.riak.op.mapreduce;
 import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.model.Function;
 
+/**
+ * @author taichi
+ */
 public class NamedFunctionPhase extends MapReducePhase {
 
 	final Function function;
