@@ -1,7 +1,7 @@
 package org.handwerkszeug.riak.op;
 
-import org.handwerkszeug.riak.op.mapreduce.MapReduceQueryConstructor;
-import org.handwerkszeug.riak.op.mapreduce.MapReduceResponseHandler;
+import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
+import org.handwerkszeug.riak.mapreduce.MapReduceResponseHandler;
 
 /**
  * @author taichi

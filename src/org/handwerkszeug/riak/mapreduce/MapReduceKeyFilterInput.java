@@ -1,4 +1,4 @@
-package org.handwerkszeug.riak.op.mapreduce;
+package org.handwerkszeug.riak.mapreduce;
 
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;

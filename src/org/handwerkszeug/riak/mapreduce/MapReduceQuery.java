@@ -1,4 +1,4 @@
-package org.handwerkszeug.riak.op.mapreduce;
+package org.handwerkszeug.riak.mapreduce;
 
 import java.util.Collection;
 
