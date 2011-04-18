@@ -1,5 +1,8 @@
 package org.handwerkszeug.riak.op;
 
+/**
+ * @author taichi
+ */
 public interface RiakResponse<T> {
 
 	boolean isErrorResponse();

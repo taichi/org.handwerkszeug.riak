@@ -6,21 +6,22 @@ import org.handwerkszeug.riak.JsonAppender;
 import org.handwerkszeug.riak.model.Erlang;
 
 /**
- * 
- * @author taichi
  * @see <a
  *      href="http://wiki.basho.com/Riak-Search---Querying.html#Querying-Integrated-with-Map-Reduce">Querying
  *      Integrated with Map/Reduce </a>
+ * @see <a
+ *      href="https://github.com/basho/riak_search/blob/master/apps/riak_search/src/riak_search.erl">riak_search.erl</a>
+ * @author taichi
  */
 public class MapReduceSearchInput implements JsonAppender<ObjectNode> {
 
 	static final Erlang riakSearch = new Erlang("riak_search", "mapred_search");
 
-	final String bucket;
+	final String index;
 	final String query;
 
-	public MapReduceSearchInput(String bucket, String query) {
-		this.bucket = bucket;
+	public MapReduceSearchInput(String index, String query) {
+		this.index = index;
 		this.query = query;
 	}
 
@@ -28,7 +29,7 @@ public class MapReduceSearchInput implements JsonAppender<ObjectNode> {
 	public void appendTo(ObjectNode json) {
 		riakSearch.appendTo(json);
 		ArrayNode arg = json.putArray("arg");
-		arg.add(this.bucket);
+		arg.add(this.index);
 		arg.add(this.query);
 	}
 

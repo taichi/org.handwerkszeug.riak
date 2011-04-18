@@ -1,6 +1,11 @@
 package org.handwerkszeug.riak.http;
 
+import java.util.List;
+
+import org.handwerkszeug.riak.model.Location;
+import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakOperations;
+import org.handwerkszeug.riak.op.RiakResponse;
 
 /**
  * <p>
@@ -23,12 +28,10 @@ public interface HttpRiakOperations extends RiakOperations, LuwakSupport {
 	 * @see <a
 	 *      href="http://blog.basho.com/2010/02/24/link-walking-by-example/">Link
 	 *      Walking By Example </a>
+	 * @see <a
+	 *      href="https://github.com/basho/riak_kv/blob/master/src/riak_kv_wm_link_walker.erl">riak_kv_wm_link_walker.erl</a>
 	 */
-	void link(String request);
+	RiakResponse<List<RiakObject<byte[]>>> walk(Location walkbegin,
+			List<LinkCondition> conditions);
 
-	/**
-	 * @see <a href="http://wiki.basho.com/Riak-Search---Querying.html">Riak
-	 *      Search Querying</a>
-	 */
-	void search(String query);
 }
