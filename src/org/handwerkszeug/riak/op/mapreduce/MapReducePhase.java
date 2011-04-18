@@ -20,16 +20,11 @@ public abstract class MapReducePhase implements JsonAppender<ArrayNode> {
 
 	final boolean keep;
 
-	public MapReducePhase(PhaseType phase) {
-		this(phase, false);
-	}
-
 	public MapReducePhase(PhaseType phase, boolean keep) {
 		this.phase = phase;
 		this.keep = keep;
 	}
 
-	// TODO use streaming API ? JsonGenerator....
 	@Override
 	public void appendTo(ArrayNode json) {
 		ObjectNode rootNode = json.addObject();

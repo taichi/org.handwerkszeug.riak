@@ -3,70 +3,43 @@ package org.handwerkszeug.riak.op.mapreduce;
 import org.codehaus.jackson.node.ObjectNode;
 
 /**
+ * if you want to built-in javascript function, use {@link NamedFunctionPhase}.
+ * 
  * @author taichi
+ * @see NamedFunctionPhase
  */
 public class AdHocJavaScriptPhase extends JavaScriptPhase {
 
-	enum BuiltInType {
-		/**
-		 * {jsfun,Name} where Name is a binary that, when evaluated in
-		 * Javascript, points to a built-in Javascript function.
-		 */
-		named() {
-			@Override
-			void appendFunctionBody(ObjectNode json, String source) {
-				json.put("name", source);
-			}
-		},
-		anonymous() {
-			@Override
-			void appendFunctionBody(ObjectNode json, String source) {
-				json.put("source", source);
-			}
-		};
-
-		abstract void appendFunctionBody(ObjectNode json, String source);
-	}
-
-	protected BuiltInType builtIn;
 	protected String source;
 
-	protected AdHocJavaScriptPhase(PhaseType phase, BuiltInType type, String source,
-			Object arg) {
-		super(phase, arg);
+	protected AdHocJavaScriptPhase(PhaseType phase, String source, Object arg,
+			boolean keep) {
+		super(phase, arg, keep);
 		this.source = source;
 	}
 
-	public static JavaScriptPhase map(String source) {
-		return new AdHocJavaScriptPhase(PhaseType.map, BuiltInType.anonymous,
-				source, null);
+	public static MapReducePhase map(String source) {
+		return new AdHocJavaScriptPhase(PhaseType.map, source, null, false);
 	}
 
-	public static JavaScriptPhase map(String source, Object arg) {
-		return new AdHocJavaScriptPhase(PhaseType.map, BuiltInType.anonymous,
-				source, arg);
+	public static MapReducePhase map(String source, Object arg) {
+		return new AdHocJavaScriptPhase(PhaseType.map, source, arg, false);
 	}
 
-	public JavaScriptPhase reduce(String source) {
-		return new AdHocJavaScriptPhase(PhaseType.reduce, BuiltInType.anonymous,
-				source, null);
+	public static MapReducePhase map(String source, Object arg, boolean keep) {
+		return new AdHocJavaScriptPhase(PhaseType.map, source, arg, keep);
 	}
 
-	public static JavaScriptPhase mapByBuiltIn(String name) {
-		return new AdHocJavaScriptPhase(PhaseType.map, BuiltInType.named, name, null);
+	public MapReducePhase reduce(String source) {
+		return new AdHocJavaScriptPhase(PhaseType.reduce, source, null, false);
 	}
 
-	public static JavaScriptPhase mapByBuiltIn(String name, Object arg) {
-		return new AdHocJavaScriptPhase(PhaseType.map, BuiltInType.named, name, arg);
-	}
-
-	public JavaScriptPhase reduceByBuiltIn(String name) {
-		return new AdHocJavaScriptPhase(PhaseType.reduce, BuiltInType.named, name,
-				null);
+	public MapReducePhase reduce(String source, boolean keep) {
+		return new AdHocJavaScriptPhase(PhaseType.reduce, source, null, keep);
 	}
 
 	@Override
-	protected void appendFunctionBody(ObjectNode json) {
-		this.builtIn.appendFunctionBody(json, this.source);
+	protected void appendFunction(ObjectNode json) {
+		json.put("source", this.source);
 	}
 }

@@ -8,28 +8,38 @@ import org.handwerkszeug.riak.model.Location;
  */
 public class StoredJavaScriptPhase extends JavaScriptPhase {
 
-	protected Location key;
+	protected Location location;
 
-	protected StoredJavaScriptPhase(PhaseType phase, Location key, Object arg) {
-		super(phase, arg);
-		this.key = key;
+	protected StoredJavaScriptPhase(PhaseType phase, Location location,
+			Object arg, boolean keep) {
+		super(phase, arg, keep);
+		this.location = location;
 	}
 
-	public static JavaScriptPhase map(Location key) {
-		return new StoredJavaScriptPhase(PhaseType.map, key, null);
+	public static MapReducePhase map(Location location) {
+		return new StoredJavaScriptPhase(PhaseType.map, location, null, false);
 	}
 
-	public static JavaScriptPhase map(Location key, Object arg) {
-		return new StoredJavaScriptPhase(PhaseType.map, key, arg);
+	public static MapReducePhase map(Location location, Object arg) {
+		return new StoredJavaScriptPhase(PhaseType.map, location, arg, false);
 	}
 
-	public static JavaScriptPhase reduce(Location key) {
-		return new StoredJavaScriptPhase(PhaseType.reduce, key, null);
+	public static MapReducePhase map(Location location, Object arg, boolean keep) {
+		return new StoredJavaScriptPhase(PhaseType.map, location, arg, keep);
+	}
+
+	public static MapReducePhase reduce(Location location) {
+		return new StoredJavaScriptPhase(PhaseType.reduce, location, null,
+				false);
+	}
+
+	public static MapReducePhase reduce(Location location, boolean keep) {
+		return new StoredJavaScriptPhase(PhaseType.reduce, location, null, keep);
 	}
 
 	@Override
-	protected void appendFunctionBody(ObjectNode json) {
-		json.put("bucket", key.getBucket());
-		json.put("key", key.getKey());
+	protected void appendFunction(ObjectNode json) {
+		json.put("bucket", location.getBucket());
+		json.put("key", location.getKey());
 	}
 }

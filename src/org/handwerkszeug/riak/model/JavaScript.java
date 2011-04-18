@@ -14,6 +14,11 @@ public class JavaScript implements Function {
 	}
 
 	@Override
+	public String getLanguage() {
+		return "javascript";
+	}
+
+	@Override
 	public void appendTo(ObjectNode json) {
 		json.put("name", this.name);
 	}

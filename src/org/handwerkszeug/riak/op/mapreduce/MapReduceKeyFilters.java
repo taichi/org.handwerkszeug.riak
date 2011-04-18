@@ -3,6 +3,9 @@ package org.handwerkszeug.riak.op.mapreduce;
 import org.codehaus.jackson.node.ArrayNode;
 
 /**
+ * {@link MapReduceKeyFilter} Factory.<br/>
+ * there are shortcut methods. so you may not use there.
+ * 
  * @author taichi
  * @see <a
  *      href="https://github.com/basho/riak_kv/blob/master/src/riak_kv_mapred_filters.erl">riak_kv_mapred_filters.erl</a>

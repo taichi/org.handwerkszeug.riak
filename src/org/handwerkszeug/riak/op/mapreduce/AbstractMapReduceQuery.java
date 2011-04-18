@@ -74,6 +74,7 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 	static final String FIELD_TIMEOUT = "timeout";
 
 	protected ObjectNode prepare() {
+		// TODO use streaming API ? JsonGenerator....
 		ObjectMapper om = new ObjectMapper();
 		ObjectNode root = om.createObjectNode();
 		if (StringUtil.isEmpty(this.bucket) == false) {

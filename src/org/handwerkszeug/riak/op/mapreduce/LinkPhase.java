@@ -1,6 +1,7 @@
 package org.handwerkszeug.riak.op.mapreduce;
 
 import org.codehaus.jackson.node.ObjectNode;
+import org.handwerkszeug.riak.util.StringUtil;
 
 /**
  * @author taichi
@@ -32,7 +33,7 @@ public class LinkPhase extends MapReducePhase {
 	@Override
 	public void appendPhase(ObjectNode json) {
 		json.put("bucket", this.bucket);
-		if (tag != null && tag.isEmpty() == false) {
+		if (StringUtil.isEmpty(this.tag) == false) {
 			json.put("tag", this.tag);
 		}
 	}

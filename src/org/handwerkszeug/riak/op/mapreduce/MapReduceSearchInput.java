@@ -26,8 +26,7 @@ public class MapReduceSearchInput implements JsonAppender<ObjectNode> {
 
 	@Override
 	public void appendTo(ObjectNode json) {
-		json.put("module", riakSearch.getModule());
-		json.put("function", riakSearch.getFunction());
+		riakSearch.appendTo(json);
 		ArrayNode arg = json.putArray("arg");
 		arg.add(this.bucket);
 		arg.add(this.query);

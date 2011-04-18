@@ -17,6 +17,11 @@ public class Erlang implements Function {
 		this.function = function;
 	}
 
+	@Override
+	public String getLanguage() {
+		return "erlang";
+	}
+
 	public String getModule() {
 		return this.module;
 	}
@@ -27,7 +32,10 @@ public class Erlang implements Function {
 
 	@Override
 	public void appendTo(ObjectNode json) {
-		json.put("mod", this.getModule());
-		json.put("fun", this.getFunction());
+		// TODO pre/post commit Erlang function
+		// json.put("mod", this.getModule());
+		// json.put("fun", this.getFunction());
+		json.put("module", this.getModule());
+		json.put("function", this.getFunction());
 	}
 }
