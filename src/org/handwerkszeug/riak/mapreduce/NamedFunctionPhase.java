@@ -18,7 +18,7 @@ public class NamedFunctionPhase extends MapReducePhase {
 	}
 
 	public static MapReducePhase map(Function function) {
-		return map(function, false);
+		return map(function, true);
 	}
 
 	public static MapReducePhase map(Function function, boolean keep) {
@@ -26,7 +26,7 @@ public class NamedFunctionPhase extends MapReducePhase {
 	}
 
 	public static MapReducePhase reduce(Function function) {
-		return reduce(function, false);
+		return reduce(function, true);
 	}
 
 	public static MapReducePhase reduce(Function function, boolean keep) {

@@ -12,7 +12,7 @@ public class LinkPhase extends MapReducePhase {
 	}
 
 	public static MapReducePhase link() {
-		return link(false);
+		return link(true);
 	}
 
 	public static MapReducePhase link(final boolean keep) {
@@ -20,7 +20,7 @@ public class LinkPhase extends MapReducePhase {
 	}
 
 	public static MapReducePhase link(String bucket) {
-		return link(bucket, false);
+		return link(bucket, true);
 	}
 
 	public static MapReducePhase link(final String bucket, boolean keep) {
@@ -33,7 +33,7 @@ public class LinkPhase extends MapReducePhase {
 	}
 
 	public static MapReducePhase link(String bucket, String tag) {
-		return link(bucket, tag, false);
+		return link(bucket, tag, true);
 	}
 
 	public static MapReducePhase link(final String bucket, final String tag,
