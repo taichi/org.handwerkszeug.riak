@@ -63,7 +63,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public MapReducePhase reduce(String source) {
-			return new AdHoc(PhaseType.reduce, source, false);
+			return reduce(source, false);
 		}
 
 		public MapReducePhase reduce(String source, boolean keep) {
