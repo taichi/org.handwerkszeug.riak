@@ -1,9 +1,10 @@
-package org.handwerkszeug.riak.op;
+package org.handwerkszeug.riak.http;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.handwerkszeug.riak.model.RiakObject;
+import org.handwerkszeug.riak.op.RiakResponse;
 
 /**
  * @author taichi

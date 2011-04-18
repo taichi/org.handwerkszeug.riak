@@ -1,4 +1,4 @@
-package org.handwerkszeug.riak.op;
+package org.handwerkszeug.riak.http;
 
 import java.io.IOException;
 import java.io.OutputStream;

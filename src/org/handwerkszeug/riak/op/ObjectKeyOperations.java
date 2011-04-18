@@ -7,11 +7,6 @@ import org.handwerkszeug.riak.model.RiakObject;
 
 /**
  * <p>
- * not support manual sibling.<br/>
- * when you use http client and {@code get} operations,<br/>
- * client set {@code Accept : multipart/mixed} all time.<br/>
- * </p>
- * <p>
  * <h3>Siblings</h3>
  * <p>
  * When “allow_mult” is set to true in the bucket properties, concurrent updates
@@ -46,22 +41,9 @@ public interface ObjectKeyOperations {
 	RiakResponse<RiakObject<byte[]>> get(Location key, GetOptions options,
 			SiblingHandler handler);
 
-	/**
-	 * @see <a href="http://wiki.basho.com/Luwak.html">Luwak</a>
-	 */
-	void getStream(Location key, GetOptions options, InputStreamHandler handler);
-
 	RiakResponse<_> put(RiakObject<byte[]> content);
 
 	RiakResponse<_> put(RiakObject<byte[]> content, PutOptions options);
-
-	/**
-	 * @see <a href="http://wiki.basho.com/Luwak.html">Luwak</a>
-	 */
-	RiakResponse<Location> putStream(String bucket,
-			RiakObject<OutputStreamHandler> content);
-
-	RiakResponse<_> putStream(RiakObject<OutputStreamHandler> content);
 
 	RiakResponse<_> delete(Location key);
 
