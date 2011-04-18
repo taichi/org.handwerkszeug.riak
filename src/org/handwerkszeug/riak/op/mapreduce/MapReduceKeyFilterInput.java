@@ -3,11 +3,14 @@ package org.handwerkszeug.riak.op.mapreduce;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 
+/**
+ * @author taichi
+ */
 public class MapReduceKeyFilterInput implements MapReduceInput {
 
-	String bucket;
+	final String bucket;
 
-	Iterable<MapReduceKeyFilter> keyFilters;
+	final Iterable<MapReduceKeyFilter> keyFilters;
 
 	public MapReduceKeyFilterInput(String bucket,
 			Iterable<MapReduceKeyFilter> keyFilters) {
