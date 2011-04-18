@@ -8,6 +8,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.JsonAppender;
+import org.handwerkszeug.riak.model.Erlang;
 import org.handwerkszeug.riak.util.StringUtil;
 
 public abstract class AbstractMapReduceQuery implements MapReduceQuery {
@@ -85,7 +86,12 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 			add(root.putArray(FIELD_INPUTS), this.inputs);
 		}
 
-		add(root.putArray(FIELD_QUERY), this.queries);
+		ArrayNode query = root.putArray(FIELD_QUERY);
+		if (0 < this.queries.size()) {
+			add(query, this.queries);
+		} else {
+			NamedFunctionPhase.map(Erlang.map_object_value).appendTo(query);
+		}
 
 		if (0 < this.timeout) {
 			root.put(FIELD_TIMEOUT, this.timeout);
