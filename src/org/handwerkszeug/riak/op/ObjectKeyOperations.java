@@ -51,10 +51,9 @@ public interface ObjectKeyOperations {
 	 */
 	void getStream(Location key, GetOptions options, InputStreamHandler handler);
 
-	RiakResponse<_> put(Location key, RiakObject<byte[]> content);
+	RiakResponse<_> put(RiakObject<byte[]> content);
 
-	RiakResponse<_> put(Location key, RiakObject<byte[]> content,
-			PutOptions options);
+	RiakResponse<_> put(RiakObject<byte[]> content, PutOptions options);
 
 	/**
 	 * @see <a href="http://wiki.basho.com/Luwak.html">Luwak</a>
@@ -62,8 +61,7 @@ public interface ObjectKeyOperations {
 	RiakResponse<Location> putStream(String bucket,
 			RiakObject<OutputStreamHandler> content);
 
-	RiakResponse<_> putStream(Location key,
-			RiakObject<OutputStreamHandler> content);
+	RiakResponse<_> putStream(RiakObject<OutputStreamHandler> content);
 
 	RiakResponse<_> delete(Location key);
 
