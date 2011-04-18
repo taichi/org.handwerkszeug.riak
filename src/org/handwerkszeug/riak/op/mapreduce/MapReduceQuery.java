@@ -1,5 +1,7 @@
 package org.handwerkszeug.riak.op.mapreduce;
 
+import java.util.Collection;
+
 /**
  * 
  * @author taichi
@@ -15,11 +17,11 @@ public interface MapReduceQuery {
 	 */
 	void setInputs(String bucket);
 
-	void addInputs(MapReduceInput... inputs);
+	void setInputs(Collection<MapReduceInput> inputs);
 
 	void setInputs(MapReduceSearchInput search);
 
-	void addQueries(MapReducePhase... mapReducePhases);
+	void setQueries(Collection<MapReducePhase> mapReducePhases);
 
 	/**
 	 * Map/Reduce queries have a default timeout of 60000 milliseconds (60

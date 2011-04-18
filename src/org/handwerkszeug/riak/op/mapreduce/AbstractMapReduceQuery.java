@@ -1,6 +1,7 @@
 package org.handwerkszeug.riak.op.mapreduce;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.codehaus.jackson.map.ObjectMapper;
@@ -33,13 +34,11 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 	}
 
 	@Override
-	public void addInputs(MapReduceInput... inputs) {
+	public void setInputs(Collection<MapReduceInput> inputs) {
 		if (StringUtil.isEmpty(this.bucket) == false || this.search != null) {
 			throw new IllegalStateException();
 		}
-		for (MapReduceInput in : inputs) {
-			this.inputs.add(in);
-		}
+		this.inputs.addAll(inputs);
 	}
 
 	@Override
@@ -52,10 +51,8 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 	}
 
 	@Override
-	public void addQueries(MapReducePhase... mapReducePhases) {
-		for (MapReducePhase ph : mapReducePhases) {
-			this.queries.add(ph);
-		}
+	public void setQueries(Collection<MapReducePhase> mapReducePhases) {
+		this.queries.addAll(mapReducePhases);
 	}
 
 	@Override
@@ -79,11 +76,10 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 	protected ObjectNode prepare() {
 		ObjectMapper om = new ObjectMapper();
 		ObjectNode root = om.createObjectNode();
-		if (this.bucket != null && this.bucket.isEmpty() == false) {
+		if (StringUtil.isEmpty(this.bucket) == false) {
 			root.put(FIELD_INPUTS, this.bucket);
 		} else if (this.search != null) {
-			ObjectNode node = root.putObject(FIELD_INPUTS);
-			this.search.appendTo(node);
+			this.search.appendTo(root.putObject(FIELD_INPUTS));
 		} else {
 			add(root.putArray(FIELD_INPUTS), this.inputs);
 		}
