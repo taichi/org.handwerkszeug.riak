@@ -9,6 +9,12 @@ public class MapReduceKeyFilterInput implements MapReduceInput {
 
 	Iterable<MapReduceKeyFilter> keyFilters;
 
+	public MapReduceKeyFilterInput(String bucket,
+			Iterable<MapReduceKeyFilter> keyFilters) {
+		this.bucket = bucket;
+		this.keyFilters = keyFilters;
+	}
+
 	@Override
 	public void appendTo(ArrayNode json) {
 		ObjectNode node = json.addObject();

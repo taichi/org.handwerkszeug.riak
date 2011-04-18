@@ -13,90 +13,49 @@ public class MapReduceKeyFilters {
 	 * Transform functions
 	 */
 	public static class Transform {
-		static final MapReduceKeyFilter intToString = new MapReduceKeyFilter() {
-			@Override
-			public void appendTo(ArrayNode json) {
-				create("int_to_string", json);
-			}
-		};
 
 		/**
 		 * Turns an integer (previously extracted with string_to_int), into a
 		 * string.
 		 */
 		public static MapReduceKeyFilter intToString() {
-			return intToString;
+			return InternalFunctions.intToString;
 		}
-
-		static final MapReduceKeyFilter stringToInt = new MapReduceKeyFilter() {
-			@Override
-			public void appendTo(ArrayNode json) {
-				create("string_to_int", json);
-			}
-		};
 
 		/**
 		 * Turns a string into an integer.
 		 */
 		public static MapReduceKeyFilter stringToInt() {
-			return stringToInt;
+			return InternalFunctions.stringToInt;
 		}
-
-		static final MapReduceKeyFilter floatToString = new MapReduceKeyFilter() {
-			@Override
-			public void appendTo(ArrayNode json) {
-				create("float_to_string", json);
-			}
-		};
 
 		/**
 		 * Turns a floating point number (previously extracted with
 		 * string_to_float), into a string.
 		 */
 		public static MapReduceKeyFilter floatToString() {
-			return floatToString;
+			return InternalFunctions.floatToString;
 		}
-
-		static final MapReduceKeyFilter stringToFloat = new MapReduceKeyFilter() {
-			@Override
-			public void appendTo(ArrayNode json) {
-				create("string_to_float", json);
-			}
-		};
 
 		/**
 		 * Turns a string into a floating point number.
 		 */
 		public static MapReduceKeyFilter stringToFloat() {
-			return stringToFloat;
+			return InternalFunctions.stringToFloat;
 		}
-
-		static final MapReduceKeyFilter toUpper = new MapReduceKeyFilter() {
-			@Override
-			public void appendTo(ArrayNode json) {
-				create("to_upper", json);
-			}
-		};
 
 		/**
 		 * Changes all letters to uppercase.
 		 */
 		public static MapReduceKeyFilter toUpper() {
-			return toUpper;
+			return InternalFunctions.toUpper;
 		}
-
-		static final MapReduceKeyFilter toLower = new MapReduceKeyFilter() {
-			@Override
-			public void appendTo(ArrayNode json) {
-				create("to_lower", json);
-			}
-		};
 
 		/**
 		 * Changes all letters to lowercase.
 		 */
 		public static MapReduceKeyFilter toLower() {
-			return toLower;
+			return InternalFunctions.toLower;
 		}
 
 		/**
@@ -111,26 +70,18 @@ public class MapReduceKeyFilters {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
-					ArrayNode node = create("tokenize", json);
+					ArrayNode node = InternalFunctions.create("tokenize", json);
 					node.add(delimiter);
 					node.add(nth);
-
 				}
 			};
 		}
-
-		static final MapReduceKeyFilter urldecode = new MapReduceKeyFilter() {
-			@Override
-			public void appendTo(ArrayNode json) {
-				create("urldecode", json);
-			}
-		};
 
 		/**
 		 * URL-decodes the string.
 		 */
 		public static MapReduceKeyFilter urldecode() {
-			return urldecode;
+			return InternalFunctions.urldecode;
 		}
 	}
 
@@ -139,16 +90,12 @@ public class MapReduceKeyFilters {
 	 */
 	public static class Predicates {
 
-		static ArrayNode between(ArrayNode container) {
-			return create("between", container);
-		}
-
 		public static MapReduceKeyFilter between(final String from,
 				final String to) {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
-					ArrayNode node = between(json);
+					ArrayNode node = InternalFunctions.between(json);
 					node.add(from);
 					node.add(to);
 				}
@@ -160,7 +107,7 @@ public class MapReduceKeyFilters {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
-					ArrayNode node = between(json);
+					ArrayNode node = InternalFunctions.between(json);
 					node.add(from);
 					node.add(to);
 					node.add(inclusive);
@@ -172,7 +119,7 @@ public class MapReduceKeyFilters {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
-					ArrayNode node = between(json);
+					ArrayNode node = InternalFunctions.between(json);
 					node.add(from);
 					node.add(to);
 				}
@@ -184,7 +131,7 @@ public class MapReduceKeyFilters {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
-					ArrayNode node = between(json);
+					ArrayNode node = InternalFunctions.between(json);
 					node.add(from);
 					node.add(to);
 					node.add(inclusive);
@@ -196,7 +143,7 @@ public class MapReduceKeyFilters {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
-					ArrayNode node = between(json);
+					ArrayNode node = InternalFunctions.between(json);
 					node.add(from);
 					node.add(to);
 				}
@@ -208,7 +155,7 @@ public class MapReduceKeyFilters {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
-					ArrayNode node = between(json);
+					ArrayNode node = InternalFunctions.between(json);
 					node.add(from);
 					node.add(to);
 					node.add(inclusive);
@@ -221,7 +168,7 @@ public class MapReduceKeyFilters {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
-					ArrayNode node = between(json);
+					ArrayNode node = InternalFunctions.between(json);
 					node.add(from);
 					node.add(to);
 				}
@@ -233,7 +180,7 @@ public class MapReduceKeyFilters {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
-					ArrayNode node = between(json);
+					ArrayNode node = InternalFunctions.between(json);
 					node.add(from);
 					node.add(to);
 					node.add(inclusive);
@@ -246,7 +193,7 @@ public class MapReduceKeyFilters {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
-					ArrayNode node = between(json);
+					ArrayNode node = InternalFunctions.between(json);
 					node.add(from);
 					node.add(to);
 				}
@@ -258,7 +205,7 @@ public class MapReduceKeyFilters {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
-					ArrayNode node = between(json);
+					ArrayNode node = InternalFunctions.between(json);
 					node.add(from);
 					node.add(to);
 					node.add(inclusive);
@@ -272,9 +219,66 @@ public class MapReduceKeyFilters {
 		return null;
 	}
 
-	protected static ArrayNode create(String name, ArrayNode container) {
+}
+
+class InternalFunctions {
+
+	static ArrayNode create(String name, ArrayNode container) {
 		ArrayNode node = container.addArray();
 		node.add(name);
 		return node;
 	}
+
+	static final MapReduceKeyFilter intToString = new MapReduceKeyFilter() {
+		@Override
+		public void appendTo(ArrayNode json) {
+			create("int_to_string", json);
+		}
+	};
+
+	static final MapReduceKeyFilter stringToInt = new MapReduceKeyFilter() {
+		@Override
+		public void appendTo(ArrayNode json) {
+			create("string_to_int", json);
+		}
+	};
+
+	static final MapReduceKeyFilter floatToString = new MapReduceKeyFilter() {
+		@Override
+		public void appendTo(ArrayNode json) {
+			create("float_to_string", json);
+		}
+	};
+
+	static final MapReduceKeyFilter stringToFloat = new MapReduceKeyFilter() {
+		@Override
+		public void appendTo(ArrayNode json) {
+			create("string_to_float", json);
+		}
+	};
+	static final MapReduceKeyFilter toUpper = new MapReduceKeyFilter() {
+		@Override
+		public void appendTo(ArrayNode json) {
+			create("to_upper", json);
+		}
+	};
+
+	static final MapReduceKeyFilter toLower = new MapReduceKeyFilter() {
+		@Override
+		public void appendTo(ArrayNode json) {
+			create("to_lower", json);
+		}
+	};
+
+	static final MapReduceKeyFilter urldecode = new MapReduceKeyFilter() {
+		@Override
+		public void appendTo(ArrayNode json) {
+			create("urldecode", json);
+		}
+	};
+
+	public static ArrayNode between(ArrayNode container) {
+		return create("between", container);
+	}
+
 }
