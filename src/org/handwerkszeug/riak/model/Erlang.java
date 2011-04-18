@@ -38,4 +38,6 @@ public class Erlang implements Function {
 		json.put("module", this.getModule());
 		json.put("function", this.getFunction());
 	}
+
+	// TODO list built-in functions
 }

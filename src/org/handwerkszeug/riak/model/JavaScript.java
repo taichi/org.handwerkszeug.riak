@@ -7,6 +7,8 @@ import org.codehaus.jackson.node.ObjectNode;
  */
 public class JavaScript implements Function {
 
+	public static final String LANG = "javascript";
+
 	final String name;
 
 	public JavaScript(String name) {
@@ -15,11 +17,13 @@ public class JavaScript implements Function {
 
 	@Override
 	public String getLanguage() {
-		return "javascript";
+		return LANG;
 	}
 
 	@Override
 	public void appendTo(ObjectNode json) {
 		json.put("name", this.name);
 	}
+
+	// TODO list built-in functions
 }

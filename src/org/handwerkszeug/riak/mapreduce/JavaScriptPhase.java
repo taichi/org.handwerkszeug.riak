@@ -15,7 +15,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 
 	@Override
 	protected void appendPhase(ObjectNode json) {
-		json.put("language", "javascript");
+		json.put("language", JavaScript.LANG);
 		appendFunction(json);
 	}
 
@@ -30,9 +30,9 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 	}
 
 	/**
-	 * if you want to built-in javascript function, use {@link BuiltIn}.
+	 * if you want to built-in javascript function, use {@link BuiltIns}.
 	 * 
-	 * @see BuiltIn
+	 * @see BuiltIns
 	 */
 	public static class AdHoc extends JavaScriptPhase {
 
@@ -166,10 +166,10 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 	 * @see <a
 	 *      href="https://github.com/basho/riak_kv/blob/master/priv/mapred_builtins.js">mapred_builtins.js</a>
 	 */
-	public static class BuiltIn extends JavaScriptPhase {
+	public static class BuiltIns extends JavaScriptPhase {
 		final JavaScript builtIn;
 
-		public BuiltIn(PhaseType type, JavaScript builtIn, boolean keep) {
+		public BuiltIns(PhaseType type, JavaScript builtIn, boolean keep) {
 			super(type, keep);
 			this.builtIn = builtIn;
 		}
@@ -179,7 +179,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase map(JavaScript builtIn, boolean keep) {
-			return new BuiltIn(PhaseType.map, builtIn, keep);
+			return new BuiltIns(PhaseType.map, builtIn, keep);
 		}
 
 		public static MapReducePhase map(JavaScript builtIn, Object arg) {
@@ -193,7 +193,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 
 		static MapReducePhase withArg(PhaseType type, JavaScript builtIn,
 				final Object arg, boolean keep) {
-			return new BuiltIn(type, builtIn, keep) {
+			return new BuiltIns(type, builtIn, keep) {
 				@Override
 				protected void appendFunction(ObjectNode json) {
 					this.builtIn.appendTo(json);
@@ -207,7 +207,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase reduce(JavaScript builtIn, boolean keep) {
-			return new BuiltIn(PhaseType.reduce, builtIn, keep);
+			return new BuiltIns(PhaseType.reduce, builtIn, keep);
 		}
 
 		public static MapReducePhase reduce(JavaScript builtIn, Object arg) {
