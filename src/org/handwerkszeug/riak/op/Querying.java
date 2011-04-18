@@ -15,6 +15,9 @@ public interface Querying {
 
 	/**
 	 * @see <a href="http://wiki.basho.com/Links.html">Links</a>
+	 * @see <a
+	 *      href="http://blog.basho.com/2010/02/24/link-walking-by-example/">Link
+	 *      Walking By Example </a>
 	 */
 	void link(String request); // TODO ???
 

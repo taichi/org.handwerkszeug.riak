@@ -8,27 +8,25 @@ import org.handwerkszeug.riak.model.Location;
  */
 public abstract class JavaScriptPhase extends MapReducePhase {
 
-	/**
-	 * Map phases may also be passed static arguments by using the “arg” spec
-	 * field.
-	 */
-	protected Object arg;
-
-	protected JavaScriptPhase(PhaseType phase, Object arg, boolean keep) {
+	protected JavaScriptPhase(PhaseType phase, boolean keep) {
 		super(phase, keep);
-		this.arg = arg;
 	}
 
 	@Override
 	protected void appendPhase(ObjectNode json) {
 		json.put("language", "javascript");
 		appendFunction(json);
-		if (arg != null) {
-			json.putPOJO("arg", this.arg);
-		}
 	}
 
 	protected abstract void appendFunction(ObjectNode json);
+
+	/**
+	 * Map phases may also be passed static arguments by using the “arg” spec
+	 * field.
+	 */
+	protected void appendArg(ObjectNode json, Object arg) {
+		json.putPOJO("arg", arg);
+	}
 
 	/**
 	 * if you want to built-in javascript function, use
@@ -40,33 +38,44 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 
 		protected String source;
 
-		protected AdHoc(PhaseType phase, String source, Object arg, boolean keep) {
-			super(phase, arg, keep);
+		protected AdHoc(PhaseType phase, String source, boolean keep) {
+			super(phase, keep);
 			this.source = source;
 		}
 
 		public static MapReducePhase map(String source) {
-			return new AdHoc(PhaseType.map, source, null, false);
+			return new AdHoc(PhaseType.map, source, false);
 		}
 
-		public static MapReducePhase map(String source, Object arg) {
-			return new AdHoc(PhaseType.map, source, arg, false);
+		public static MapReducePhase map(String source, final Object arg) {
+			return map(source, arg);
 		}
 
-		public static MapReducePhase map(String source, Object arg, boolean keep) {
-			return new AdHoc(PhaseType.map, source, arg, keep);
+		public static MapReducePhase map(String source, final Object arg,
+				boolean keep) {
+			return new AdHoc(PhaseType.map, source, keep) {
+				@Override
+				protected void appendFunction(ObjectNode json) {
+					appendSource(json);
+					appendArg(json, arg);
+				}
+			};
 		}
 
 		public MapReducePhase reduce(String source) {
-			return new AdHoc(PhaseType.reduce, source, null, false);
+			return new AdHoc(PhaseType.reduce, source, false);
 		}
 
 		public MapReducePhase reduce(String source, boolean keep) {
-			return new AdHoc(PhaseType.reduce, source, null, keep);
+			return new AdHoc(PhaseType.reduce, source, keep);
 		}
 
 		@Override
 		protected void appendFunction(ObjectNode json) {
+			appendSource(json);
+		}
+
+		protected void appendSource(ObjectNode json) {
 			json.put("source", this.source);
 		}
 	}
@@ -75,37 +84,50 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 
 		protected Location location;
 
-		protected Stored(PhaseType phase, Location location, Object arg,
-				boolean keep) {
-			super(phase, arg, keep);
+		protected Stored(PhaseType phase, Location location, boolean keep) {
+			super(phase, keep);
 			this.location = location;
 		}
 
 		public static MapReducePhase map(Location location) {
-			return new Stored(PhaseType.map, location, null, false);
+			return map(location, false);
+		}
+
+		public static MapReducePhase map(Location location, boolean keep) {
+			return new Stored(PhaseType.map, location, keep);
 		}
 
 		public static MapReducePhase map(Location location, Object arg) {
-			return new Stored(PhaseType.map, location, arg, false);
+			return map(location, arg, false);
 		}
 
-		public static MapReducePhase map(Location location, Object arg,
+		public static MapReducePhase map(Location location, final Object arg,
 				boolean keep) {
-			return new Stored(PhaseType.map, location, arg, keep);
+			return new Stored(PhaseType.map, location, keep) {
+				@Override
+				protected void appendFunction(ObjectNode json) {
+					appendLocation(json);
+					appendArg(json, arg);
+				}
+			};
 		}
 
 		public static MapReducePhase reduce(Location location) {
-			return new Stored(PhaseType.reduce, location, null, false);
+			return reduce(location, false);
 		}
 
 		public static MapReducePhase reduce(Location location, boolean keep) {
-			return new Stored(PhaseType.reduce, location, null, keep);
+			return new Stored(PhaseType.reduce, location, keep);
 		}
 
 		@Override
 		protected void appendFunction(ObjectNode json) {
-			json.put("bucket", location.getBucket());
-			json.put("key", location.getKey());
+			appendLocation(json);
+		}
+
+		protected void appendLocation(ObjectNode json) {
+			json.put("bucket", this.location.getBucket());
+			json.put("key", this.location.getKey());
 		}
 	}
 }

@@ -1,40 +1,53 @@
 package org.handwerkszeug.riak.mapreduce;
 
 import org.codehaus.jackson.node.ObjectNode;
-import org.handwerkszeug.riak.util.StringUtil;
 
 /**
  * @author taichi
  */
 public class LinkPhase extends MapReducePhase {
 
-	protected String bucket;
-
-	protected String tag;
-
-	public LinkPhase(String bucket) {
-		this(bucket, null, false);
+	protected LinkPhase(boolean keep) {
+		super(PhaseType.link, keep);
 	}
 
-	public LinkPhase(String bucket, boolean keep) {
-		this(bucket, null, keep);
+	public static MapReducePhase link() {
+		return link(false);
 	}
 
-	public LinkPhase(String bucket, String tag) {
-		this(bucket, tag, false);
+	public static MapReducePhase link(final boolean keep) {
+		return new LinkPhase(keep);
 	}
 
-	public LinkPhase(String bucket, String tag, boolean keep) {
-		super(PhaseType.link, false);
-		this.bucket = bucket;
-		this.tag = tag;
+	public static MapReducePhase link(String bucket) {
+		return link(bucket, false);
+	}
+
+	public static MapReducePhase link(final String bucket, boolean keep) {
+		return new LinkPhase(keep) {
+			@Override
+			public void appendPhase(ObjectNode json) {
+				json.put("bucket", bucket);
+			}
+		};
+	}
+
+	public static MapReducePhase link(String bucket, String tag) {
+		return link(bucket, tag, false);
+	}
+
+	public static MapReducePhase link(final String bucket, final String tag,
+			boolean keep) {
+		return new LinkPhase(keep) {
+			@Override
+			public void appendPhase(ObjectNode json) {
+				json.put("bucket", bucket);
+				json.put("tag", tag);
+			}
+		};
 	}
 
 	@Override
 	public void appendPhase(ObjectNode json) {
-		json.put("bucket", this.bucket);
-		if (StringUtil.isEmpty(this.tag) == false) {
-			json.put("tag", this.tag);
-		}
 	}
 }
