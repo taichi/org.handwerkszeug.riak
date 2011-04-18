@@ -1,6 +1,7 @@
 package org.handwerkszeug.riak.mapreduce;
 
 import org.codehaus.jackson.node.ObjectNode;
+import org.handwerkszeug.riak.model.JavaScript;
 import org.handwerkszeug.riak.model.Location;
 
 /**
@@ -29,10 +30,9 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 	}
 
 	/**
-	 * if you want to built-in javascript function, use
-	 * {@link NamedFunctionPhase}.
+	 * if you want to built-in javascript function, use {@link BuiltIn}.
 	 * 
-	 * @see NamedFunctionPhase
+	 * @see BuiltIn
 	 */
 	public static class AdHoc extends JavaScriptPhase {
 
@@ -44,16 +44,24 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase map(String source) {
-			return new AdHoc(PhaseType.map, source, false);
+			return map(source, false);
 		}
 
-		public static MapReducePhase map(String source, final Object arg) {
+		public static MapReducePhase map(String source, boolean keep) {
+			return new AdHoc(PhaseType.map, source, keep);
+		}
+
+		public static MapReducePhase map(String source, Object arg) {
 			return map(source, arg);
 		}
 
-		public static MapReducePhase map(String source, final Object arg,
-				boolean keep) {
-			return new AdHoc(PhaseType.map, source, keep) {
+		public static MapReducePhase map(String source, Object arg, boolean keep) {
+			return withArg(PhaseType.map, source, arg, keep);
+		}
+
+		static MapReducePhase withArg(PhaseType type, String source,
+				final Object arg, boolean keep) {
+			return new AdHoc(type, source, keep) {
 				@Override
 				protected void appendFunction(ObjectNode json) {
 					appendSource(json);
@@ -68,6 +76,15 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 
 		public MapReducePhase reduce(String source, boolean keep) {
 			return new AdHoc(PhaseType.reduce, source, keep);
+		}
+
+		public static MapReducePhase reduce(String source, Object arg) {
+			return withArg(PhaseType.reduce, source, arg, false);
+		}
+
+		public static MapReducePhase reduce(String source, Object arg,
+				boolean keep) {
+			return withArg(PhaseType.reduce, source, arg, keep);
 		}
 
 		@Override
@@ -101,9 +118,14 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 			return map(location, arg, false);
 		}
 
-		public static MapReducePhase map(Location location, final Object arg,
+		public static MapReducePhase map(Location location, Object arg,
 				boolean keep) {
-			return new Stored(PhaseType.map, location, keep) {
+			return withArg(PhaseType.map, location, arg, keep);
+		}
+
+		static MapReducePhase withArg(PhaseType type, Location location,
+				final Object arg, boolean keep) {
+			return new Stored(type, location, keep) {
 				@Override
 				protected void appendFunction(ObjectNode json) {
 					appendLocation(json);
@@ -120,6 +142,15 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 			return new Stored(PhaseType.reduce, location, keep);
 		}
 
+		public static MapReducePhase reduce(Location location, Object arg) {
+			return withArg(PhaseType.map, location, arg, false);
+		}
+
+		public static MapReducePhase reduce(Location location, Object arg,
+				boolean keep) {
+			return withArg(PhaseType.map, location, arg, keep);
+		}
+
 		@Override
 		protected void appendFunction(ObjectNode json) {
 			appendLocation(json);
@@ -128,6 +159,69 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		protected void appendLocation(ObjectNode json) {
 			json.put("bucket", this.location.getBucket());
 			json.put("key", this.location.getKey());
+		}
+	}
+
+	/**
+	 * @see <a
+	 *      href="https://github.com/basho/riak_kv/blob/master/priv/mapred_builtins.js">mapred_builtins.js</a>
+	 */
+	public static class BuiltIn extends JavaScriptPhase {
+		final JavaScript builtIn;
+
+		public BuiltIn(PhaseType type, JavaScript builtIn, boolean keep) {
+			super(type, keep);
+			this.builtIn = builtIn;
+		}
+
+		public static MapReducePhase map(JavaScript builtIn) {
+			return map(builtIn, false);
+		}
+
+		public static MapReducePhase map(JavaScript builtIn, boolean keep) {
+			return new BuiltIn(PhaseType.map, builtIn, keep);
+		}
+
+		public static MapReducePhase map(JavaScript builtIn, Object arg) {
+			return withArg(PhaseType.map, builtIn, arg, false);
+		}
+
+		public static MapReducePhase map(JavaScript builtIn, Object arg,
+				boolean keep) {
+			return withArg(PhaseType.map, builtIn, arg, keep);
+		}
+
+		static MapReducePhase withArg(PhaseType type, JavaScript builtIn,
+				final Object arg, boolean keep) {
+			return new BuiltIn(type, builtIn, keep) {
+				@Override
+				protected void appendFunction(ObjectNode json) {
+					this.builtIn.appendTo(json);
+					appendArg(json, arg);
+				}
+			};
+		}
+
+		public static MapReducePhase reduce(JavaScript builtIn) {
+			return reduce(builtIn, false);
+		}
+
+		public static MapReducePhase reduce(JavaScript builtIn, boolean keep) {
+			return new BuiltIn(PhaseType.reduce, builtIn, keep);
+		}
+
+		public static MapReducePhase reduce(JavaScript builtIn, Object arg) {
+			return withArg(PhaseType.reduce, builtIn, arg, false);
+		}
+
+		public static MapReducePhase reduce(JavaScript builtIn, Object arg,
+				boolean keep) {
+			return withArg(PhaseType.reduce, builtIn, arg, keep);
+		}
+
+		@Override
+		protected void appendFunction(ObjectNode json) {
+			this.builtIn.appendTo(json);
 		}
 	}
 }
