@@ -48,7 +48,7 @@ public class LinkCondition {
 		return this.tag;
 	}
 
-	public int getKeep() {
-		return this.keep ? 1 : 0;
+	public boolean getKeep() {
+		return this.keep;
 	}
 }
