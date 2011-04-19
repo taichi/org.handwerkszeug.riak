@@ -1,0 +1,13 @@
+{
+   "inputs":"testPrepareBucket",
+   "query":[
+      {
+         "map":{
+            "language":"erlang",
+            "module":"riak_kv_mapreduce",
+            "function":"map_object_value",
+            "keep":true
+         }
+      }
+   ]
+}
