@@ -28,7 +28,7 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 
 	@Override
 	public void setInputs(String bucket) {
-		if (this.inputs.isEmpty() == false || this.search != null) {
+		if ((this.inputs.isEmpty() == false) || (this.search != null)) {
 			throw new IllegalStateException();
 		}
 		this.bucket = bucket;
@@ -36,7 +36,7 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 
 	@Override
 	public void setInputs(Collection<MapReduceInput> inputs) {
-		if (StringUtil.isEmpty(this.bucket) == false || this.search != null) {
+		if ((StringUtil.isEmpty(this.bucket) == false) || (this.search != null)) {
 			throw new IllegalStateException();
 		}
 		this.inputs.addAll(inputs);
@@ -44,8 +44,8 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 
 	@Override
 	public void setInputs(MapReduceSearchInput search) {
-		if (StringUtil.isEmpty(this.bucket) == false
-				|| this.inputs.isEmpty() == false) {
+		if ((StringUtil.isEmpty(this.bucket) == false)
+				|| (this.inputs.isEmpty() == false)) {
 			throw new IllegalStateException();
 		}
 		this.search = search;
@@ -87,10 +87,10 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 		}
 
 		ArrayNode query = root.putArray(FIELD_QUERY);
-		if (0 < this.queries.size()) {
-			add(query, this.queries);
-		} else {
+		if (this.queries.isEmpty()) {
 			NamedFunctionPhase.map(Erlang.map_object_value).appendTo(query);
+		} else {
+			add(query, this.queries);
 		}
 
 		if (0 < this.timeout) {
