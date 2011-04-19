@@ -19,8 +19,6 @@ public class JsonUtil {
 			return om.readTree(new BufferedInputStream(in));
 		} catch (IOException e) {
 			throw new IORuntimeException(e);
-		} finally {
-			Streams.close(in);
 		}
 	}
 

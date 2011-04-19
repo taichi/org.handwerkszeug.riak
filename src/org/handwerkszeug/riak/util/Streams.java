@@ -45,6 +45,12 @@ public class Streams {
 		try {
 			in = _.open();
 			_.handle(in);
+		} catch (RuntimeException e) {
+			if (clazz.isAssignableFrom(e.getClass())) {
+				_.happen((T) e);
+			} else {
+				throw e;
+			}
 		} catch (Exception e) {
 			if (clazz.isAssignableFrom(e.getClass())) {
 				_.happen((T) e);
