@@ -10,11 +10,11 @@ import org.handwerkszeug.riak.model.Bucket;
  */
 public interface BucketOperations {
 
-	RiakResponse<List<String>> listBuckets();
+	void listBuckets(RiakResponseHandler<List<String>> handler);
 
 	void listKeys(String bucket, KeyHandler handler);
 
-	RiakResponse<Bucket> getBucket(String bucket);
+	void getBucket(String bucket, RiakResponseHandler<Bucket> handler);
 
-	RiakResponse<_> setBucket(Bucket bucket);
+	void setBucket(Bucket bucket, RiakResponseHandler<_> handler);
 }

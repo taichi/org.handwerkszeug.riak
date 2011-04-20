@@ -1,10 +1,13 @@
 package org.handwerkszeug.riak.mapreduce;
 
 import org.handwerkszeug.riak.op.RiakResponse;
+import org.handwerkszeug.riak.op.RiakResponseHandler;
 
-public interface MapReduceResponseHandler {
-
-	void handle(RiakResponse<MapReduceResponse> response);
+/**
+ * @author taichi
+ */
+public interface MapReduceResponseHandler extends
+		RiakResponseHandler<MapReduceResponse> {
 
 	void handleDone(RiakResponse<MapReduceResponse> response);
 }

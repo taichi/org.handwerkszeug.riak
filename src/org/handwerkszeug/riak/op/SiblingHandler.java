@@ -23,5 +23,5 @@ public interface SiblingHandler {
 	 * 
 	 * @return conflict resolved object.
 	 */
-	RiakObject<byte[]> end();
+	void end();
 }
