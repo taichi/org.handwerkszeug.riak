@@ -34,20 +34,21 @@ import org.handwerkszeug.riak.model.RiakObject;
  */
 public interface ObjectKeyOperations {
 
-	void get(Location key, RiakResponseHandler<RiakObject<byte[]>> handler);
+	RiakFuture get(Location key, RiakResponseHandler<RiakObject<byte[]>> handler);
 
-	void get(Location key, GetOptions options,
+	RiakFuture get(Location key, GetOptions options,
 			RiakResponseHandler<RiakObject<byte[]>> handler);
 
-	void get(Location key, GetOptions options, SiblingHandler siblingHandler,
+	RiakFuture get(Location key, GetOptions options,
+			SiblingHandler siblingHandler,
 			RiakResponseHandler<RiakObject<byte[]>> handler);
 
-	void put(RiakObject<byte[]> content, RiakResponseHandler<_> handler);
+	RiakFuture put(RiakObject<byte[]> content, RiakResponseHandler<_> handler);
 
-	void put(RiakObject<byte[]> content, PutOptions options,
+	RiakFuture put(RiakObject<byte[]> content, PutOptions options,
 			RiakResponseHandler<_> handler);
 
-	void delete(Location key, RiakResponseHandler<_> handler);
+	RiakFuture delete(Location key, RiakResponseHandler<_> handler);
 
 	/**
 	 * @param key
@@ -56,5 +57,6 @@ public interface ObjectKeyOperations {
 	 *            an object. (default is set at the bucket level)
 	 * @return
 	 */
-	void delete(Location key, Quorum quorum, RiakResponseHandler<_> handler);
+	RiakFuture delete(Location key, Quorum quorum,
+			RiakResponseHandler<_> handler);
 }

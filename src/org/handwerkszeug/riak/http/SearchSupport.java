@@ -1,5 +1,9 @@
 package org.handwerkszeug.riak.http;
 
+import org.handwerkszeug.riak.model.RiakObject;
+import org.handwerkszeug.riak.op.RiakFuture;
+import org.handwerkszeug.riak.op.RiakResponseHandler;
+
 /**
  * @author taichi
  */
@@ -12,6 +16,7 @@ public interface SearchSupport {
 	 *      href="http://lucene.apache.org/java/2_4_0/queryparsersyntax.html">Apache
 	 *      Lucene - Query Parser Syntax</a>
 	 */
-	void search(String query);
+	RiakFuture search(String query,
+			RiakResponseHandler<RiakObject<byte[]>> handler);
 	// TODO temporally define. you need think about this.
 }

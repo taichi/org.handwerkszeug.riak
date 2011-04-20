@@ -13,11 +13,11 @@ import org.handwerkszeug.riak.model.ServerInfo;
 public interface RiakOperations extends BucketOperations, ObjectKeyOperations,
 		Querying {
 
-	void ping(RiakResponseHandler<_> handler);
+	RiakFuture ping(RiakResponseHandler<_> handler);
 
-	void getClientId(RiakResponseHandler<String> handler);
+	RiakFuture getClientId(RiakResponseHandler<String> handler);
 
-	void setClientId(String id, RiakResponseHandler<_> handler);
+	RiakFuture setClientId(String id, RiakResponseHandler<_> handler);
 
-	void serverInfo(RiakResponseHandler<ServerInfo> handler);
+	RiakFuture serverInfo(RiakResponseHandler<ServerInfo> handler);
 }
