@@ -1,6 +1,8 @@
 connection pooling.
+nio based event handling.
+highly scalable.
 interface driven and stateless design.
-  tranceport switchable.
+  transport switchable.
   resource safety.
 
 for developer
