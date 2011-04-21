@@ -1,6 +1,5 @@
 package org.handwerkszeug.riak.http;
 
-import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.GetOptions;
@@ -13,13 +12,10 @@ import org.handwerkszeug.riak.op.RiakResponseHandler;
  */
 public interface LuwakSupport {
 
-	RiakFuture getStream(Location key, GetOptions options,
+	RiakFuture getStream(String key, GetOptions options,
 			InputStreamHandler handler);
 
-	RiakFuture putStream(String bucket,
-			RiakObject<OutputStreamHandler> content,
+	RiakFuture putStream(RiakObject<OutputStreamHandler> content,
 			RiakResponseHandler<Location> handler);
 
-	RiakFuture putStream(RiakObject<OutputStreamHandler> content,
-			RiakResponseHandler<_> handler);
 }
