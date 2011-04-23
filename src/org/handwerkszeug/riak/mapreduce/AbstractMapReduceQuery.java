@@ -1,16 +1,17 @@
 package org.handwerkszeug.riak.mapreduce;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.JsonAppender;
-import org.handwerkszeug.riak.model.Erlang;
 import org.handwerkszeug.riak.util.StringUtil;
 
+/**
+ * @author taichi
+ */
 public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 
 	protected String bucket;
@@ -35,11 +36,13 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 	}
 
 	@Override
-	public void setInputs(Collection<MapReduceInput> inputs) {
+	public void setInputs(MapReduceInput... inputs) {
 		if ((StringUtil.isEmpty(this.bucket) == false) || (this.search != null)) {
 			throw new IllegalStateException();
 		}
-		this.inputs.addAll(inputs);
+		for (MapReduceInput i : inputs) {
+			this.inputs.add(i);
+		}
 	}
 
 	@Override
@@ -52,22 +55,15 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 	}
 
 	@Override
-	public void setQueries(Collection<MapReducePhase> mapReducePhases) {
-		this.queries.addAll(mapReducePhases);
+	public void setQueries(MapReducePhase... mapReducePhases) {
+		for (MapReducePhase m : mapReducePhases) {
+			this.queries.add(m);
+		}
 	}
 
 	@Override
 	public void setTimeout(long timeout) {
 		this.timeout = timeout;
-	}
-
-	@Override
-	public void clear() {
-		this.bucket = null;
-		this.inputs.clear();
-		this.search = null;
-		this.queries.clear();
-		this.timeout = 0L;
 	}
 
 	static final String FIELD_INPUTS = "inputs";
@@ -82,13 +78,17 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 			root.put(FIELD_INPUTS, this.bucket);
 		} else if (this.search != null) {
 			this.search.appendTo(root.putObject(FIELD_INPUTS));
-		} else {
+		} else if (this.inputs != null && this.inputs.isEmpty() == false) {
 			add(root.putArray(FIELD_INPUTS), this.inputs);
+		} else {
+			// TODO message.
+			throw new IllegalStateException("inputs must set.");
 		}
 
 		ArrayNode query = root.putArray(FIELD_QUERY);
 		if (this.queries.isEmpty()) {
-			NamedFunctionPhase.map(Erlang.map_object_value).appendTo(query);
+			// TODO message.
+			throw new IllegalStateException("queries must set.");
 		} else {
 			add(query, this.queries);
 		}

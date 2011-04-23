@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ObjectNode;
+import org.handwerkszeug.riak.model.Erlang;
 import org.handwerkszeug.riak.util.JsonUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,10 +26,15 @@ public class AbstractMapReduceQueryTest {
 	@Test
 	public void testPrepareBucket() throws Exception {
 		this.target.setInputs("testPrepareBucket");
+		this.target.setQueries(NamedFunctionPhase.map(Erlang.map_object_value));
+
 		ObjectNode act = this.target.prepare();
 		JsonNode exp = read("testPrepareBucket");
 		assertEquals(exp, act);
 
 	}
 
+	@Test
+	public void testPrepareMapReduceInput() throws Exception {
+	}
 }

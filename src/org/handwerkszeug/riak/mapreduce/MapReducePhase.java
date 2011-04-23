@@ -5,7 +5,6 @@ import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.JsonAppender;
 
 /**
- * 
  * @author taichi
  * @see <a
  *      href="https://github.com/basho/riak_kv/blob/master/src/riak_kv_mapred_json.erl">riak_kv_mapred_json.erl</a>
