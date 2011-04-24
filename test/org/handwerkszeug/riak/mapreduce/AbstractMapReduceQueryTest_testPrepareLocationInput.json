@@ -1,0 +1,22 @@
+{
+   "inputs":[
+   	      ["testBucket","testKey","arg"],
+   	      {
+   	          "bucket":"rawBucket",
+   	          "key_filters":[
+   	              ["string_to_int"],
+   	              ["between",10,20]
+   	          ]
+   	      }
+   	   ],
+   "query":[
+      {
+         "map":{
+            "language":"erlang",
+            "module":"riak_kv_mapreduce",
+            "function":"map_object_value",
+            "keep":true
+         }
+      }
+   ]
+}

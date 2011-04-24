@@ -13,11 +13,64 @@ import org.handwerkszeug.riak.model.Location;
 public abstract class MapReduceInput implements JsonAppender<ArrayNode> {
 
 	public static MapReduceInput location(Location location) {
-		return new LocationInput(location, null);
+		return new LocationInput(location);
 	}
 
-	public static MapReduceInput location(Location location, Object keydata) {
-		return new LocationInput(location, keydata);
+	public static MapReduceInput location(Location location,
+			final Object keydata) {
+		return new LocationInput(location) {
+			@Override
+			protected void appendKeyData(ArrayNode node) {
+				node.addPOJO(keydata);
+			}
+		};
+	}
+
+	public static MapReduceInput location(Location location,
+			final String keydata) {
+		return new LocationInput(location) {
+			@Override
+			protected void appendKeyData(ArrayNode node) {
+				node.add(keydata);
+			}
+		};
+	}
+
+	public static MapReduceInput location(Location location, final int keydata) {
+		return new LocationInput(location) {
+			@Override
+			protected void appendKeyData(ArrayNode node) {
+				node.add(keydata);
+			}
+		};
+	}
+
+	public static MapReduceInput location(Location location, final long keydata) {
+		return new LocationInput(location) {
+			@Override
+			protected void appendKeyData(ArrayNode node) {
+				node.add(keydata);
+			}
+		};
+	}
+
+	public static MapReduceInput location(Location location,
+			final double keydata) {
+		return new LocationInput(location) {
+			@Override
+			protected void appendKeyData(ArrayNode node) {
+				node.add(keydata);
+			}
+		};
+	}
+
+	public static MapReduceInput location(Location location, final float keydata) {
+		return new LocationInput(location) {
+			@Override
+			protected void appendKeyData(ArrayNode node) {
+				node.add(keydata);
+			}
+		};
 	}
 
 	public static MapReduceInput keyFilter(final String bucket,
@@ -47,11 +100,9 @@ public abstract class MapReduceInput implements JsonAppender<ArrayNode> {
 	protected static class LocationInput extends MapReduceInput {
 
 		final Location location;
-		final Object keydata;
 
-		public LocationInput(Location location, Object keydata) {
+		public LocationInput(Location location) {
 			this.location = location;
-			this.keydata = keydata;
 		}
 
 		@Override
@@ -59,9 +110,10 @@ public abstract class MapReduceInput implements JsonAppender<ArrayNode> {
 			ArrayNode node = json.addArray();
 			node.add(this.location.getBucket());
 			node.add(this.location.getKey());
-			if (keydata != null) {
-				node.addPOJO(this.keydata);
-			}
+			appendKeyData(node);
+		}
+
+		protected void appendKeyData(ArrayNode node) {
 		}
 	}
 }

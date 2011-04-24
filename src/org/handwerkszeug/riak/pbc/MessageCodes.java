@@ -1,7 +1,7 @@
 package org.handwerkszeug.riak.pbc;
 
 public enum MessageCodes {
-	RpbErrorResp(1), RpbPingReq(2), RpbPingResp(3);
+	RpbErrorResp(0), RpbPingReq(1), RpbPingResp(2);
 
 	private final int code;
 
