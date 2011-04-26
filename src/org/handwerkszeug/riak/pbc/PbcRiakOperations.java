@@ -160,6 +160,9 @@ public class PbcRiakOperations implements RiakOperations {
 
 	protected RiakFuture handle(final String NAME, Object send,
 			final NettyUtil.MessageHandler handler) {
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(NAME);
+		}
 		ChannelFuture future = this.bootstrap.connect(new InetSocketAddress(
 				this.host, this.port));
 		Channel channel = future.awaitUninterruptibly().getChannel();
@@ -172,7 +175,9 @@ public class PbcRiakOperations implements RiakOperations {
 				pipeline.remove(NAME);
 				try {
 					Object o = e.getMessage();
-					LOG.debug(Markers.DETAIL, Messages.Receive, o);
+					if (LOG.isDebugEnabled()) {
+						LOG.debug(Markers.DETAIL, Messages.Receive, o);
+					}
 					handler.handle(o);
 				} finally {
 					e.getChannel().close();

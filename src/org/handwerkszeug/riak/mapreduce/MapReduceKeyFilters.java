@@ -518,6 +518,17 @@ public class MapReduceKeyFilters {
 			};
 		}
 
+		/**
+		 * Tests that the input matches the regular expression given in the
+		 * argument.
+		 * 
+		 * @param regex
+		 * @return
+		 * @see <a href="http://www.erlang.org/doc/man/re.html">Perl like
+		 *      regular expressions for Erlang</a>
+		 * @see <a href="http://www.pcre.org/">PCRE - Perl Compatible Regular
+		 *      Expressions</a?
+		 */
 		public static MapReduceKeyFilter matches(final String regex) {
 			// TODO validate expression.
 			// does Riak support java compatible regular expressions ?
