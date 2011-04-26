@@ -15,12 +15,11 @@ import org.handwerkszeug.riak.op.RiakResponseHandler;
  * client set {@code Accept : multipart/mixed} all time.<br/>
  * </p>
  * 
+ * @author taichi
  * @see <a href="http://wiki.basho.com/REST-API.html">REST API</a>
- * 
  * @see <a href
  *      ="https://github.com/basho/riak_kv/blob/master/src/riak_kv_wm_raw.erl"
  *      >Riak REST Server code</a>
- * @author taichi
  */
 public interface HttpRiakOperations extends RiakOperations, LuwakSupport {
 

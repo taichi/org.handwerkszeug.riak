@@ -1,5 +1,8 @@
 package org.handwerkszeug.riak.model;
 
+/**
+ * @author taichi
+ */
 public class Link {
 
 	final Location location;

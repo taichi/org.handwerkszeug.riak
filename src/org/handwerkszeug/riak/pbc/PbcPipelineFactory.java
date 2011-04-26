@@ -5,6 +5,9 @@ import static org.jboss.netty.channel.Channels.pipeline;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 
+/**
+ * @author taichi
+ */
 public class PbcPipelineFactory implements ChannelPipelineFactory {
 
 	@Override

@@ -1,7 +1,8 @@
 package org.handwerkszeug.riak.model;
 
+import org.handwerkszeug.riak.nls.Messages;
+
 /**
- * 
  * @author taichi
  * @see <a
  *      href="https://github.com/basho/riak-erlang-client/blob/master/include/riakc_pb.hrl">riakc_pb.hrl</a>
@@ -50,6 +51,7 @@ public class Quorum {
 		if (0 < quorum) {
 			return new Quorum(quorum, String.valueOf(quorum));
 		}
-		throw new IllegalArgumentException("quorum " + quorum);
+		throw new IllegalArgumentException(String.format(
+				Messages.IllegalQuorum, quorum));
 	}
 }

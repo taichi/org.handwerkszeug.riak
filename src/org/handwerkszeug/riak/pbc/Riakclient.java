@@ -5636,7 +5636,6 @@ public final class Riakclient {
 			public Riakclient.RpbListBucketsResp buildPartial() {
 				Riakclient.RpbListBucketsResp result = new Riakclient.RpbListBucketsResp(
 						this);
-				int from_bitField0_ = this.bitField0_;
 				if (((this.bitField0_ & 0x00000001) == 0x00000001)) {
 					this.buckets_ = java.util.Collections
 							.unmodifiableList(this.buckets_);

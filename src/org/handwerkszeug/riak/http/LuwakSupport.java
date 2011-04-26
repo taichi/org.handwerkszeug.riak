@@ -6,8 +6,8 @@ import org.handwerkszeug.riak.op.RiakFuture;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 
 /**
- * @see <a href="http://wiki.basho.com/Luwak.html">Luwak</a>
  * @author taichi
+ * @see <a href="http://wiki.basho.com/Luwak.html">Luwak</a>
  */
 public interface LuwakSupport {
 

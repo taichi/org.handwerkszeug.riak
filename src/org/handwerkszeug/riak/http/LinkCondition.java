@@ -1,5 +1,8 @@
 package org.handwerkszeug.riak.http;
 
+/**
+ * @author taichi
+ */
 public class LinkCondition {
 
 	public static final String ANY = "_";

@@ -10,11 +10,10 @@ import org.handwerkszeug.riak.util.EnumUtil.VariableEnum;
 import com.google.protobuf.MessageLite;
 
 /**
- * <a href=
- * "https://github.com/basho/riak-erlang-client/blob/master/src/riakc_pb.erl"
- * >riakc_pb.erl</a>
- * 
  * @author taichi
+ * @see <a href=
+ *      "https://github.com/basho/riak-erlang-client/blob/master/src/riakc_pb.erl"
+ *      >riakc_pb.erl</a>
  */
 public enum MessageCodes implements VariableEnum {
 

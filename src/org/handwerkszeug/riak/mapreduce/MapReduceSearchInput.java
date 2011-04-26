@@ -6,12 +6,12 @@ import org.handwerkszeug.riak.JsonAppender;
 import org.handwerkszeug.riak.model.Erlang;
 
 /**
+ * @author taichi
  * @see <a
  *      href="http://wiki.basho.com/Riak-Search---Querying.html#Querying-Integrated-with-Map-Reduce">Querying
  *      Integrated with Map/Reduce </a>
  * @see <a
  *      href="https://github.com/basho/riak_search/blob/master/apps/riak_search/src/riak_search.erl">riak_search.erl</a>
- * @author taichi
  */
 public class MapReduceSearchInput implements JsonAppender<ObjectNode> {
 
