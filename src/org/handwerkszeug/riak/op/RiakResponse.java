@@ -7,9 +7,9 @@ public interface RiakResponse<T> {
 
 	boolean isErrorResponse();
 
-	String getErrorMessage();
+	String getMessage();
 
-	int getErrorCode();
+	int getResponseCode();
 
 	T getResponse();
 }

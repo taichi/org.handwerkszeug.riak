@@ -11,13 +11,20 @@ public abstract class PbcRiakResponse<T> implements RiakResponse<T> {
 	}
 
 	@Override
-	public int getErrorCode() {
+	public int getResponseCode() {
 		return 0;
 	}
 
 	@Override
-	public String getErrorMessage() {
+	public String getMessage() {
 		return "";
+	}
+
+	protected static class NoOpResponse extends PbcRiakResponse<_> {
+		@Override
+		public _ getResponse() {
+			return _._;
+		}
 	}
 
 	protected static class ErrorResponse extends PbcRiakResponse<_> {
@@ -34,12 +41,12 @@ public abstract class PbcRiakResponse<T> implements RiakResponse<T> {
 		}
 
 		@Override
-		public int getErrorCode() {
+		public int getResponseCode() {
 			return this.error.getErrcode();
 		}
 
 		@Override
-		public String getErrorMessage() {
+		public String getMessage() {
 			return this.error.getErrmsg().toStringUtf8();
 		}
 
