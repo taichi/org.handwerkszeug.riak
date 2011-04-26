@@ -12,4 +12,8 @@ public class Messages {
 	public static String IllegalQuorum = "quorum %s";
 
 	public static String Receive = "receive {}";
+
+	public static String HaventProceed = "{} message haven't proceed. maybe bug.";
+
+	public static String SiblingExists = "{} {} Sibling exists.";
 }

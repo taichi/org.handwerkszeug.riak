@@ -9,7 +9,7 @@ public class NettyUtil {
 
 	public interface MessageHandler {
 
-		void handle(Object receive);
+		boolean handle(Object receive);
 	}
 
 	public static class FutureAdapter implements RiakFuture {
