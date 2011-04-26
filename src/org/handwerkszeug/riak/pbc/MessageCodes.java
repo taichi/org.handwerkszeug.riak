@@ -23,6 +23,8 @@ public enum MessageCodes implements VariableEnum {
 	/**  */
 	RpbPingReq(1),
 	/**  */
+	RpbPingResp(2),
+	/**  */
 	RpbGetClientIdReq(3),
 	/** @see Riakclient.RpbGetClientIdResp */
 	RpbGetClientIdResp(4, Riakclient.RpbGetClientIdResp.getDefaultInstance()),
@@ -35,10 +37,16 @@ public enum MessageCodes implements VariableEnum {
 	/** @see Riakclient.RpbGetServerInfoResp */
 	RpbGetServerInfoResp(8, Riakclient.RpbGetServerInfoResp
 			.getDefaultInstance()),
+	/** @see Riakclient.RpbGetReq */
+	RpbGetReq(9, Riakclient.RpbGetReq.getDefaultInstance()),
 	/** @see Riakclient.RpbGetResp */
 	RpbGetResp(10, Riakclient.RpbGetResp.getDefaultInstance()),
-	/**  */
-	RpbPutResp(12),
+	/** @see Riakclient.RpbPutReq */
+	RpbPutReq(11, Riakclient.RpbPutReq.getDefaultInstance()),
+	/** @see Riakclient.RpbPutResp */
+	RpbPutResp(12, Riakclient.RpbPutResp.getDefaultInstance()),
+	/** @see Riakclient.RpbDelReq */
+	RpbDelReq(13, Riakclient.RpbDelReq.getDefaultInstance()),
 	/**  */
 	RpbDelResp(14),
 	/**  */
@@ -47,6 +55,8 @@ public enum MessageCodes implements VariableEnum {
 	RpbListBucketsResp(16, Riakclient.RpbListBucketsResp.getDefaultInstance()),
 	/** @see Riakclient.RpbListKeysReq */
 	RpbListKeysReq(17, Riakclient.RpbListKeysReq.getDefaultInstance()),
+	/** @see Riakclient.RpbListKeysResp */
+	RpbListKeysResp(18, Riakclient.RpbListKeysResp.getDefaultInstance()),
 	/** @see Riakclient.RpbGetBucketReq */
 	RpbGetBucketReq(19, Riakclient.RpbGetBucketReq.getDefaultInstance()),
 	/** @see Riakclient.RpbGetBucketResp */
@@ -56,7 +66,9 @@ public enum MessageCodes implements VariableEnum {
 	/**  */
 	RpbSetBucketResp(22),
 	/** @see Riakclient.RpbMapRedReq */
-	RpbMapRedReq(23, Riakclient.RpbMapRedReq.getDefaultInstance());
+	RpbMapRedReq(23, Riakclient.RpbMapRedReq.getDefaultInstance()),
+	/** @see Riakclient.RpbMapRedResp */
+	RpbMapRedResp(24, Riakclient.RpbMapRedResp.getDefaultInstance());
 
 	private final int code;
 	private final MessageLite prototype;

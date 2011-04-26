@@ -6,4 +6,6 @@ package org.handwerkszeug.riak.nls;
 public class Messages {
 
 	public static String UnknownMessageCode = "Unknown message code %s";
+
+	public static String UnsupportedContentLength = "Unsupported content length. %s";
 }

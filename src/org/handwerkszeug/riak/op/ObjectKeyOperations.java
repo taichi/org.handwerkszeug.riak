@@ -1,5 +1,7 @@
 package org.handwerkszeug.riak.op;
 
+import java.util.List;
+
 import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.Quorum;
@@ -43,10 +45,11 @@ public interface ObjectKeyOperations {
 			SiblingHandler siblingHandler,
 			RiakResponseHandler<RiakObject<byte[]>> handler);
 
-	RiakFuture put(RiakObject<byte[]> content, RiakResponseHandler<_> handler);
+	RiakFuture put(RiakObject<byte[]> content,
+			RiakResponseHandler<List<RiakObject<byte[]>>> handler);
 
 	RiakFuture put(RiakObject<byte[]> content, PutOptions options,
-			RiakResponseHandler<_> handler);
+			RiakResponseHandler<List<RiakObject<byte[]>>> handler);
 
 	RiakFuture delete(Location key, RiakResponseHandler<_> handler);
 
