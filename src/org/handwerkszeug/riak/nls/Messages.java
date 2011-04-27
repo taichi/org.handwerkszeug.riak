@@ -16,4 +16,6 @@ public class Messages {
 	public static String HaventProceed = "{} message haven't proceed. maybe bug.";
 
 	public static String SiblingExists = "{} {} Sibling exists.";
+
+	public static String NoContents = "{} has no contents";
 }

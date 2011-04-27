@@ -40,7 +40,7 @@ public interface RiakObject<T> {
 
 	List<Link> getLinks();
 
-	void setLinks(List<Link> link);
+	void setLinks(List<Link> links);
 
 	Date getLastModified();
 

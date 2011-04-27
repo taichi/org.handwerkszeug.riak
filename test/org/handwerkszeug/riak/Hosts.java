@@ -1,6 +1,7 @@
 package org.handwerkszeug.riak;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -50,8 +51,16 @@ public class Hosts {
 			stb.append("/riak");
 			RIAK_URL = stb.toString();
 		} catch (IOException e) {
-			LOG.error(Markers.LIFECYCLE, e.getMessage(), e);
+			LOG.error(Markers.BOUNDARY, e.getMessage(), e);
 		}
-
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(Markers.BOUNDARY, "RIAK_HOST    {}", RIAK_HOST);
+			LOG.debug(Markers.BOUNDARY, "RIAK_PB_PORT {}", RIAK_PB_PORT);
+			LOG.debug(Markers.BOUNDARY, "RIAK_URL     {}", RIAK_URL);
+		}
 	}
+
+	public static InetSocketAddress RIAK_ADDR = new InetSocketAddress(
+			RIAK_HOST, RIAK_PB_PORT);
+
 }

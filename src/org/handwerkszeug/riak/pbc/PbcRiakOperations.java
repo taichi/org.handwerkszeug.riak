@@ -1,6 +1,10 @@
 package org.handwerkszeug.riak.pbc;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.RiakException;
@@ -8,6 +12,8 @@ import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponseHandler;
 import org.handwerkszeug.riak.model.Bucket;
+import org.handwerkszeug.riak.model.DefaultRiakObject;
+import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakObject;
@@ -20,9 +26,13 @@ import org.handwerkszeug.riak.op.RiakFuture;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
+import org.handwerkszeug.riak.op.internal.DefaultRiakObjectResponse;
 import org.handwerkszeug.riak.op.internal.NoOpResponse;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbContent;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetResp;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbLink;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbPair;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -78,11 +88,11 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	@Override
-	public RiakFuture get(Location key,
-			RiakResponseHandler<RiakObject<byte[]>> handler) {
+	public RiakFuture get(final Location location,
+			final RiakResponseHandler<RiakObject<byte[]>> handler) {
 		RpbGetReq request = RpbGetReq.newBuilder()
-				.setBucket(ByteString.copyFromUtf8(key.getBucket()))
-				.setKey(ByteString.copyFromUtf8(key.getKey())).build();
+				.setBucket(ByteString.copyFromUtf8(location.getBucket()))
+				.setKey(ByteString.copyFromUtf8(location.getKey())).build();
 		return handle("get", request, handler, new NettyUtil.MessageHandler() {
 			@Override
 			public boolean handle(Object receive) {
@@ -90,18 +100,76 @@ public class PbcRiakOperations implements RiakOperations {
 					RpbGetResp resp = (RpbGetResp) receive;
 					String vclock = "";
 					if (resp.hasVclock()) {
-						vclock = resp.getVclock().toStringUtf8();
+						vclock = to(resp.getVclock());
 					}
 					int size = resp.getContentCount();
-					if (2 < size) {
+					if (size < 1) {
+						LOG.error(Markers.BOUNDARY, Messages.NoContents,
+								location);
+						return true;
+					} else if (1 < size) {
 						LOG.warn(Markers.BOUNDARY, Messages.SiblingExists,
 								vclock, size);
 					}
-					// XXX
+					RiakObject<byte[]> ro = convert(location, vclock,
+							resp.getContent(0));
+					handler.handle(new DefaultRiakObjectResponse(ro));
+					return true;
 				}
 				return false;
 			}
 		});
+	}
+
+	protected RiakObject<byte[]> convert(Location location, String vclock,
+			RpbContent content) {
+		DefaultRiakObject o = new DefaultRiakObject(location);
+		o.setVectorClock(vclock);
+
+		// TODO new array is created.
+		o.setContent(content.getValue().toByteArray());
+		if (content.hasContentType()) {
+			o.setContentType(to(content.getContentType()));
+		}
+		if (content.hasCharset()) {
+			o.setCharset(to(content.getCharset()));
+		}
+		if (content.hasContentEncoding()) {
+			o.setContentEncoding(to(content.getContentEncoding()));
+		}
+		if (content.hasVtag()) {
+			o.setVtag(to(content.getVtag()));
+		}
+		List<Link> list = new ArrayList<Link>(content.getLinksCount());
+		o.setLinks(list);
+		for (RpbLink pb : content.getLinksList()) {
+			Location l = new Location(to(pb.getBucket()), to(pb.getKey()));
+			Link link = new Link(l, to(pb.getTag()));
+			list.add(link);
+		}
+		o.setLastModified(new Date(to(content.getLastMod())));
+		o.setLastModifiedUsecs(new Date(to(content.getLastModUsecs())));
+		Map<String, String> map = new HashMap<String, String>(
+				content.getUsermetaCount());
+		o.setUserMetadata(map);
+		for (RpbPair pb : content.getUsermetaList()) {
+			String key = to(pb.getKey());
+			if ((key.isEmpty() == false) && pb.hasValue()) {
+				map.put(key, to(pb.getValue()));
+			}
+		}
+		return o;
+	}
+
+	static String to(ByteString bs) {
+		if (bs == null) {
+			return "";
+		}
+		return bs.toStringUtf8();
+	}
+
+	static long to(int uint32) {
+		return uint32 & 0xFFFFFFFFL;
 	}
 
 	@Override

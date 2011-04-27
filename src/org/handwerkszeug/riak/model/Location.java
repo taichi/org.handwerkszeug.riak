@@ -20,4 +20,16 @@ public class Location {
 	public String getKey() {
 		return this.key;
 	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("Location [bucket=");
+		builder.append(this.bucket);
+		builder.append(", key=");
+		builder.append(this.key);
+		builder.append("]");
+		return builder.toString();
+	}
+
 }
