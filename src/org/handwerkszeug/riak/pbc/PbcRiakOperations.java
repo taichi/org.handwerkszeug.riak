@@ -151,8 +151,11 @@ public class PbcRiakOperations implements RiakOperations {
 			Link link = new Link(l, to(pb.getTag()));
 			list.add(link);
 		}
+
+		// TODO be carefully.
 		o.setLastModified(new Date(to(content.getLastMod())));
 		o.setLastModifiedUsecs(new Date(to(content.getLastModUsecs())));
+
 		Map<String, String> map = new HashMap<String, String>(
 				content.getUsermetaCount());
 		o.setUserMetadata(map);
