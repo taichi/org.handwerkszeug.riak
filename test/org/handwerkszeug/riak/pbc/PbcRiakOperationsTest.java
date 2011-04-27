@@ -2,8 +2,10 @@ package org.handwerkszeug.riak.pbc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakException;
@@ -46,27 +48,54 @@ public class PbcRiakOperationsTest {
 
 	@Test
 	public void testPing() throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+
+		final boolean[] is = { false };
 		this.target.ping(new RiakResponseHandler<_>() {
 			@Override
 			public void handle(RiakResponse<_> response) throws RiakException {
-				assertFalse(response.isErrorResponse());
-				assertEquals("pong", response.getMessage());
+				try {
+					assertFalse(response.isErrorResponse());
+					assertEquals("pong", response.getMessage());
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
 			}
 		});
+
+		while (waiter.get() == false) {
+			Thread.sleep(10);
+		}
+		assertTrue(is[0]);
 	}
 
 	@Test
 	public void testGet() throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+
+		final boolean[] is = { false };
 		this.target.get(new Location("hb", "first"),
 				new RiakResponseHandler<RiakObject<byte[]>>() {
 					@Override
 					public void handle(RiakResponse<RiakObject<byte[]>> response)
 							throws RiakException {
-						assertFalse(response.isErrorResponse());
-						RiakObject<byte[]> content = response.getResponse();
-						String hello = new String(content.getContent());
-						assertEquals("hello", hello);
+						try {
+							assertFalse(response.isErrorResponse());
+							RiakObject<byte[]> content = response.getResponse();
+							String hello = new String(content.getContent());
+							assertEquals("hello", hello);
+							System.out.println(content);
+							is[0] = true;
+						} finally {
+							waiter.compareAndSet(false, true);
+						}
 					}
 				});
+
+		while (waiter.get() == false) {
+			Thread.sleep(10);
+		}
+		assertTrue(is[0]);
 	}
 }

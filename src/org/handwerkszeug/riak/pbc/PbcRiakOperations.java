@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.iharder.Base64;
+
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
@@ -100,7 +102,9 @@ public class PbcRiakOperations implements RiakOperations {
 					RpbGetResp resp = (RpbGetResp) receive;
 					String vclock = "";
 					if (resp.hasVclock()) {
-						vclock = to(resp.getVclock());
+						// TODO decodeBytes when implement put operation.
+						vclock = Base64.encodeBytes(resp.getVclock()
+								.toByteArray());
 					}
 					int size = resp.getContentCount();
 					if (size < 1) {

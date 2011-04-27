@@ -27,5 +27,9 @@ public class NettyUtil {
 				throws InterruptedException {
 			return this.delegate.await(timeout, unit);
 		}
+
+		public void awaitUninterruptibly() {
+			this.delegate.awaitUninterruptibly();
+		}
 	}
 }
