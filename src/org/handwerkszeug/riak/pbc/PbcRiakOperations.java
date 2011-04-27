@@ -159,10 +159,6 @@ public class PbcRiakOperations implements RiakOperations {
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) {
-						if (receive instanceof Riakclient.RpbErrorResp) {
-							Riakclient.RpbErrorResp error = (Riakclient.RpbErrorResp) receive;
-							handler.handle(new PbcErrorResponse<_>(error));
-						}
 						if (MessageCodes.RpbPingResp.equals(receive)) {
 							handler.handle(new NoOpResponse() {
 								@Override
