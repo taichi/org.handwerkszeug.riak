@@ -2,6 +2,7 @@ package org.handwerkszeug.riak.http;
 
 import java.util.List;
 
+import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakFuture;
@@ -34,4 +35,9 @@ public interface HttpRiakOperations extends RiakOperations, LuwakSupport {
 	RiakFuture walk(Location walkbegin, List<LinkCondition> conditions,
 			RiakResponseHandler<List<RiakObject<byte[]>>> handler);
 
+	/**
+	 * @see <a href="http://wiki.basho.com/REST-API.html#Other-operations">Other
+	 *      operations</a>
+	 */
+	RiakFuture getStats(RiakResponseHandler<ObjectNode> handler);
 }

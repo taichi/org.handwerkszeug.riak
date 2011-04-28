@@ -1,8 +1,10 @@
 package org.handwerkszeug.riak.pbc;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -39,7 +41,9 @@ import org.handwerkszeug.riak.pbc.Riakclient.RpbGetReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbLink;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPair;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbPutReq;
 import org.handwerkszeug.riak.util.NettyUtil;
+import org.handwerkszeug.riak.util.StringUtil;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -106,7 +110,6 @@ public class PbcRiakOperations implements RiakOperations {
 					RpbGetResp resp = (RpbGetResp) receive;
 					String vclock = "";
 					if (resp.hasVclock()) {
-						// TODO decodeBytes when implement put operation.
 						vclock = Base64.encodeBytes(resp.getVclock()
 								.toByteArray());
 					}
@@ -215,8 +218,96 @@ public class PbcRiakOperations implements RiakOperations {
 	@Override
 	public RiakFuture put(RiakObject<byte[]> content,
 			RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
-		// TODO Auto-generated method stub
-		return null;
+		Location loc = content.getLocation();
+		RpbPutReq.Builder builder = buildPutRequest(content, loc);
+
+		return handle("put", builder.build(), handler,
+				new NettyUtil.MessageHandler() {
+
+					@Override
+					public boolean handle(Object receive) {
+						return false;
+					}
+				});
+	}
+
+	protected RpbPutReq.Builder buildPutRequest(RiakObject<byte[]> content,
+			Location loc) {
+		RpbPutReq.Builder builder = RpbPutReq.newBuilder()
+				.setBucket(ByteString.copyFromUtf8(loc.getBucket()))
+				.setKey(ByteString.copyFromUtf8(loc.getKey()));
+		String vclock = content.getVectorClock();
+		if (StringUtil.isEmpty(vclock) == false) {
+			try {
+				byte[] bytes = Base64.decode(vclock);
+				builder.setVclock(ByteString.copyFrom(bytes));
+			} catch (IOException e) {
+				throw new RiakException(e);
+			}
+		}
+		builder.setContent(convert(content));
+		return builder;
+	}
+
+	protected RpbContent convert(RiakObject<byte[]> content) {
+		RpbContent.Builder builder = RpbContent.newBuilder();
+		builder.setValue(ByteString.copyFrom(content.getContent()));
+		if (StringUtil.isEmpty(content.getContentType()) == false) {
+			builder.setContentType(ByteString.copyFromUtf8(content
+					.getContentType()));
+		}
+		if (StringUtil.isEmpty(content.getCharset()) == false) {
+			builder.setCharset(ByteString.copyFromUtf8(content.getCharset()));
+		}
+		if (StringUtil.isEmpty(content.getContentEncoding()) == false) {
+			builder.setContentEncoding(ByteString.copyFromUtf8(content
+					.getContentEncoding()));
+		}
+		if (StringUtil.isEmpty(content.getVtag()) == false) {
+			builder.setVtag(ByteString.copyFromUtf8(content.getVtag()));
+		}
+		if ((content.getLinks() != null)
+				&& (content.getLinks().isEmpty() == false)) {
+			for (Link link : content.getLinks()) {
+				RpbLink.Builder lb = RpbLink.newBuilder();
+				Location loc = link.getLocation();
+				if (StringUtil.isEmpty(loc.getBucket()) == false) {
+					lb.setBucket(ByteString.copyFromUtf8(loc.getBucket()));
+				}
+				if (StringUtil.isEmpty(loc.getKey()) == false) {
+					lb.setKey(ByteString.copyFromUtf8(loc.getKey()));
+				}
+				if (StringUtil.isEmpty(link.getTag()) == false) {
+					lb.setTag(ByteString.copyFromUtf8(link.getTag()));
+				}
+				builder.addLinks(lb.build());
+			}
+		}
+
+		if (content.getLastModified() != null) {
+			Date lm = content.getLastModified();
+			long mili = lm.getTime();
+			int sec = (int) (mili / 1000);
+			int msec = (int) (mili % 1000);
+			builder.setLastMod(sec);
+			builder.setLastModUsecs(msec);
+		}
+
+		if ((content.getUserMetadata() != null)
+				&& (content.getUserMetadata().isEmpty() == false)) {
+			Map<String, String> map = content.getUserMetadata();
+			for (String key : map.keySet()) {
+				RpbPair.Builder b = RpbPair.newBuilder();
+				b.setKey(ByteString.copyFromUtf8(key));
+				String v = map.get(key);
+				if (StringUtil.isEmpty(v) == false) {
+					b.setValue(ByteString.copyFromUtf8(v));
+				}
+				builder.addUsermeta(b.build());
+			}
+		}
+
+		return builder.build();
 	}
 
 	@Override
@@ -279,7 +370,7 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	@Override
-	public RiakFuture serverInfo(RiakResponseHandler<ServerInfo> handler) {
+	public RiakFuture getServerInfo(RiakResponseHandler<ServerInfo> handler) {
 		// TODO Auto-generated method stub
 		return null;
 	}

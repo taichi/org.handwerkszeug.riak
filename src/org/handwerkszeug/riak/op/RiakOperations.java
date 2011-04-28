@@ -45,5 +45,5 @@ public interface RiakOperations extends BucketOperations, ObjectKeyOperations,
 	 * @param handler
 	 * @return
 	 */
-	RiakFuture serverInfo(RiakResponseHandler<ServerInfo> handler);
+	RiakFuture getServerInfo(RiakResponseHandler<ServerInfo> handler);
 }
