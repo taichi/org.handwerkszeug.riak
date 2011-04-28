@@ -1,6 +1,7 @@
 package org.handwerkszeug.riak.op;
 
 import org.handwerkszeug.riak.RiakException;
+import org.handwerkszeug.riak.model.RiakResponse;
 
 /**
  * 

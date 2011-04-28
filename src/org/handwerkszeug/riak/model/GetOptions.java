@@ -1,8 +1,7 @@
-package org.handwerkszeug.riak.op;
+package org.handwerkszeug.riak.model;
 
 import java.util.Date;
 
-import org.handwerkszeug.riak.model.Quorum;
 
 /**
  * not support manual siblings.

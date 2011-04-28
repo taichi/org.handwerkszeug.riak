@@ -1,6 +1,6 @@
 package org.handwerkszeug.riak.mapreduce;
 
-import org.handwerkszeug.riak.op.RiakResponse;
+import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 
 /**

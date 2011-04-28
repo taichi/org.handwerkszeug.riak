@@ -1,4 +1,4 @@
-package org.handwerkszeug.riak.op.internal;
+package org.handwerkszeug.riak.model.internal;
 
 import org.handwerkszeug.riak._;
 

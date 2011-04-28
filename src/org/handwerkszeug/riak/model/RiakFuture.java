@@ -1,4 +1,4 @@
-package org.handwerkszeug.riak.op;
+package org.handwerkszeug.riak.model;
 
 import java.util.concurrent.TimeUnit;
 

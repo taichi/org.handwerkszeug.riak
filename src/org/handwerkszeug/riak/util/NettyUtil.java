@@ -2,7 +2,7 @@ package org.handwerkszeug.riak.util;
 
 import java.util.concurrent.TimeUnit;
 
-import org.handwerkszeug.riak.op.RiakFuture;
+import org.handwerkszeug.riak.model.RiakFuture;
 import org.jboss.netty.channel.ChannelFuture;
 
 public class NettyUtil {

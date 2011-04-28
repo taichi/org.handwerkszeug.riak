@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.model.Location;
+import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
-import org.handwerkszeug.riak.op.RiakFuture;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 

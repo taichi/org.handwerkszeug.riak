@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.handwerkszeug.riak.model.RiakObject;
-import org.handwerkszeug.riak.op.RiakResponse;
+import org.handwerkszeug.riak.model.RiakResponse;
 
 /**
  * @author taichi

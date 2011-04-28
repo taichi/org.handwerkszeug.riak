@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.model.Bucket;
+import org.handwerkszeug.riak.model.RiakFuture;
 
 /**
  * @author taichi

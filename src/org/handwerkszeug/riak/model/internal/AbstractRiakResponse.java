@@ -1,6 +1,6 @@
-package org.handwerkszeug.riak.op.internal;
+package org.handwerkszeug.riak.model.internal;
 
-import org.handwerkszeug.riak.op.RiakResponse;
+import org.handwerkszeug.riak.model.RiakResponse;
 
 /**
  * @author taichi

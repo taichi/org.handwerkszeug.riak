@@ -1,8 +1,8 @@
 package org.handwerkszeug.riak.http;
 
+import org.handwerkszeug.riak.model.GetOptions;
+import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
-import org.handwerkszeug.riak.op.GetOptions;
-import org.handwerkszeug.riak.op.RiakFuture;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 
 /**

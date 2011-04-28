@@ -3,8 +3,11 @@ package org.handwerkszeug.riak.op;
 import java.util.List;
 
 import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.model.GetOptions;
 import org.handwerkszeug.riak.model.Location;
+import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.Quorum;
+import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 
 /**

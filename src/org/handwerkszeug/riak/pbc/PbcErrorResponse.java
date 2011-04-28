@@ -1,6 +1,6 @@
 package org.handwerkszeug.riak.pbc;
 
-import org.handwerkszeug.riak.op.internal.AbstractRiakResponse;
+import org.handwerkszeug.riak.model.internal.AbstractRiakResponse;
 
 /**
  * @author taichi

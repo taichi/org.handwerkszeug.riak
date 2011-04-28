@@ -16,7 +16,7 @@ import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakObject;
-import org.handwerkszeug.riak.op.RiakResponse;
+import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
