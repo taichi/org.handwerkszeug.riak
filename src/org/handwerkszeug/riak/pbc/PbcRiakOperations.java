@@ -39,6 +39,7 @@ import org.handwerkszeug.riak.op.internal.AbstractRiakResponse;
 import org.handwerkszeug.riak.op.internal.DefaultRiakObjectResponse;
 import org.handwerkszeug.riak.op.internal.NoOpResponse;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbContent;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbDelReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbLink;
@@ -257,6 +258,24 @@ public class PbcRiakOperations implements RiakOperations {
 				});
 	}
 
+	@Override
+	public RiakFuture put(RiakObject<byte[]> content, PutOptions options,
+			RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
+		// TODO
+		// final List<RiakObject<byte[]>> list = new
+		// ArrayList<RiakObject<byte[]>>(
+		// resp.getContentCount());
+		// if (0 < resp.getContentCount()) {
+		// String vclock = toVclock(resp.getVclock());
+		// for (RpbContent c : resp.getContentList()) {
+		// RiakObject<byte[]> ro = convert(loc,
+		// vclock, c);
+		// list.add(ro);
+		// }
+		// }
+		return null;
+	}
+
 	protected RpbPutReq.Builder buildPutRequest(RiakObject<byte[]> content,
 			Location loc) {
 		RpbPutReq.Builder builder = RpbPutReq.newBuilder()
@@ -332,27 +351,22 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	@Override
-	public RiakFuture put(RiakObject<byte[]> content, PutOptions options,
-			RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
-		// TODO Auto-generated method stub
-		// final List<RiakObject<byte[]>> list = new
-		// ArrayList<RiakObject<byte[]>>(
-		// resp.getContentCount());
-		// if (0 < resp.getContentCount()) {
-		// String vclock = toVclock(resp.getVclock());
-		// for (RpbContent c : resp.getContentList()) {
-		// RiakObject<byte[]> ro = convert(loc,
-		// vclock, c);
-		// list.add(ro);
-		// }
-		// }
-		return null;
-	}
-
-	@Override
-	public RiakFuture delete(Location key, RiakResponseHandler<_> handler) {
-		// TODO Auto-generated method stub
-		return null;
+	public RiakFuture delete(Location location,
+			final RiakResponseHandler<_> handler) {
+		RpbDelReq request = RpbDelReq.newBuilder()
+				.setBucket(ByteString.copyFromUtf8(location.getBucket()))
+				.setKey(ByteString.copyFromUtf8(location.getKey())).build();
+		return handle("delete", request, handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) {
+						if (MessageCodes.RpbDelResp.equals(receive)) {
+							handler.handle(new NoOpResponse());
+							return true;
+						}
+						return false;
+					}
+				});
 	}
 
 	@Override

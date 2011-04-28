@@ -72,11 +72,20 @@ public class PbcRiakOperationsTest {
 	}
 
 	@Test
-	public void testGet() throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+	public void testPutGetDel() throws Exception {
+		Location location = new Location("testBucket", "testKey");
+		String testdata = new SimpleDateFormat().format(new Date()) + "\n";
+		testPut(location, testdata);
+		testGet(location, testdata);
+		testDelete(location);
+	}
 
+	public void testGet(Location location, final String testdata)
+			throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
 		final boolean[] is = { false };
-		this.target.get(new Location("hb", "first"),
+
+		this.target.get(location,
 				new RiakResponseHandler<RiakObject<byte[]>>() {
 					@Override
 					public void handle(RiakResponse<RiakObject<byte[]>> response)
@@ -84,8 +93,8 @@ public class PbcRiakOperationsTest {
 						try {
 							assertFalse(response.isErrorResponse());
 							RiakObject<byte[]> content = response.getResponse();
-							String hello = new String(content.getContent());
-							assertEquals("hello", hello);
+							String actual = new String(content.getContent());
+							assertEquals(testdata, actual);
 							is[0] = true;
 						} finally {
 							waiter.compareAndSet(false, true);
@@ -96,14 +105,10 @@ public class PbcRiakOperationsTest {
 		wait(waiter, is);
 	}
 
-	@Test
-	public void testPut() throws Exception {
+	public void testPut(Location location, final String testdata)
+			throws Exception {
 		final AtomicBoolean waiter = new AtomicBoolean(false);
 
-		final String testdata = new SimpleDateFormat().format(new Date())
-				+ "\n";
-
-		Location location = new Location("testBucket", "testKey");
 		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
 			@Override
 			public byte[] getContent() {
@@ -126,6 +131,25 @@ public class PbcRiakOperationsTest {
 						}
 					}
 				});
+
+		wait(waiter, is);
+	}
+
+	public void testDelete(Location location) throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		target.delete(location, new RiakResponseHandler<_>() {
+			@Override
+			public void handle(RiakResponse<_> response) throws RiakException {
+				try {
+					assertFalse(response.isErrorResponse());
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
 
 		wait(waiter, is);
 	}
