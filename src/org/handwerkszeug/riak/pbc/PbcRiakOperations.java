@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +35,7 @@ import org.handwerkszeug.riak.op.RiakFuture;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
+import org.handwerkszeug.riak.op.internal.AbstractRiakResponse;
 import org.handwerkszeug.riak.op.internal.DefaultRiakObjectResponse;
 import org.handwerkszeug.riak.op.internal.NoOpResponse;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbContent;
@@ -42,6 +44,7 @@ import org.handwerkszeug.riak.pbc.Riakclient.RpbGetResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbLink;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPair;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPutReq;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbPutResp;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
 import org.jboss.netty.channel.Channel;
@@ -108,11 +111,8 @@ public class PbcRiakOperations implements RiakOperations {
 			public boolean handle(Object receive) {
 				if (receive instanceof RpbGetResp) {
 					RpbGetResp resp = (RpbGetResp) receive;
-					String vclock = "";
-					if (resp.hasVclock()) {
-						vclock = Base64.encodeBytes(resp.getVclock()
-								.toByteArray());
-					}
+					String vclock = toVclock(resp.getVclock());
+
 					int size = resp.getContentCount();
 					if (size < 1) {
 						LOG.error(Markers.BOUNDARY, Messages.NoContents,
@@ -130,6 +130,25 @@ public class PbcRiakOperations implements RiakOperations {
 				return false;
 			}
 		});
+	}
+
+	public String toVclock(ByteString clock) {
+		if (clock != null) {
+			return Base64.encodeBytes(clock.toByteArray());
+		}
+		return null;
+	}
+
+	public ByteString fromVclock(String base64) {
+		if (StringUtil.isEmpty(base64) == false) {
+			try {
+				byte[] bytes = Base64.decode(base64);
+				return ByteString.copyFrom(bytes);
+			} catch (IOException e) {
+				throw new RiakException(e);
+			}
+		}
+		return null;
 	}
 
 	protected RiakObject<byte[]> convert(Location location, String vclock,
@@ -217,15 +236,22 @@ public class PbcRiakOperations implements RiakOperations {
 
 	@Override
 	public RiakFuture put(RiakObject<byte[]> content,
-			RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
-		Location loc = content.getLocation();
+			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
+		final Location loc = content.getLocation();
 		RpbPutReq.Builder builder = buildPutRequest(content, loc);
-
 		return handle("put", builder.build(), handler,
 				new NettyUtil.MessageHandler() {
-
 					@Override
 					public boolean handle(Object receive) {
+						if (receive instanceof RpbPutResp) {
+							handler.handle(new AbstractRiakResponse<List<RiakObject<byte[]>>>() {
+								@Override
+								public List<RiakObject<byte[]>> getResponse() {
+									return Collections.emptyList();
+								}
+							});
+							return true;
+						}
 						return false;
 					}
 				});
@@ -238,12 +264,7 @@ public class PbcRiakOperations implements RiakOperations {
 				.setKey(ByteString.copyFromUtf8(loc.getKey()));
 		String vclock = content.getVectorClock();
 		if (StringUtil.isEmpty(vclock) == false) {
-			try {
-				byte[] bytes = Base64.decode(vclock);
-				builder.setVclock(ByteString.copyFrom(bytes));
-			} catch (IOException e) {
-				throw new RiakException(e);
-			}
+			builder.setVclock(fromVclock(vclock));
 		}
 		builder.setContent(convert(content));
 		return builder;
@@ -314,6 +335,17 @@ public class PbcRiakOperations implements RiakOperations {
 	public RiakFuture put(RiakObject<byte[]> content, PutOptions options,
 			RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
 		// TODO Auto-generated method stub
+		// final List<RiakObject<byte[]>> list = new
+		// ArrayList<RiakObject<byte[]>>(
+		// resp.getContentCount());
+		// if (0 < resp.getContentCount()) {
+		// String vclock = toVclock(resp.getVclock());
+		// for (RpbContent c : resp.getContentList()) {
+		// RiakObject<byte[]> ro = convert(loc,
+		// vclock, c);
+		// list.add(ro);
+		// }
+		// }
 		return null;
 	}
 

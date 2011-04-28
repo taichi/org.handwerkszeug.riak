@@ -4,12 +4,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakResponse;
@@ -82,7 +86,40 @@ public class PbcRiakOperationsTest {
 							RiakObject<byte[]> content = response.getResponse();
 							String hello = new String(content.getContent());
 							assertEquals("hello", hello);
-							System.out.println(content);
+							is[0] = true;
+						} finally {
+							waiter.compareAndSet(false, true);
+						}
+					}
+				});
+
+		wait(waiter, is);
+	}
+
+	@Test
+	public void testPut() throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+
+		final String testdata = new SimpleDateFormat().format(new Date())
+				+ "\n";
+
+		Location location = new Location("testBucket", "testKey");
+		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
+			@Override
+			public byte[] getContent() {
+				return testdata.getBytes();
+			}
+		};
+		final boolean[] is = { false };
+		this.target.put(ro,
+				new RiakResponseHandler<List<RiakObject<byte[]>>>() {
+					@Override
+					public void handle(
+							RiakResponse<List<RiakObject<byte[]>>> response)
+							throws RiakException {
+						try {
+							assertFalse(response.isErrorResponse());
+							assertEquals(0, response.getResponse().size());
 							is[0] = true;
 						} finally {
 							waiter.compareAndSet(false, true);
