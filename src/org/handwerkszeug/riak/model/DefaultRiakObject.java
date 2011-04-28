@@ -20,7 +20,6 @@ public class DefaultRiakObject implements RiakObject<byte[]> {
 	private String vtag;
 	private List<Link> links = Collections.emptyList();
 	private Date lastModified;
-	private Date lastModifiedUsecs;
 	private Map<String, String> userMetadata = Collections.emptyMap();
 
 	public DefaultRiakObject(Location location) {
@@ -117,16 +116,6 @@ public class DefaultRiakObject implements RiakObject<byte[]> {
 	}
 
 	@Override
-	public Date getLastModifiedUsecs() {
-		return this.lastModifiedUsecs;
-	}
-
-	@Override
-	public void setLastModifiedUsecs(Date date) {
-		this.lastModifiedUsecs = date;
-	}
-
-	@Override
 	public Map<String, String> getUserMetadata() {
 		return this.userMetadata;
 	}
@@ -157,8 +146,6 @@ public class DefaultRiakObject implements RiakObject<byte[]> {
 		builder.append(this.links);
 		builder.append(", lastModified=");
 		builder.append(this.lastModified);
-		builder.append(", lastModifiedUsecs=");
-		builder.append(this.lastModifiedUsecs);
 		builder.append(", userMetadata=");
 		builder.append(this.userMetadata);
 		builder.append("]");

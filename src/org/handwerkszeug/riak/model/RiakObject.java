@@ -46,11 +46,6 @@ public interface RiakObject<T> {
 
 	void setLastModified(Date date);
 
-	Date getLastModifiedUsecs();
-
-	// TODO Protocol buffers Only ? what's usecs ?
-	void setLastModifiedUsecs(Date date);
-
 	Map<String, String> getUserMetadata();
 
 	void setUserMetadata(Map<String, String> metadata);

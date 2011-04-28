@@ -18,4 +18,6 @@ public class Messages {
 	public static String SiblingExists = "{} {} Sibling exists.";
 
 	public static String NoContents = "{} has no contents";
+
+	public static String LastModified = "Last-Modified: {}";
 }

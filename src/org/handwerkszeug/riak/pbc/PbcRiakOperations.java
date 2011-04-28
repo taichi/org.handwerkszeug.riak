@@ -1,10 +1,14 @@
 package org.handwerkszeug.riak.pbc;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 import net.iharder.Base64;
 
@@ -152,9 +156,23 @@ public class PbcRiakOperations implements RiakOperations {
 			list.add(link);
 		}
 
-		// TODO be carefully.
-		o.setLastModified(new Date(to(content.getLastMod())));
-		o.setLastModifiedUsecs(new Date(to(content.getLastModUsecs())));
+		// see.
+		// https://github.com/basho/riak-erlang-client/blob/master/src/riakc_pb.erl
+		// https://github.com/basho/riak_kv/blob/master/src/riak_kv_put_fsm.erl
+		// http://www.erlang.org/doc/man/erlang.html#now-0
+		long milis = TimeUnit.SECONDS.toMillis(to(content.getLastMod()));
+		milis += TimeUnit.MICROSECONDS.toMillis(to(content.getLastModUsecs()));
+		Calendar c = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+		c.setTimeInMillis(milis);
+		o.setLastModified(c.getTime());
+
+		if (LOG.isDebugEnabled()) {
+			SimpleDateFormat fmt = new SimpleDateFormat(
+					"EEE, d MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+			fmt.setCalendar(c);
+			LOG.debug(Markers.DETAIL, Messages.LastModified,
+					fmt.format(c.getTime()));
+		}
 
 		Map<String, String> map = new HashMap<String, String>(
 				content.getUsermetaCount());

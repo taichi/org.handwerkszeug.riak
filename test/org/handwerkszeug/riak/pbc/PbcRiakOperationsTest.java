@@ -64,10 +64,7 @@ public class PbcRiakOperationsTest {
 			}
 		});
 
-		while (waiter.get() == false) {
-			Thread.sleep(10);
-		}
-		assertTrue(is[0]);
+		wait(waiter, is);
 	}
 
 	@Test
@@ -93,6 +90,11 @@ public class PbcRiakOperationsTest {
 					}
 				});
 
+		wait(waiter, is);
+	}
+
+	protected void wait(final AtomicBoolean waiter, final boolean[] is)
+			throws InterruptedException {
 		while (waiter.get() == false) {
 			Thread.sleep(10);
 		}
