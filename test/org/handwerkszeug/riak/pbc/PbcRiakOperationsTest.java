@@ -438,6 +438,32 @@ public class PbcRiakOperationsTest {
 	}
 
 	@Test
+	public void testDeleteWithQuorum() throws Exception {
+		Location location = new Location("testDeleteWithQuorum", "delkey");
+		testPut(location, "aaa");
+		testDeleteWithQuorum(location);
+	}
+
+	public void testDeleteWithQuorum(Location location) throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		target.delete(location, Quorum.of(2), new RiakResponseHandler<_>() {
+			@Override
+			public void handle(RiakResponse<_> response) throws RiakException {
+				try {
+					assertFalse(response.isErrorResponse());
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
+		wait(waiter, is);
+	}
+
+	@Test
 	public void testClientId() throws Exception {
 		String id = "AXZH";
 		testSetClientId(id);

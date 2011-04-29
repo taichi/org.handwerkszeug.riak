@@ -1,5 +1,7 @@
 package org.handwerkszeug.riak.pbc;
 
+import static org.handwerkszeug.riak.util.Validation.notNull;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -90,6 +92,8 @@ public class PbcRiakOperations implements RiakOperations {
 	@Override
 	public RiakFuture listBuckets(
 			final RiakResponseHandler<List<String>> handler) {
+		notNull(handler, "handler");
+
 		return handle("listBuckets", MessageCodes.RpbListBucketsReq, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
@@ -116,6 +120,9 @@ public class PbcRiakOperations implements RiakOperations {
 
 	@Override
 	public RiakFuture listKeys(String bucket, final KeyHandler handler) {
+		notNull(bucket, "bucket");
+		notNull(handler, "handler");
+
 		RpbListKeysReq request = RpbListKeysReq.newBuilder()
 				.setBucket(ByteString.copyFromUtf8(bucket)).build();
 		final String name = "listKeys";
@@ -174,6 +181,9 @@ public class PbcRiakOperations implements RiakOperations {
 	@Override
 	public RiakFuture getBucket(final String bucket,
 			final RiakResponseHandler<Bucket> handler) {
+		notNull(bucket, "bucket");
+		notNull(handler, "handler");
+
 		RpbGetBucketReq request = RpbGetBucketReq.newBuilder()
 				.setBucket(ByteString.copyFromUtf8(bucket)).build();
 		return handle("getBucket", request, handler,
@@ -202,6 +212,9 @@ public class PbcRiakOperations implements RiakOperations {
 	@Override
 	public RiakFuture setBucket(Bucket bucket,
 			final RiakResponseHandler<_> handler) {
+		notNull(bucket, "bucket");
+		notNull(handler, "handler");
+
 		RpbBucketProps props = RpbBucketProps.newBuilder()
 				.setNVal(bucket.getNumberOfReplicas())
 				.setAllowMult(bucket.getAllowMulti()).build();
@@ -224,12 +237,19 @@ public class PbcRiakOperations implements RiakOperations {
 	@Override
 	public RiakFuture get(final Location location,
 			RiakResponseHandler<RiakObject<byte[]>> handler) {
+		notNull(location, "location");
+		notNull(handler, "handler");
+
 		return getSingle(RpbGetReq.newBuilder(), location, handler);
 	}
 
 	@Override
 	public RiakFuture get(Location location, GetOptions options,
 			RiakResponseHandler<RiakObject<byte[]>> handler) {
+		notNull(location, "location");
+		notNull(options, "options");
+		notNull(handler, "handler");
+
 		return getSingle(from(options), location, handler);
 	}
 
@@ -264,6 +284,10 @@ public class PbcRiakOperations implements RiakOperations {
 	@Override
 	public RiakFuture get(final Location location, GetOptions options,
 			final SiblingHandler handler) {
+		notNull(location, "location");
+		notNull(options, "options");
+		notNull(handler, "handler");
+
 		RpbGetReq.Builder builder = from(options);
 		return _get("get/sibling", builder, location, handler,
 				new GetHandler() {
@@ -403,6 +427,9 @@ public class PbcRiakOperations implements RiakOperations {
 	@Override
 	public RiakFuture put(RiakObject<byte[]> content,
 			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
+		notNull(content, "content");
+		notNull(handler, "handler");
+
 		Location loc = content.getLocation();
 		RpbPutReq.Builder builder = buildPutRequest(content, loc);
 		return handle("put", builder.build(), handler,
@@ -439,6 +466,10 @@ public class PbcRiakOperations implements RiakOperations {
 	@Override
 	public RiakFuture put(RiakObject<byte[]> content, PutOptions options,
 			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
+		notNull(content, "content");
+		notNull(options, "options");
+		notNull(handler, "handler");
+
 		final Location location = content.getLocation();
 		RpbPutReq.Builder builder = buildPutRequest(content, location, options);
 		return handle("put/opt", builder.build(), handler,
@@ -554,10 +585,16 @@ public class PbcRiakOperations implements RiakOperations {
 	@Override
 	public RiakFuture delete(Location location,
 			final RiakResponseHandler<_> handler) {
-		RpbDelReq request = RpbDelReq.newBuilder()
-				.setBucket(ByteString.copyFromUtf8(location.getBucket()))
-				.setKey(ByteString.copyFromUtf8(location.getKey())).build();
-		return handle("delete", request, handler,
+		notNull(location, "location");
+		notNull(handler, "handler");
+
+		RpbDelReq.Builder builder = buildDeleteRequest(location);
+		return _delete("delete", handler, builder);
+	}
+
+	protected RiakFuture _delete(String name,
+			final RiakResponseHandler<_> handler, RpbDelReq.Builder builder) {
+		return handle(name, builder.build(), handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) {
@@ -570,11 +607,22 @@ public class PbcRiakOperations implements RiakOperations {
 				});
 	}
 
+	protected RpbDelReq.Builder buildDeleteRequest(Location location) {
+		return RpbDelReq.newBuilder()
+				.setBucket(ByteString.copyFromUtf8(location.getBucket()))
+				.setKey(ByteString.copyFromUtf8(location.getKey()));
+	}
+
 	@Override
-	public RiakFuture delete(Location key, Quorum quorum,
+	public RiakFuture delete(Location location, Quorum quorum,
 			RiakResponseHandler<_> handler) {
-		// TODO Auto-generated method stub
-		return null;
+		notNull(location, "location");
+		notNull(quorum, "quorum");
+		notNull(handler, "handler");
+
+		RpbDelReq.Builder builder = buildDeleteRequest(location);
+		builder.setRw(quorum.getInteger());
+		return _delete("delete/quorum", handler, builder);
 	}
 
 	@Override
