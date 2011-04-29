@@ -16,6 +16,7 @@ import junit.framework.Assert;
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakObject;
@@ -147,6 +148,69 @@ public class PbcRiakOperationsTest {
 
 		wait(waiter, is);
 		assertEquals(allsize, counter[0]);
+	}
+
+	@Test
+	public void testBucket() throws Exception {
+		Location location = new Location("bucketSetGet", "1");
+		String testdata = new SimpleDateFormat().format(new Date()) + "\n";
+
+		try {
+			testPut(location, testdata);
+
+			Bucket exp = testBucketGet(location.getBucket());
+			testBucketSet(exp);
+			Bucket act = testBucketGet(location.getBucket());
+			assertEquals(exp.getNumberOfReplicas(), act.getNumberOfReplicas());
+			assertEquals(exp.getAllowMulti(), act.getAllowMulti());
+		} finally {
+			testDelete(location);
+		}
+	}
+
+	public void testBucketSet(Bucket bucket) throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+		bucket.setAllowMulti(true);
+		bucket.setNumberOfReplicas(1);
+
+		target.setBucket(bucket, new RiakResponseHandler<_>() {
+			@Override
+			public void handle(RiakResponse<_> response) throws RiakException {
+				try {
+					assertFalse(response.isErrorResponse());
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
+		wait(waiter, is);
+	}
+
+	public Bucket testBucketGet(String bucket) throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+		final Bucket[] bu = new Bucket[1];
+
+		target.getBucket(bucket, new RiakResponseHandler<Bucket>() {
+			@Override
+			public void handle(RiakResponse<Bucket> response)
+					throws RiakException {
+				try {
+					assertFalse(response.isErrorResponse());
+					assertNotNull(response.getResponse());
+					bu[0] = response.getResponse();
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
+		wait(waiter, is);
+		return bu[0];
 	}
 
 	@Test

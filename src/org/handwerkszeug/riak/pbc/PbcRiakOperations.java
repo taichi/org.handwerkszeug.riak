@@ -38,9 +38,12 @@ import org.handwerkszeug.riak.op.KeyHandler;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbBucketProps;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbContent;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbDelReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbErrorResp;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbGetBucketReq;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbGetBucketResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetClientIdResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetResp;
@@ -52,6 +55,7 @@ import org.handwerkszeug.riak.pbc.Riakclient.RpbListKeysResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPair;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPutReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPutResp;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbSetBucketReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbSetClientIdReq;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
@@ -167,16 +171,54 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	@Override
-	public RiakFuture getBucket(String bucket,
-			RiakResponseHandler<Bucket> handler) {
-		// TODO Auto-generated method stub
-		return null;
+	public RiakFuture getBucket(final String bucket,
+			final RiakResponseHandler<Bucket> handler) {
+		RpbGetBucketReq request = RpbGetBucketReq.newBuilder()
+				.setBucket(ByteString.copyFromUtf8(bucket)).build();
+		return handle("getBucket", request, handler,
+				new NettyUtil.MessageHandler() {
+
+					@Override
+					public boolean handle(Object receive) {
+						if (receive instanceof RpbGetBucketResp) {
+							RpbGetBucketResp resp = (RpbGetBucketResp) receive;
+							RpbBucketProps props = resp.getProps();
+							final PbcBucket pb = new PbcBucket(bucket);
+							pb.setNumberOfReplicas(props.getNVal());
+							pb.setAllowMulti(props.getAllowMult());
+							handler.handle(new AbstractRiakResponse<Bucket>() {
+								@Override
+								public Bucket getResponse() {
+									return pb;
+								}
+							});
+							return true;
+						}
+						return false;
+					}
+				});
 	}
 
 	@Override
-	public RiakFuture setBucket(Bucket bucket, RiakResponseHandler<_> handler) {
-		// TODO Auto-generated method stub
-		return null;
+	public RiakFuture setBucket(Bucket bucket,
+			final RiakResponseHandler<_> handler) {
+		RpbBucketProps props = RpbBucketProps.newBuilder()
+				.setNVal(bucket.getNumberOfReplicas())
+				.setAllowMult(bucket.getAllowMulti()).build();
+		RpbSetBucketReq request = RpbSetBucketReq.newBuilder()
+				.setBucket(ByteString.copyFromUtf8(bucket.getName()))
+				.setProps(props).build();
+		return handle("setBucket", request, handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) {
+						if (MessageCodes.RpbSetBucketResp.equals(receive)) {
+							handler.handle(new NoOpResponse());
+							return true;
+						}
+						return false;
+					}
+				});
 	}
 
 	@Override

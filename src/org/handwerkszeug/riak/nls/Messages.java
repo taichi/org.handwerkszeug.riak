@@ -13,6 +13,8 @@ public class Messages {
 
 	public static String IllegalClientId = "ClientId should be a 32-bit binary";
 
+	public static String UnsupportedBucketProps = "Use REST API.";
+
 	public static String Receive = "receive {}";
 
 	public static String HaventProceed = "{} message haven't proceed. maybe bug.";

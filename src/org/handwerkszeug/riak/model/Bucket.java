@@ -7,8 +7,6 @@ public interface Bucket {
 
 	String getName();
 
-	void setName(String name);
-
 	/**
 	 * the number of replicas for objects in this bucket
 	 * 
