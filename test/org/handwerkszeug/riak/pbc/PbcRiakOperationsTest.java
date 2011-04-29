@@ -2,6 +2,7 @@ package org.handwerkszeug.riak.pbc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.text.SimpleDateFormat;
@@ -10,6 +11,8 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import junit.framework.Assert;
+
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
@@ -17,6 +20,7 @@ import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
+import org.handwerkszeug.riak.model.ServerInfo;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -159,6 +163,18 @@ public class PbcRiakOperationsTest {
 		String id = "AXZH";
 		testSetClientId(id);
 		testGetClientId(id);
+
+		try {
+			target.setClientId("12345", new RiakResponseHandler<_>() {
+				@Override
+				public void handle(RiakResponse<_> response)
+						throws RiakException {
+				}
+			});
+			Assert.fail();
+		} catch (IllegalArgumentException e) {
+			assertTrue(true);
+		}
 	}
 
 	public void testSetClientId(String id) throws Exception {
@@ -197,6 +213,28 @@ public class PbcRiakOperationsTest {
 			}
 		});
 
+		wait(waiter, is);
+	}
+
+	@Test
+	public void testGetServerInfo() throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		this.target.getServerInfo(new RiakResponseHandler<ServerInfo>() {
+			@Override
+			public void handle(RiakResponse<ServerInfo> response)
+					throws RiakException {
+				try {
+					ServerInfo info = response.getResponse();
+					assertNotNull(info.getNode());
+					assertNotNull(info.getServerVersion());
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
 		wait(waiter, is);
 	}
 

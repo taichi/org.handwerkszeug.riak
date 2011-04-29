@@ -43,6 +43,7 @@ import org.handwerkszeug.riak.pbc.Riakclient.RpbDelReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetClientIdResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetResp;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbGetServerInfoResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbLink;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPair;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPutReq;
@@ -159,7 +160,6 @@ public class PbcRiakOperations implements RiakOperations {
 		DefaultRiakObject o = new DefaultRiakObject(location);
 		o.setVectorClock(vclock);
 
-		// TODO new array is created.
 		o.setContent(content.getValue().toByteArray());
 		if (content.hasContentType()) {
 			o.setContentType(to(content.getContentType()));
@@ -428,8 +428,15 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	@Override
+	/**
+	 * @see <a href="https://github.com/basho/riak_kv/blob/master/src/riak.erl">riak.erl</a>
+	 */
 	public RiakFuture setClientId(String id,
 			final RiakResponseHandler<_> handler) {
+		byte[] bytes = id.getBytes();
+		if (4 < bytes.length) {
+			throw new IllegalArgumentException(Messages.IllegalClientId);
+		}
 		RpbSetClientIdReq request = RpbSetClientIdReq.newBuilder()
 				.setClientId(ByteString.copyFromUtf8(id)).build();
 		return handle("setClientId", request, handler,
@@ -446,9 +453,27 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	@Override
-	public RiakFuture getServerInfo(RiakResponseHandler<ServerInfo> handler) {
-		// TODO Auto-generated method stub
-		return null;
+	public RiakFuture getServerInfo(
+			final RiakResponseHandler<ServerInfo> handler) {
+		return handle("getServerInfo", MessageCodes.RpbGetServerInfoReq,
+				handler, new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) {
+						if (receive instanceof RpbGetServerInfoResp) {
+							RpbGetServerInfoResp resp = (RpbGetServerInfoResp) receive;
+							final ServerInfo info = new ServerInfo(to(resp
+									.getNode()), to(resp.getServerVersion()));
+							handler.handle(new AbstractRiakResponse<ServerInfo>() {
+								@Override
+								public ServerInfo getResponse() {
+									return info;
+								}
+							});
+							return true;
+						}
+						return false;
+					}
+				});
 	}
 
 	protected <T> RiakFuture handle(final String name, Object send,

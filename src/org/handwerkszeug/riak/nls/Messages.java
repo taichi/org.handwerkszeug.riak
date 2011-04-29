@@ -11,6 +11,8 @@ public class Messages {
 
 	public static String IllegalQuorum = "quorum %s";
 
+	public static String IllegalClientId = "ClientId should be a 32-bit binary";
+
 	public static String Receive = "receive {}";
 
 	public static String HaventProceed = "{} message haven't proceed. maybe bug.";
@@ -20,4 +22,5 @@ public class Messages {
 	public static String NoContents = "{} has no contents";
 
 	public static String LastModified = "Last-Modified: {}";
+
 }
