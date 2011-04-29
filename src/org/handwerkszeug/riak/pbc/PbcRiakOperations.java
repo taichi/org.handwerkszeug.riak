@@ -32,6 +32,7 @@ import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.ServerInfo;
 import org.handwerkszeug.riak.model.internal.AbstractRiakResponse;
 import org.handwerkszeug.riak.model.internal.DefaultRiakObjectResponse;
+import org.handwerkszeug.riak.model.internal.NoContents;
 import org.handwerkszeug.riak.model.internal.NoOpResponse;
 import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.KeyHandler;
@@ -177,7 +178,6 @@ public class PbcRiakOperations implements RiakOperations {
 				.setBucket(ByteString.copyFromUtf8(bucket)).build();
 		return handle("getBucket", request, handler,
 				new NettyUtil.MessageHandler() {
-
 					@Override
 					public boolean handle(Object receive) {
 						if (receive instanceof RpbGetBucketResp) {
@@ -223,8 +223,72 @@ public class PbcRiakOperations implements RiakOperations {
 
 	@Override
 	public RiakFuture get(final Location location,
+			RiakResponseHandler<RiakObject<byte[]>> handler) {
+		return getSingle(RpbGetReq.newBuilder(), location, handler);
+	}
+
+	@Override
+	public RiakFuture get(Location location, GetOptions options,
+			RiakResponseHandler<RiakObject<byte[]>> handler) {
+		return getSingle(from(options), location, handler);
+	}
+
+	protected RpbGetReq.Builder from(GetOptions options) {
+		RpbGetReq.Builder builder = RpbGetReq.newBuilder();
+		if (options.getReadQuorum() != null) {
+			builder.setR(options.getReadQuorum().getInteger());
+		}
+		// TODO PR support.
+		return builder;
+	}
+
+	protected RiakFuture getSingle(RpbGetReq.Builder builder,
+			final Location location,
 			final RiakResponseHandler<RiakObject<byte[]>> handler) {
-		RpbGetReq request = RpbGetReq.newBuilder()
+		return _get(builder, location, handler, new GetHandler() {
+			@Override
+			public void handle(RpbGetResp resp, String vclock) {
+				int size = resp.getContentCount();
+				if (1 < size) {
+					LOG.warn(Markers.BOUNDARY, Messages.SiblingExists, vclock,
+							size);
+				}
+				RiakObject<byte[]> ro = convert(location, vclock,
+						resp.getContent(0));
+				handler.handle(new DefaultRiakObjectResponse(ro));
+			}
+		});
+	}
+
+	@Override
+	public RiakFuture get(final Location location, GetOptions options,
+			final SiblingHandler handler) {
+		RpbGetReq.Builder builder = from(options);
+		return _get(builder, location, handler, new GetHandler() {
+			@Override
+			public void handle(RpbGetResp resp, String vclock) {
+				try {
+					handler.begin();
+					for (RpbContent c : resp.getContentList()) {
+						RiakObject<byte[]> ro = convert(location, vclock, c);
+						handler.handle(new DefaultRiakObjectResponse(ro));
+					}
+				} finally {
+					handler.end();
+				}
+			}
+		});
+	}
+
+	interface GetHandler {
+		void handle(RpbGetResp resp, String vclock);
+	}
+
+	protected RiakFuture _get(RpbGetReq.Builder builder,
+			final Location location,
+			final RiakResponseHandler<RiakObject<byte[]>> handler,
+			final GetHandler getHandler) {
+		RpbGetReq request = builder
 				.setBucket(ByteString.copyFromUtf8(location.getBucket()))
 				.setKey(ByteString.copyFromUtf8(location.getKey())).build();
 		return handle("get", request, handler, new NettyUtil.MessageHandler() {
@@ -232,20 +296,14 @@ public class PbcRiakOperations implements RiakOperations {
 			public boolean handle(Object receive) {
 				if (receive instanceof RpbGetResp) {
 					RpbGetResp resp = (RpbGetResp) receive;
-					String vclock = toVclock(resp.getVclock());
-
 					int size = resp.getContentCount();
 					if (size < 1) {
-						LOG.error(Markers.BOUNDARY, Messages.NoContents,
-								location);
-						return true;
-					} else if (1 < size) {
-						LOG.warn(Markers.BOUNDARY, Messages.SiblingExists,
-								vclock, size);
+						handler.handle(new NoContents<RiakObject<byte[]>>(
+								location));
+					} else {
+						String vclock = toVclock(resp.getVclock());
+						getHandler.handle(resp, vclock);
 					}
-					RiakObject<byte[]> ro = convert(location, vclock,
-							resp.getContent(0));
-					handler.handle(new DefaultRiakObjectResponse(ro));
 					return true;
 				}
 				return false;
@@ -337,21 +395,6 @@ public class PbcRiakOperations implements RiakOperations {
 
 	static long to(int uint32) {
 		return uint32 & 0xFFFFFFFFL;
-	}
-
-	@Override
-	public RiakFuture get(Location key, GetOptions options,
-			RiakResponseHandler<RiakObject<byte[]>> handler) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public RiakFuture get(Location key, GetOptions options,
-			SiblingHandler siblingHandler,
-			RiakResponseHandler<RiakObject<byte[]>> handler) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override

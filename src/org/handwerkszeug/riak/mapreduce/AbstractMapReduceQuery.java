@@ -7,6 +7,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.JsonAppender;
+import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.util.StringUtil;
 
 /**
@@ -81,14 +82,12 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 		} else if (this.inputs != null && this.inputs.isEmpty() == false) {
 			add(root.putArray(FIELD_INPUTS), this.inputs);
 		} else {
-			// TODO message.
-			throw new IllegalStateException("inputs must set.");
+			throw new IllegalStateException(Messages.InputsMustSet);
 		}
 
 		ArrayNode query = root.putArray(FIELD_QUERY);
 		if (this.queries.isEmpty()) {
-			// TODO message.
-			throw new IllegalStateException("queries must set.");
+			throw new IllegalStateException(Messages.QueriesMustSet);
 		} else {
 			add(query, this.queries);
 		}

@@ -15,13 +15,17 @@ public class Messages {
 
 	public static String UnsupportedBucketProps = "Use REST API.";
 
+	public static String InputsMustSet = "inputs must set.";
+
+	public static String QueriesMustSet = "queries must set.";
+
+	public static String NoContents = "%s has no contents";
+
 	public static String Receive = "receive {}";
 
 	public static String HaventProceed = "{} message haven't proceed. maybe bug.";
 
 	public static String SiblingExists = "{} {} Sibling exists.";
-
-	public static String NoContents = "{} has no contents";
 
 	public static String LastModified = "Last-Modified: {}";
 

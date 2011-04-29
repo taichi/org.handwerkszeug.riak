@@ -5,18 +5,12 @@ import org.handwerkszeug.riak.model.RiakObject;
 /**
  * @author taichi
  */
-public interface SiblingHandler {
+public interface SiblingHandler extends RiakResponseHandler<RiakObject<byte[]>> {
 
 	/**
 	 * at the beginning of sibling.
 	 */
 	void begin();
-
-	/**
-	 * @param sibling
-	 * @return true : continue handling.
-	 */
-	boolean handle(RiakObject<byte[]> sibling);
 
 	/**
 	 * at the end of the sibling.

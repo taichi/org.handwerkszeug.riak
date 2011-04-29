@@ -17,13 +17,16 @@ import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.model.Bucket;
+import org.handwerkszeug.riak.model.DefaultGetOptions;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.Location;
+import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.model.ServerInfo;
 import org.handwerkszeug.riak.op.KeyHandler;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
+import org.handwerkszeug.riak.op.SiblingHandler;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -105,14 +108,14 @@ public class PbcRiakOperationsTest {
 	public void testListKeys() throws Exception {
 		String bucket = "testListKeys";
 		String testdata = new SimpleDateFormat().format(new Date()) + "\n";
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 20; i++) {
 			Location l = new Location(bucket, String.valueOf(i));
 			testPut(l, testdata);
 		}
 
-		testListKeys(bucket, 100);
+		testListKeys(bucket, 20);
 
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 20; i++) {
 			Location l = new Location(bucket, String.valueOf(i));
 			testDelete(l);
 		}
@@ -293,6 +296,95 @@ public class PbcRiakOperationsTest {
 			}
 		});
 
+		wait(waiter, is);
+	}
+
+	@Test
+	public void testGetWithOpt() throws Exception {
+		final Location location = new Location("testGetWithOpt", "testKey");
+		final String testdata = new SimpleDateFormat().format(new Date())
+				+ "\n";
+		testPut(location, testdata);
+		try {
+			testGetWithOpt(location, testdata);
+		} finally {
+			testDelete(location);
+		}
+	}
+
+	protected void testGetWithOpt(final Location location, final String testdata)
+			throws InterruptedException {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		target.get(location, new DefaultGetOptions() {
+			@Override
+			public Quorum getReadQuorum() {
+				return Quorum.of(2);
+			}
+		}, new RiakResponseHandler<RiakObject<byte[]>>() {
+			@Override
+			public void handle(RiakResponse<RiakObject<byte[]>> response)
+					throws RiakException {
+				try {
+					assertFalse(response.isErrorResponse());
+					RiakObject<byte[]> ro = response.getResponse();
+					assertEquals(location, ro.getLocation());
+					assertEquals(testdata, new String(ro.getContent()));
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
+		wait(waiter, is);
+	}
+
+	@Test
+	public void testGetWithSibling() throws Exception {
+		final Location location = new Location("testGetWithSibling", "testKey");
+		final String testdata = new SimpleDateFormat().format(new Date())
+				+ "\n";
+		testPut(location, testdata);
+		try {
+			testGetWithSibling(location, testdata);
+		} finally {
+			testDelete(location);
+		}
+	}
+
+	protected void testGetWithSibling(final Location location,
+			final String testdata) throws InterruptedException {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		target.get(location, new DefaultGetOptions() {
+			@Override
+			public Quorum getReadQuorum() {
+				return Quorum.of(2);
+			}
+		}, new SiblingHandler() {
+			@Override
+			public void begin() {
+				assertTrue(true);
+			}
+
+			@Override
+			public void handle(RiakResponse<RiakObject<byte[]>> response)
+					throws RiakException {
+				assertFalse(response.isErrorResponse());
+				RiakObject<byte[]> ro = response.getResponse();
+				assertEquals(location, ro.getLocation());
+				assertEquals(testdata, new String(ro.getContent()));
+				is[0] = true;
+			}
+
+			@Override
+			public void end() {
+				waiter.compareAndSet(false, true);
+			}
+		});
 		wait(waiter, is);
 	}
 
