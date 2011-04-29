@@ -40,12 +40,14 @@ import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbContent;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbDelReq;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbGetClientIdResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbGetResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbLink;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPair;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPutReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPutResp;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbSetClientIdReq;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
 import org.jboss.netty.channel.Channel;
@@ -404,15 +406,43 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	@Override
-	public RiakFuture getClientId(RiakResponseHandler<String> handler) {
-		// TODO Auto-generated method stub
-		return null;
+	public RiakFuture getClientId(final RiakResponseHandler<String> handler) {
+		return handle("getClientId", MessageCodes.RpbGetClientIdReq, handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) {
+						if (receive instanceof RpbGetClientIdResp) {
+							RpbGetClientIdResp resp = (RpbGetClientIdResp) receive;
+							final String cid = to(resp.getClientId());
+							handler.handle(new AbstractRiakResponse<String>() {
+								@Override
+								public String getResponse() {
+									return cid;
+								}
+							});
+							return true;
+						}
+						return false;
+					}
+				});
 	}
 
 	@Override
-	public RiakFuture setClientId(String id, RiakResponseHandler<_> handler) {
-		// TODO Auto-generated method stub
-		return null;
+	public RiakFuture setClientId(String id,
+			final RiakResponseHandler<_> handler) {
+		RpbSetClientIdReq request = RpbSetClientIdReq.newBuilder()
+				.setClientId(ByteString.copyFromUtf8(id)).build();
+		return handle("setClientId", request, handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) {
+						if (MessageCodes.RpbSetClientIdResp.equals(receive)) {
+							handler.handle(new NoOpResponse());
+							return true;
+						}
+						return false;
+					}
+				});
 	}
 
 	@Override

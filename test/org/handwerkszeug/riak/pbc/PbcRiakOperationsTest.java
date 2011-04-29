@@ -154,6 +154,52 @@ public class PbcRiakOperationsTest {
 		wait(waiter, is);
 	}
 
+	@Test
+	public void testClientId() throws Exception {
+		String id = "AXZH";
+		testSetClientId(id);
+		testGetClientId(id);
+	}
+
+	public void testSetClientId(String id) throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		this.target.setClientId(id, new RiakResponseHandler<_>() {
+			@Override
+			public void handle(RiakResponse<_> response) throws RiakException {
+				try {
+					assertFalse(response.isErrorResponse());
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
+		wait(waiter, is);
+	}
+
+	public void testGetClientId(final String id) throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		this.target.getClientId(new RiakResponseHandler<String>() {
+			@Override
+			public void handle(RiakResponse<String> response)
+					throws RiakException {
+				try {
+					assertEquals(id, response.getResponse());
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
+		wait(waiter, is);
+	}
+
 	protected void wait(final AtomicBoolean waiter, final boolean[] is)
 			throws InterruptedException {
 		while (waiter.get() == false) {
