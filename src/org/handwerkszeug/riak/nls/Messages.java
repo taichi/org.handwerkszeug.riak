@@ -21,7 +21,7 @@ public class Messages {
 
 	public static String NoContents = "%s has no contents";
 
-	public static String Receive = "receive {}";
+	public static String Receive = "{} receive {}";
 
 	public static String HaventProceed = "{} message haven't proceed. maybe bug.";
 

@@ -131,7 +131,7 @@ public class PbcRiakOperations implements RiakOperations {
 				ChannelPipeline pipeline = e.getChannel().getPipeline();
 				Object o = e.getMessage();
 				if (LOG.isDebugEnabled()) {
-					LOG.debug(Markers.DETAIL, Messages.Receive, o);
+					LOG.debug(Markers.DETAIL, Messages.Receive, name, o);
 				}
 				if (o instanceof RpbErrorResp) {
 					RpbErrorResp error = (RpbErrorResp) o;
@@ -690,7 +690,7 @@ public class PbcRiakOperations implements RiakOperations {
 				pipeline.remove(name);
 				Object o = e.getMessage();
 				if (LOG.isDebugEnabled()) {
-					LOG.debug(Markers.DETAIL, Messages.Receive, o);
+					LOG.debug(Markers.DETAIL, Messages.Receive, name, o);
 				}
 				if (o instanceof RpbErrorResp) {
 					RpbErrorResp error = (RpbErrorResp) o;
