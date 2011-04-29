@@ -21,7 +21,7 @@ import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
-import org.handwerkszeug.riak.mapreduce.MapReduceResponseHandler;
+import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.GetOptions;
@@ -627,9 +627,10 @@ public class PbcRiakOperations implements RiakOperations {
 
 	@Override
 	public void mapReduce(MapReduceQueryConstructor constructor,
-			MapReduceResponseHandler handler) {
-		// TODO Auto-generated method stub
-
+			RiakResponseHandler<MapReduceResponse> handler) {
+		notNull(constructor, "constructor");
+		notNull(handler, "handler");
+		// TODO
 	}
 
 	@Override

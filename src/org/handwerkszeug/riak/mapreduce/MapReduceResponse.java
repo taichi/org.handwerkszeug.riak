@@ -13,4 +13,6 @@ public interface MapReduceResponse {
 	Integer getPhase();
 
 	JsonNode getResponse();
+
+	boolean done();
 }

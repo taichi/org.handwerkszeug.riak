@@ -12,18 +12,17 @@ import org.handwerkszeug.riak.util.JsonUtil;
 import org.junit.Before;
 import org.junit.Test;
 
-public class AbstractMapReduceQueryTest {
+public class DefaultMapReduceQueryTest {
 
-	AbstractMapReduceQuery target;
+	DefaultMapReduceQuery target;
 
 	static JsonNode read(String name) {
-		return JsonUtil.read(AbstractMapReduceQueryTest.class, name);
+		return JsonUtil.read(DefaultMapReduceQueryTest.class, name);
 	}
 
 	@Before
 	public void setUp() throws Exception {
-		this.target = new AbstractMapReduceQuery() {
-		};
+		this.target = new DefaultMapReduceQuery();
 	}
 
 	@Test

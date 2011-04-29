@@ -13,7 +13,7 @@ import org.handwerkszeug.riak.util.StringUtil;
 /**
  * @author taichi
  */
-public abstract class AbstractMapReduceQuery implements MapReduceQuery {
+public class DefaultMapReduceQuery implements MapReduceQuery {
 
 	protected String bucket;
 
@@ -25,7 +25,7 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 
 	protected long timeout;
 
-	protected AbstractMapReduceQuery() {
+	protected DefaultMapReduceQuery() {
 	}
 
 	@Override
@@ -71,7 +71,7 @@ public abstract class AbstractMapReduceQuery implements MapReduceQuery {
 	static final String FIELD_QUERY = "query";
 	static final String FIELD_TIMEOUT = "timeout";
 
-	protected ObjectNode prepare() {
+	public ObjectNode prepare() {
 		// TODO use streaming API ? JsonGenerator....
 		ObjectMapper om = new ObjectMapper();
 		ObjectNode root = om.createObjectNode();
