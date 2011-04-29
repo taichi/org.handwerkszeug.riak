@@ -239,13 +239,14 @@ public class PbcRiakOperations implements RiakOperations {
 			builder.setR(options.getReadQuorum().getInteger());
 		}
 		// TODO PR support.
+		// TODO emulate other options.
 		return builder;
 	}
 
 	protected RiakFuture getSingle(RpbGetReq.Builder builder,
 			final Location location,
 			final RiakResponseHandler<RiakObject<byte[]>> handler) {
-		return _get(builder, location, handler, new GetHandler() {
+		return _get("get/single", builder, location, handler, new GetHandler() {
 			@Override
 			public void handle(RpbGetResp resp, String vclock) {
 				int size = resp.getContentCount();
@@ -264,34 +265,36 @@ public class PbcRiakOperations implements RiakOperations {
 	public RiakFuture get(final Location location, GetOptions options,
 			final SiblingHandler handler) {
 		RpbGetReq.Builder builder = from(options);
-		return _get(builder, location, handler, new GetHandler() {
-			@Override
-			public void handle(RpbGetResp resp, String vclock) {
-				try {
-					handler.begin();
-					for (RpbContent c : resp.getContentList()) {
-						RiakObject<byte[]> ro = convert(location, vclock, c);
-						handler.handle(new DefaultRiakObjectResponse(ro));
+		return _get("get/sibling", builder, location, handler,
+				new GetHandler() {
+					@Override
+					public void handle(RpbGetResp resp, String vclock) {
+						try {
+							handler.begin();
+							for (RpbContent c : resp.getContentList()) {
+								RiakObject<byte[]> ro = convert(location,
+										vclock, c);
+								handler.handle(new DefaultRiakObjectResponse(ro));
+							}
+						} finally {
+							handler.end();
+						}
 					}
-				} finally {
-					handler.end();
-				}
-			}
-		});
+				});
 	}
 
 	interface GetHandler {
 		void handle(RpbGetResp resp, String vclock);
 	}
 
-	protected RiakFuture _get(RpbGetReq.Builder builder,
+	protected RiakFuture _get(String name, RpbGetReq.Builder builder,
 			final Location location,
 			final RiakResponseHandler<RiakObject<byte[]>> handler,
 			final GetHandler getHandler) {
 		RpbGetReq request = builder
 				.setBucket(ByteString.copyFromUtf8(location.getBucket()))
 				.setKey(ByteString.copyFromUtf8(location.getKey())).build();
-		return handle("get", request, handler, new NettyUtil.MessageHandler() {
+		return handle(name, request, handler, new NettyUtil.MessageHandler() {
 			@Override
 			public boolean handle(Object receive) {
 				if (receive instanceof RpbGetResp) {
@@ -400,7 +403,7 @@ public class PbcRiakOperations implements RiakOperations {
 	@Override
 	public RiakFuture put(RiakObject<byte[]> content,
 			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
-		final Location loc = content.getLocation();
+		Location loc = content.getLocation();
 		RpbPutReq.Builder builder = buildPutRequest(content, loc);
 		return handle("put", builder.build(), handler,
 				new NettyUtil.MessageHandler() {
@@ -420,24 +423,6 @@ public class PbcRiakOperations implements RiakOperations {
 				});
 	}
 
-	@Override
-	public RiakFuture put(RiakObject<byte[]> content, PutOptions options,
-			RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
-		// TODO
-		// final List<RiakObject<byte[]>> list = new
-		// ArrayList<RiakObject<byte[]>>(
-		// resp.getContentCount());
-		// if (0 < resp.getContentCount()) {
-		// String vclock = toVclock(resp.getVclock());
-		// for (RpbContent c : resp.getContentList()) {
-		// RiakObject<byte[]> ro = convert(loc,
-		// vclock, c);
-		// list.add(ro);
-		// }
-		// }
-		return null;
-	}
-
 	protected RpbPutReq.Builder buildPutRequest(RiakObject<byte[]> content,
 			Location loc) {
 		RpbPutReq.Builder builder = RpbPutReq.newBuilder()
@@ -448,6 +433,60 @@ public class PbcRiakOperations implements RiakOperations {
 			builder.setVclock(fromVclock(vclock));
 		}
 		builder.setContent(convert(content));
+		return builder;
+	}
+
+	@Override
+	public RiakFuture put(RiakObject<byte[]> content, PutOptions options,
+			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
+		final Location location = content.getLocation();
+		RpbPutReq.Builder builder = buildPutRequest(content, location, options);
+		return handle("put/opt", builder.build(), handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) {
+						if (receive instanceof RpbPutResp) {
+							RpbPutResp resp = (RpbPutResp) receive;
+							final List<RiakObject<byte[]>> list = new ArrayList<RiakObject<byte[]>>(
+									resp.getContentCount());
+							if (0 < resp.getContentCount()) {
+								String vclock = toVclock(resp.getVclock());
+								for (RpbContent c : resp.getContentList()) {
+									RiakObject<byte[]> ro = convert(location,
+											vclock, c);
+									list.add(ro);
+								}
+							}
+							handler.handle(new AbstractRiakResponse<List<RiakObject<byte[]>>>() {
+								@Override
+								public List<RiakObject<byte[]>> getResponse() {
+									return list;
+								}
+							});
+							return true;
+						}
+						return false;
+					}
+				});
+
+	}
+
+	protected RpbPutReq.Builder buildPutRequest(RiakObject<byte[]> content,
+			Location loc, PutOptions options) {
+		RpbPutReq.Builder builder = buildPutRequest(content, loc);
+		if (StringUtil.isEmpty(options.getVectorClock()) == false) {
+			ByteString clock = fromVclock(options.getVectorClock());
+			builder.setVclock(clock);
+		}
+		if (options.getWriteQuorum() != null) {
+			builder.setW(options.getWriteQuorum().getInteger());
+		}
+		if (options.getDurableWriteQuorum() != null) {
+			builder.setDw(options.getDurableWriteQuorum().getInteger());
+		}
+		if (options.getReturnBody()) {
+			builder.setReturnBody(options.getReturnBody());
+		}
 		return builder;
 	}
 

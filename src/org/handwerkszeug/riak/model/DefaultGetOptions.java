@@ -12,7 +12,7 @@ public class DefaultGetOptions implements GetOptions {
 
 	@Override
 	public Quorum getReadQuorum() {
-		return Quorum.Default;
+		return null;
 	}
 
 	@Override

@@ -18,6 +18,7 @@ import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultGetOptions;
+import org.handwerkszeug.riak.model.DefaultPutOptions;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.Quorum;
@@ -385,6 +386,54 @@ public class PbcRiakOperationsTest {
 				waiter.compareAndSet(false, true);
 			}
 		});
+		wait(waiter, is);
+	}
+
+	@Test
+	public void testPutWithOpt() throws Exception {
+		final Location location = new Location("testPutWithOpt", "testKey");
+		final String testdata = new SimpleDateFormat().format(new Date())
+				+ "\n";
+		try {
+			testPutWithOpt(location, testdata);
+		} finally {
+			testDelete(location);
+		}
+	}
+
+	public void testPutWithOpt(Location location, final String testdata)
+			throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+
+		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
+			@Override
+			public byte[] getContent() {
+				return testdata.getBytes();
+			}
+		};
+		final boolean[] is = { false };
+
+		target.put(ro, new DefaultPutOptions() {
+			@Override
+			public boolean getReturnBody() {
+				return true;
+			}
+		}, new RiakResponseHandler<List<RiakObject<byte[]>>>() {
+			@Override
+			public void handle(RiakResponse<List<RiakObject<byte[]>>> response)
+					throws RiakException {
+				try {
+					assertFalse(response.isErrorResponse());
+					assertEquals(1, response.getResponse().size());
+					RiakObject<byte[]> res = response.getResponse().get(0);
+					assertEquals(testdata, new String(res.getContent()));
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
 		wait(waiter, is);
 	}
 
