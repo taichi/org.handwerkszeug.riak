@@ -1,5 +1,7 @@
 package org.handwerkszeug.riak.model;
 
+import static org.handwerkszeug.riak.util.Validation.notNull;
+
 import org.codehaus.jackson.node.ObjectNode;
 
 /**
@@ -12,6 +14,7 @@ public class JavaScript implements Function {
 	final String name;
 
 	public JavaScript(String name) {
+		notNull(name, "name");
 		this.name = name;
 	}
 

@@ -6,8 +6,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -21,6 +19,7 @@ import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.mapreduce.MapReduceInputs;
+import org.handwerkszeug.riak.mapreduce.MapReduceKeyFilters;
 import org.handwerkszeug.riak.mapreduce.MapReduceQuery;
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
@@ -475,34 +474,35 @@ public class PbcRiakOperationsTest {
 	@Test
 	public void testMapReduce() throws Exception {
 		String bucket = "testMapReduce";
-		List<Integer> exp = new ArrayList<Integer>();
 		for (int i = 0; i < 20; i++) {
 			Location l = new Location(bucket, String.valueOf(i));
 			int val = i + 10;
 			testPut(l, String.valueOf(val));
-			exp.add(val);
 		}
 
-		testMapReduce(bucket, 20, exp);
+		testMapReduce(bucket, 20);
 
-		// for (int i = 0; i < 20; i++) {
-		// Location l = new Location(bucket, String.valueOf(i));
-		// testDelete(l);
-		// }
+		for (int i = 0; i < 20; i++) {
+			Location l = new Location(bucket, String.valueOf(i));
+			testDelete(l);
+		}
 	}
 
-	public void testMapReduce(final String bucket, int keys, List<Integer> exp)
-			throws Exception {
+	public void testMapReduce(final String bucket, int keys) throws Exception {
 		final AtomicBoolean waiter = new AtomicBoolean(false);
 		final boolean[] is = { false };
 
-		final List<Integer> actual = new ArrayList<Integer>();
+		final int[] actual = new int[1];
 		target.mapReduce(new MapReduceQueryConstructor() {
 			@Override
 			public void cunstruct(MapReduceQuery query) {
-				query.setInputs(MapReduceInputs.bucket(bucket));
-				query.setQueries(NamedFunctionPhase
-						.map(Erlang.map_object_value));
+				query.setInputs(MapReduceInputs.keyFilter(bucket,
+						MapReduceKeyFilters.Transform.stringToInt(),
+						MapReduceKeyFilters.Predicates.lessThanEq(10)));
+				query.setQueries(NamedFunctionPhase.map(
+						Erlang.map_object_value, false), NamedFunctionPhase
+						.reduce(Erlang.reduce_string_to_integer, false),
+						NamedFunctionPhase.reduce(Erlang.reduce_sum, true));
 			}
 		}, new RiakResponseHandler<MapReduceResponse>() {
 			@Override
@@ -518,16 +518,14 @@ public class PbcRiakOperationsTest {
 						ArrayNode an = (ArrayNode) response.getResponse()
 								.getResponse();
 						JsonNode jn = an.get(0);
-						actual.add(jn.getValueAsInt());
+						actual[0] = jn.getIntValue();
 					}
 				}
 			}
 		});
 
 		wait(waiter, is);
-		assertEquals(20, actual.size());
-		Collections.sort(actual);
-		assertEquals(exp, actual);
+		assertEquals(165, actual[0]);
 	}
 
 	@Test

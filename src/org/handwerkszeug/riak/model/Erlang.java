@@ -1,11 +1,16 @@
 package org.handwerkszeug.riak.model;
 
+import static org.handwerkszeug.riak.util.Validation.notNull;
+
 import org.codehaus.jackson.node.ObjectNode;
 
 /**
  * JSON node key is different between M/R and pre/post commit operation.
  * 
+ * 
  * @author taichi
+ * @see <a
+ *      href="https://github.com/basho/riak_kv/blob/master/src/riak_kv_mapreduce.erl">riak_kv_mapreduce.erl</a>
  */
 public class Erlang implements Function {
 
@@ -13,6 +18,8 @@ public class Erlang implements Function {
 	final String function;
 
 	public Erlang(String module, String function) {
+		notNull(module, "module");
+		notNull(function, "function");
 		this.module = module;
 		this.function = function;
 	}
@@ -39,10 +46,27 @@ public class Erlang implements Function {
 		json.put("function", this.getFunction());
 	}
 
-	// TODO list built-in functions
-	public static final Erlang map_object_value = new Erlang(
-			"riak_kv_mapreduce", "map_object_value");
+	public static Erlang riak_kv_mapreduce(String function) {
+		return new Erlang("riak_kv_mapreduce", function);
+	}
 
-	public static final Erlang reduce_sum = new Erlang("riak_kv_mapreduce",
-			"reduce_sum");
+	public static final Erlang map_identity = riak_kv_mapreduce("map_identity");
+
+	public static final Erlang map_object_value = riak_kv_mapreduce("map_object_value");
+
+	public static final Erlang map_object_value_list = riak_kv_mapreduce("map_object_value_list");
+
+	public static final Erlang reduce_identity = riak_kv_mapreduce("reduce_identity");
+
+	public static final Erlang reduce_set_union = riak_kv_mapreduce("reduce_set_union");
+
+	public static final Erlang reduce_sort = riak_kv_mapreduce("reduce_sort");
+
+	public static final Erlang reduce_string_to_integer = riak_kv_mapreduce("reduce_string_to_integer");
+
+	public static final Erlang reduce_sum = riak_kv_mapreduce("reduce_sum");
+
+	public static final Erlang reduce_plist_sum = riak_kv_mapreduce("reduce_plist_sum");
+
+	public static final Erlang reduce_count_inputs = riak_kv_mapreduce("reduce_count_inputs");
 }
