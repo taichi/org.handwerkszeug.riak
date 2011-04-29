@@ -1,14 +1,13 @@
 {
-   "inputs":[
-   	      ["testBucket","testKey","arg"],
-   	      {
-   	          "bucket":"rawBucket",
-   	          "key_filters":[
-   	              ["string_to_int"],
-   	              ["between",10,20]
-   	          ]
-   	      }
-   	   ],
+   "inputs":
+		{
+			"bucket":"rawBucket",
+			"key_filters":[
+				["string_to_int"],
+				["between",10,20]
+			]
+		}
+   	   ,
    "query":[
       {
          "map":{

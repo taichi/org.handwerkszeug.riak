@@ -7,7 +7,6 @@ import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.mapreduce.MapReduceKeyFilters.Predicates;
 import org.handwerkszeug.riak.mapreduce.MapReduceKeyFilters.Transform;
 import org.handwerkszeug.riak.model.Erlang;
-import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.util.JsonUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +26,7 @@ public class DefaultMapReduceQueryTest {
 
 	@Test
 	public void testPrepareBucket() throws Exception {
-		this.target.setInputs("testPrepareBucket");
+		this.target.setInputs(MapReduceInputs.bucket("testPrepareBucket"));
 		this.target.setQueries(NamedFunctionPhase.map(Erlang.map_object_value));
 		assertJson("testPrepareBucket");
 	}
@@ -40,10 +39,8 @@ public class DefaultMapReduceQueryTest {
 
 	@Test
 	public void testPrepareMapReduceInput() throws Exception {
-		this.target.setInputs(MapReduceInput.location(new Location(
-				"testBucket", "testKey"), "arg"), MapReduceInput.keyFilter(
-				"rawBucket", Transform.stringToInt(),
-				Predicates.between(10, 20)));
+		this.target.setInputs(MapReduceInputs.keyFilter("rawBucket",
+				Transform.stringToInt(), Predicates.between(10, 20)));
 		this.target.setQueries(NamedFunctionPhase.map(Erlang.map_object_value));
 		assertJson("testPrepareLocationInput");
 	}

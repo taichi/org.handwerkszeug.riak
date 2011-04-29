@@ -20,6 +20,7 @@ import org.codehaus.jackson.node.ArrayNode;
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.mapreduce.MapReduceInputs;
 import org.handwerkszeug.riak.mapreduce.MapReduceQuery;
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
@@ -484,10 +485,10 @@ public class PbcRiakOperationsTest {
 
 		testMapReduce(bucket, 20, exp);
 
-		for (int i = 0; i < 20; i++) {
-			Location l = new Location(bucket, String.valueOf(i));
-			testDelete(l);
-		}
+		// for (int i = 0; i < 20; i++) {
+		// Location l = new Location(bucket, String.valueOf(i));
+		// testDelete(l);
+		// }
 	}
 
 	public void testMapReduce(final String bucket, int keys, List<Integer> exp)
@@ -499,7 +500,7 @@ public class PbcRiakOperationsTest {
 		target.mapReduce(new MapReduceQueryConstructor() {
 			@Override
 			public void cunstruct(MapReduceQuery query) {
-				query.setInputs(bucket);
+				query.setInputs(MapReduceInputs.bucket(bucket));
 				query.setQueries(NamedFunctionPhase
 						.map(Erlang.map_object_value));
 			}

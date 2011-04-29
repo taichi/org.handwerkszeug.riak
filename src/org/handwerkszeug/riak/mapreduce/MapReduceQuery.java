@@ -9,15 +9,11 @@ package org.handwerkszeug.riak.mapreduce;
 public interface MapReduceQuery {
 
 	/**
-	 * all of the keys in that bucket as inputs
+	 * set one or more inputs
 	 * 
-	 * @param bucket
+	 * @param inputs
 	 */
-	void setInputs(String bucket);
-
-	void setInputs(MapReduceInput... inputs);
-
-	void setInputs(MapReduceSearchInput search);
+	void setInputs(MapReduceInputs inputs);
 
 	/**
 	 * set one or more phases.
