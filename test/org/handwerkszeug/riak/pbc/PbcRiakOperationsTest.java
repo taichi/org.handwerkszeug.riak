@@ -21,6 +21,7 @@ import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.model.ServerInfo;
+import org.handwerkszeug.riak.op.KeyHandler;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -73,6 +74,79 @@ public class PbcRiakOperationsTest {
 		});
 
 		wait(waiter, is);
+	}
+
+	@Test
+	public void testListBuckets() throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		target.listBuckets(new RiakResponseHandler<List<String>>() {
+			@Override
+			public void handle(RiakResponse<List<String>> response)
+					throws RiakException {
+				try {
+					List<String> keys = response.getResponse();
+					assertNotNull(keys);
+					assertTrue(0 < keys.size());
+
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
+		wait(waiter, is);
+	}
+
+	@Test
+	public void testListKeys() throws Exception {
+		String bucket = "testListKeys";
+		String testdata = new SimpleDateFormat().format(new Date()) + "\n";
+		for (int i = 0; i < 100; i++) {
+			Location l = new Location(bucket, String.valueOf(i));
+			testPut(l, testdata);
+		}
+
+		testListKeys(bucket, 100);
+
+		for (int i = 0; i < 100; i++) {
+			Location l = new Location(bucket, String.valueOf(i));
+			testDelete(l);
+		}
+
+	}
+
+	public void testListKeys(String bucket, int allsize) throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		final int[] counter = { 0 };
+		target.listKeys(bucket, new KeyHandler() {
+
+			@Override
+			public void handle(RiakResponse<_> response) throws RiakException {
+				if (response.isErrorResponse()) {
+					waiter.compareAndSet(false, true);
+				}
+			}
+
+			@Override
+			public void handleKeys(RiakResponse<List<String>> response,
+					boolean done) {
+				List<String> list = response.getResponse();
+				counter[0] += list.size();
+
+				if (done) {
+					waiter.compareAndSet(false, true);
+					is[0] = true;
+				}
+			}
+		});
+
+		wait(waiter, is);
+		assertEquals(allsize, counter[0]);
 	}
 
 	@Test

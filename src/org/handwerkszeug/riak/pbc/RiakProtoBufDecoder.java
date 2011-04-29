@@ -32,12 +32,13 @@ public class RiakProtoBufDecoder extends OneToOneDecoder {
 				throw new IllegalStateException(String.format(
 						Messages.UnsupportedContentLength, length));
 			}
+			length -= 1;
 			byte code = buffer.readByte();
 			MessageCodes mc = MessageCodes.valueOf(code);
 			MessageLite proto = mc.getPrototype();
 			if (proto != null) {
 				MessageLite.Builder builder = mergeFrom(
-						proto.newBuilderForType(), buffer);
+						proto.newBuilderForType(), buffer, length);
 				MessageLite newone = builder.build();
 				return newone;
 			} else {
@@ -48,11 +49,11 @@ public class RiakProtoBufDecoder extends OneToOneDecoder {
 	}
 
 	protected MessageLite.Builder mergeFrom(MessageLite.Builder builder,
-			ChannelBuffer buffer) throws IOException {
+			ChannelBuffer buffer, int length) throws IOException {
 		if (buffer.hasArray()) {
 			final int offset = buffer.readerIndex();
 			return builder.mergeFrom(buffer.array(), buffer.arrayOffset()
-					+ offset, buffer.readableBytes());
+					+ offset, length);
 		} else {
 			return builder.mergeFrom(new ChannelBufferInputStream(buffer));
 		}

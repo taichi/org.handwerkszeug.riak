@@ -11,6 +11,13 @@ import org.handwerkszeug.riak.model.RiakFuture;
  */
 public interface BucketOperations {
 
+	/**
+	 * This call can be expensive for the server – do not use in performance
+	 * sensitive code.
+	 * 
+	 * @param handler
+	 * @return
+	 */
 	RiakFuture listBuckets(RiakResponseHandler<List<String>> handler);
 
 	RiakFuture listKeys(String bucket, KeyHandler handler);

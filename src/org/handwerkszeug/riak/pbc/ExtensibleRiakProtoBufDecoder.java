@@ -22,12 +22,12 @@ public class ExtensibleRiakProtoBufDecoder extends RiakProtoBufDecoder {
 	}
 
 	@Override
-	protected Builder mergeFrom(Builder builder, ChannelBuffer buffer)
-			throws IOException {
+	protected Builder mergeFrom(Builder builder, ChannelBuffer buffer,
+			int length) throws IOException {
 		if (buffer.hasArray()) {
 			final int offset = buffer.readerIndex();
 			return builder.mergeFrom(buffer.array(), buffer.arrayOffset()
-					+ offset, buffer.readableBytes(), this.registry);
+					+ offset, length, this.registry);
 		} else {
 			return builder.mergeFrom(new ChannelBufferInputStream(buffer),
 					this.registry);
