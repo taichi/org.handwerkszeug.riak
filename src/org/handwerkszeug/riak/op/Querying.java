@@ -2,6 +2,7 @@ package org.handwerkszeug.riak.op;
 
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
+import org.handwerkszeug.riak.model.RiakFuture;
 
 /**
  * @author taichi
@@ -16,6 +17,6 @@ public interface Querying {
 	/**
 	 * @see <a href="http://wiki.basho.com/MapReduce.html">MapReduce</a>
 	 */
-	void mapReduce(MapReduceQueryConstructor constructor,
+	RiakFuture mapReduce(MapReduceQueryConstructor constructor,
 			RiakResponseHandler<MapReduceResponse> handler);
 }

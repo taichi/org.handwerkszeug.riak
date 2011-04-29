@@ -11,10 +11,16 @@ import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.slf4j.Logger;
 
+/**
+ * @author taichi
+ */
 public class NettyUtil {
 
 	public interface MessageHandler {
-
+		/**
+		 * @param receive
+		 * @return true : handle finished / false : do more handle.
+		 */
 		boolean handle(Object receive);
 	}
 

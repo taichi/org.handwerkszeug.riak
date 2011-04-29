@@ -6,6 +6,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -13,13 +15,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.Assert;
 
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.node.ArrayNode;
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.mapreduce.MapReduceQuery;
+import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
+import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
+import org.handwerkszeug.riak.mapreduce.NamedFunctionPhase;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultGetOptions;
 import org.handwerkszeug.riak.model.DefaultPutOptions;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
+import org.handwerkszeug.riak.model.Erlang;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakObject;
@@ -120,7 +129,6 @@ public class PbcRiakOperationsTest {
 			Location l = new Location(bucket, String.valueOf(i));
 			testDelete(l);
 		}
-
 	}
 
 	public void testListKeys(String bucket, int allsize) throws Exception {
@@ -461,6 +469,64 @@ public class PbcRiakOperationsTest {
 		});
 
 		wait(waiter, is);
+	}
+
+	@Test
+	public void testMapReduce() throws Exception {
+		String bucket = "testMapReduce";
+		List<Integer> exp = new ArrayList<Integer>();
+		for (int i = 0; i < 20; i++) {
+			Location l = new Location(bucket, String.valueOf(i));
+			int val = i + 10;
+			testPut(l, String.valueOf(val));
+			exp.add(val);
+		}
+
+		testMapReduce(bucket, 20, exp);
+
+		for (int i = 0; i < 20; i++) {
+			Location l = new Location(bucket, String.valueOf(i));
+			testDelete(l);
+		}
+	}
+
+	public void testMapReduce(final String bucket, int keys, List<Integer> exp)
+			throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		final List<Integer> actual = new ArrayList<Integer>();
+		target.mapReduce(new MapReduceQueryConstructor() {
+			@Override
+			public void cunstruct(MapReduceQuery query) {
+				query.setInputs(bucket);
+				query.setQueries(NamedFunctionPhase
+						.map(Erlang.map_object_value));
+			}
+		}, new RiakResponseHandler<MapReduceResponse>() {
+			@Override
+			public void handle(RiakResponse<MapReduceResponse> response)
+					throws RiakException {
+				if (response.isErrorResponse()) {
+					waiter.compareAndSet(false, true);
+				} else {
+					if (response.getResponse().getDone()) {
+						waiter.compareAndSet(false, true);
+						is[0] = true;
+					} else {
+						ArrayNode an = (ArrayNode) response.getResponse()
+								.getResponse();
+						JsonNode jn = an.get(0);
+						actual.add(jn.getValueAsInt());
+					}
+				}
+			}
+		});
+
+		wait(waiter, is);
+		assertEquals(20, actual.size());
+		Collections.sort(actual);
+		assertEquals(exp, actual);
 	}
 
 	@Test

@@ -42,4 +42,7 @@ public class Erlang implements Function {
 	// TODO list built-in functions
 	public static final Erlang map_object_value = new Erlang(
 			"riak_kv_mapreduce", "map_object_value");
+
+	public static final Erlang reduce_sum = new Erlang("riak_kv_mapreduce",
+			"reduce_sum");
 }

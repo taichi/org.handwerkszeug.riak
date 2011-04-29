@@ -25,7 +25,7 @@ public class DefaultMapReduceQuery implements MapReduceQuery {
 
 	protected long timeout;
 
-	protected DefaultMapReduceQuery() {
+	public DefaultMapReduceQuery() {
 	}
 
 	@Override

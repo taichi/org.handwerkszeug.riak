@@ -14,5 +14,5 @@ public interface MapReduceResponse {
 
 	JsonNode getResponse();
 
-	boolean done();
+	boolean getDone();
 }

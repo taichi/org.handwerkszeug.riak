@@ -17,9 +17,15 @@ import java.util.concurrent.TimeUnit;
 
 import net.iharder.Base64;
 
+import org.codehaus.jackson.JsonEncoding;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.mapreduce.DefaultMapReduceQuery;
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
 import org.handwerkszeug.riak.model.Bucket;
@@ -38,6 +44,7 @@ import org.handwerkszeug.riak.model.internal.NoContents;
 import org.handwerkszeug.riak.model.internal.NoOpResponse;
 import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.KeyHandler;
+import org.handwerkszeug.riak.op.Querying;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
@@ -55,6 +62,8 @@ import org.handwerkszeug.riak.pbc.Riakclient.RpbLink;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbListBucketsResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbListKeysReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbListKeysResp;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbMapRedReq;
+import org.handwerkszeug.riak.pbc.Riakclient.RpbMapRedResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPair;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPutReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPutResp;
@@ -71,6 +80,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.ByteString.Output;
 
 /**
  * @author taichi
@@ -125,57 +135,30 @@ public class PbcRiakOperations implements RiakOperations {
 
 		RpbListKeysReq request = RpbListKeysReq.newBuilder()
 				.setBucket(ByteString.copyFromUtf8(bucket)).build();
-		final String name = "listKeys";
-		if (LOG.isDebugEnabled()) {
-			LOG.debug(name);
-		}
-		ChannelPipeline pipeline = this.channel.getPipeline();
-		pipeline.addLast(name, new NettyUtil.UpstreamHandler<_>(LOG, handler) {
-
-			@Override
-			public void messageReceived(ChannelHandlerContext ctx,
-					MessageEvent e) throws Exception {
-				ChannelPipeline pipeline = e.getChannel().getPipeline();
-				Object o = e.getMessage();
-				if (LOG.isDebugEnabled()) {
-					LOG.debug(Markers.DETAIL, Messages.Receive, name, o);
-				}
-				if (o instanceof RpbErrorResp) {
-					RpbErrorResp error = (RpbErrorResp) o;
-					handler.handle(new PbcErrorResponse<_>(error));
-				} else if (o instanceof RpbListKeysResp) {
-					RpbListKeysResp resp = (RpbListKeysResp) o;
-					boolean done = resp.getDone();
-					if (done) {
-						pipeline.remove(name);
+		return handle("listKeys", request, handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) {
+						if (receive instanceof RpbListKeysResp) {
+							RpbListKeysResp resp = (RpbListKeysResp) receive;
+							boolean done = resp.getDone();
+							final List<String> list = new ArrayList<String>(
+									resp.getKeysCount());
+							for (ByteString bs : resp.getKeysList()) {
+								list.add(to(bs));
+							}
+							handler.handleKeys(
+									new AbstractRiakResponse<List<String>>() {
+										@Override
+										public List<String> getResponse() {
+											return list;
+										}
+									}, done);
+							return done;
+						}
+						return true;
 					}
-					final List<String> list = new ArrayList<String>(resp
-							.getKeysCount());
-					for (ByteString bs : resp.getKeysList()) {
-						list.add(to(bs));
-					}
-					handler.handleKeys(
-							new AbstractRiakResponse<List<String>>() {
-								@Override
-								public List<String> getResponse() {
-									return list;
-								}
-							}, done);
-
-				} else {
-					// do nothing.
-					ctx.sendUpstream(e);
-				}
-			}
-		});
-		try {
-			ChannelFuture cf = this.channel.write(request);
-			return new NettyUtil.FutureAdapter(cf);
-		} catch (Exception e) {
-			pipeline.remove(name);
-			this.channel.close();
-			throw new RiakException(e);
-		}
+				});
 	}
 
 	@Override
@@ -625,12 +608,57 @@ public class PbcRiakOperations implements RiakOperations {
 		return _delete("delete/quorum", handler, builder);
 	}
 
+	static final ByteString PbcJobEncoding = ByteString
+			.copyFromUtf8(Querying.JobEncoding);
+
 	@Override
-	public void mapReduce(MapReduceQueryConstructor constructor,
+	public RiakFuture mapReduce(MapReduceQueryConstructor constructor,
 			RiakResponseHandler<MapReduceResponse> handler) {
 		notNull(constructor, "constructor");
 		notNull(handler, "handler");
-		// TODO
+
+		try {
+			DefaultMapReduceQuery query = new DefaultMapReduceQuery();
+			constructor.cunstruct(query);
+			RpbMapRedReq.Builder builder = RpbMapRedReq.newBuilder();
+			builder.setContentType(PbcJobEncoding);
+			Output out = ByteString.newOutput();
+			// TODO set JsonGenerator to prepare ?
+			JsonNode node = query.prepare();
+			JsonFactory factory = new JsonFactory(new ObjectMapper());
+			JsonGenerator gen = factory.createJsonGenerator(out,
+					JsonEncoding.UTF8);
+			gen.writeTree(node);
+			gen.close();
+			ByteString byteJson = out.toByteString();
+			builder.setRequest(byteJson);
+			return mapReduce(builder.build(), handler);
+		} catch (IOException e) {
+			throw new RiakException(e);
+		}
+	}
+
+	protected RiakFuture mapReduce(RpbMapRedReq request,
+			final RiakResponseHandler<MapReduceResponse> handler) {
+		return handle("mapReduce", request, handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) {
+						if (receive instanceof RpbMapRedResp) {
+							RpbMapRedResp resp = (RpbMapRedResp) receive;
+							final PbcMapReduceResponse response = new PbcMapReduceResponse(
+									resp);
+							handler.handle(new AbstractRiakResponse<MapReduceResponse>() {
+								@Override
+								public MapReduceResponse getResponse() {
+									return response;
+								}
+							});
+							return resp.getDone();
+						}
+						return true;
+					}
+				});
 	}
 
 	@Override
@@ -736,7 +764,6 @@ public class PbcRiakOperations implements RiakOperations {
 			public void messageReceived(ChannelHandlerContext ctx,
 					MessageEvent e) throws Exception {
 				ChannelPipeline pipeline = e.getChannel().getPipeline();
-				pipeline.remove(name);
 				Object o = e.getMessage();
 				if (LOG.isDebugEnabled()) {
 					LOG.debug(Markers.DETAIL, Messages.Receive, name, o);
@@ -744,11 +771,10 @@ public class PbcRiakOperations implements RiakOperations {
 				if (o instanceof RpbErrorResp) {
 					RpbErrorResp error = (RpbErrorResp) o;
 					users.handle(new PbcErrorResponse<T>(error));
+					pipeline.remove(name);
 				} else {
-					if (internal.handle(o) == false) {
-						LOG.error(Markers.BOUNDARY, Messages.HaventProceed,
-								name);
-						ctx.sendUpstream(e);
+					if (internal.handle(o)) {
+						pipeline.remove(name);
 					}
 				}
 			}
