@@ -8,7 +8,6 @@ import java.util.concurrent.Executors;
 import org.handwerkszeug.riak.RiakAction;
 import org.handwerkszeug.riak.RiakClient;
 import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -34,6 +33,7 @@ public class PbcRiakClient implements RiakClient<PbcRiakOperations> {
 	@Override
 	public void execute(final RiakAction<PbcRiakOperations> action) {
 		notNull(action, "action");
+		// TODO stress test and implement connection pooling.
 		ClientBootstrap bootstrap = new ClientBootstrap(this.channelFactory);
 		ChannelPipelineFactory pf = new PbcPipelineFactory() {
 			@Override
@@ -45,15 +45,9 @@ public class PbcRiakClient implements RiakClient<PbcRiakOperations> {
 							public void channelConnected(
 									ChannelHandlerContext ctx,
 									ChannelStateEvent e) throws Exception {
-								Channel c = e.getChannel();
-								try {
-									PbcRiakOperations op = new PbcRiakOperations(
-											c);
-									action.execute(op);
-								} finally {
-
-								}
-
+								PbcRiakOperations op = new PbcRiakOperations(e
+										.getChannel());
+								action.execute(op);
 							}
 						});
 				return pipeline;
