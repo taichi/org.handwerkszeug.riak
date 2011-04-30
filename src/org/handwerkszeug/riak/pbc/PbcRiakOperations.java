@@ -14,8 +14,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import net.iharder.Base64;
 
@@ -48,6 +46,7 @@ import org.handwerkszeug.riak.op.Querying;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
+import org.handwerkszeug.riak.op.internal.CompletionSupport;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbBucketProps;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbContent;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbDelReq;
@@ -72,13 +71,6 @@ import org.handwerkszeug.riak.pbc.Riakclient.RpbSetClientIdReq;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,17 +84,14 @@ import com.google.protobuf.ByteString.Output;
  *      href="https://github.com/basho/riak_kv/blob/master/src/riak_kv_pb_socket.erl">Riak
  *      Protocol Buffers Server</a>
  */
-public class PbcRiakOperations implements RiakOperations, ChannelFutureListener {
+public class PbcRiakOperations implements RiakOperations {
 
 	static final Logger LOG = LoggerFactory.getLogger(PbcRiakOperations.class);
 
-	final Channel channel;
-
-	final AtomicInteger progress = new AtomicInteger(0);
-	final AtomicBoolean complete = new AtomicBoolean(false);
+	protected CompletionSupport support;
 
 	public PbcRiakOperations(Channel channel) {
-		this.channel = channel;
+		this.support = new CompletionSupport(channel);
 	}
 
 	@Override
@@ -784,55 +773,24 @@ public class PbcRiakOperations implements RiakOperations, ChannelFutureListener 
 	protected <T> RiakFuture handle(final String name, Object send,
 			final RiakResponseHandler<T> users,
 			final NettyUtil.MessageHandler internal) {
-		if (LOG.isDebugEnabled()) {
-			LOG.debug(name);
-		}
-		this.progress.incrementAndGet();
-		ChannelPipeline pipeline = this.channel.getPipeline();
-		pipeline.addLast(name, new UpstreamHandler<T>(LOG, users) {
-			@Override
-			public void messageReceived(ChannelHandlerContext ctx,
-					MessageEvent e) throws Exception {
-				ChannelPipeline pipeline = e.getChannel().getPipeline();
-				Object o = e.getMessage();
-				if (LOG.isDebugEnabled()) {
-					LOG.debug(Markers.DETAIL, Messages.Receive, name, o);
-				}
-				if (o instanceof RpbErrorResp) {
-					RpbErrorResp error = (RpbErrorResp) o;
-					users.handle(new PbcErrorResponse<T>(error) {
-						@Override
-						public void operationComplete() {
-							complete();
+		return this.support.handle(name, send, users,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) {
+						if (receive instanceof RpbErrorResp) {
+							RpbErrorResp error = (RpbErrorResp) receive;
+							users.handle(new PbcErrorResponse<T>(error) {
+								@Override
+								public void operationComplete() {
+									complete();
+								}
+							});
+							return true;
+						} else {
+							return internal.handle(receive);
 						}
-					});
-					pipeline.remove(name);
-				} else {
-					if (internal.handle(o)) {
-						pipeline.remove(name);
 					}
-				}
-				progress.decrementAndGet();
-				e.getFuture().addListener(PbcRiakOperations.this);
-			}
-		});
-		try {
-			ChannelFuture cf = this.channel.write(send);
-			return new NettyUtil.FutureAdapter(cf);
-		} catch (Exception e) {
-			pipeline.remove(name);
-			complete();
-			this.channel.close();
-			throw new RiakException(e);
-		}
-	}
-
-	@Override
-	public void operationComplete(ChannelFuture future) throws Exception {
-		if (future.isDone() && this.progress.get() < 1 && this.complete.get()) {
-			LOG.debug(Markers.BOUNDARY, Messages.CLOSE_CHANNEL);
-			future.getChannel().close();
-		}
+				});
 	}
 
 	abstract class PbcRiakResponse<T> extends AbstractRiakResponse<T> {
@@ -849,44 +807,7 @@ public class PbcRiakOperations implements RiakOperations, ChannelFutureListener 
 		}
 	}
 
-	class UpstreamHandler<T> extends SimpleChannelUpstreamHandler {
-		final Logger logger;
-		final RiakResponseHandler<T> handler;
-
-		public UpstreamHandler(Logger logger, RiakResponseHandler<T> handler) {
-			this.logger = logger;
-			this.handler = handler;
-		}
-
-		@Override
-		public void exceptionCaught(ChannelHandlerContext ctx,
-				final ExceptionEvent e) throws Exception {
-			handler.handle(new AbstractRiakResponse<T>() {
-				@Override
-				public boolean isErrorResponse() {
-					return true;
-				}
-
-				@Override
-				public String getMessage() {
-					return e.getCause().getMessage();
-				}
-
-				@Override
-				public T getResponse() {
-					return null;
-				}
-
-				@Override
-				public void operationComplete() {
-					complete();
-				}
-			});
-			logger.error(e.getCause().getMessage(), e.getCause());
-		}
-	}
-
 	protected void complete() {
-		this.complete.compareAndSet(false, true);
+		this.support.complete();
 	}
 }
