@@ -14,6 +14,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import net.iharder.Base64;
 
@@ -40,8 +42,6 @@ import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.ServerInfo;
 import org.handwerkszeug.riak.model.internal.AbstractRiakResponse;
 import org.handwerkszeug.riak.model.internal.DefaultRiakObjectResponse;
-import org.handwerkszeug.riak.model.internal.NoContents;
-import org.handwerkszeug.riak.model.internal.NoOpResponse;
 import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.KeyHandler;
 import org.handwerkszeug.riak.op.Querying;
@@ -73,9 +73,12 @@ import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,11 +92,14 @@ import com.google.protobuf.ByteString.Output;
  *      href="https://github.com/basho/riak_kv/blob/master/src/riak_kv_pb_socket.erl">Riak
  *      Protocol Buffers Server</a>
  */
-public class PbcRiakOperations implements RiakOperations {
+public class PbcRiakOperations implements RiakOperations, ChannelFutureListener {
 
 	static final Logger LOG = LoggerFactory.getLogger(PbcRiakOperations.class);
 
 	final Channel channel;
+
+	final AtomicInteger progress = new AtomicInteger(0);
+	final AtomicBoolean complete = new AtomicBoolean(false);
 
 	public PbcRiakOperations(Channel channel) {
 		this.channel = channel;
@@ -115,7 +121,7 @@ public class PbcRiakOperations implements RiakOperations {
 							for (ByteString bs : resp.getBucketsList()) {
 								list.add(to(bs));
 							}
-							handler.handle(new AbstractRiakResponse<List<String>>() {
+							handler.handle(new PbcRiakResponse<List<String>>() {
 								@Override
 								public List<String> getResponse() {
 									return list;
@@ -147,7 +153,7 @@ public class PbcRiakOperations implements RiakOperations {
 								list.add(to(bs));
 							}
 							handler.handleKeys(
-									new AbstractRiakResponse<List<String>>() {
+									new PbcRiakResponse<List<String>>() {
 										@Override
 										public List<String> getResponse() {
 											return list;
@@ -178,7 +184,7 @@ public class PbcRiakOperations implements RiakOperations {
 							final PbcBucket pb = new PbcBucket(bucket);
 							pb.setNumberOfReplicas(props.getNVal());
 							pb.setAllowMulti(props.getAllowMult());
-							handler.handle(new AbstractRiakResponse<Bucket>() {
+							handler.handle(new PbcRiakResponse<Bucket>() {
 								@Override
 								public Bucket getResponse() {
 									return pb;
@@ -256,7 +262,12 @@ public class PbcRiakOperations implements RiakOperations {
 				}
 				RiakObject<byte[]> ro = convert(location, vclock,
 						resp.getContent(0));
-				handler.handle(new DefaultRiakObjectResponse(ro));
+				handler.handle(new DefaultRiakObjectResponse(ro) {
+					@Override
+					public void operationComplete() {
+						complete();
+					}
+				});
 			}
 		});
 	}
@@ -278,7 +289,12 @@ public class PbcRiakOperations implements RiakOperations {
 							for (RpbContent c : resp.getContentList()) {
 								RiakObject<byte[]> ro = convert(location,
 										vclock, c);
-								handler.handle(new DefaultRiakObjectResponse(ro));
+								handler.handle(new DefaultRiakObjectResponse(ro) {
+									@Override
+									public void operationComplete() {
+										complete();
+									}
+								});
 							}
 						} finally {
 							handler.end();
@@ -305,8 +321,23 @@ public class PbcRiakOperations implements RiakOperations {
 					RpbGetResp resp = (RpbGetResp) receive;
 					int size = resp.getContentCount();
 					if (size < 1) {
-						handler.handle(new NoContents<RiakObject<byte[]>>(
-								location));
+						handler.handle(new PbcRiakResponse<RiakObject<byte[]>>() {
+							@Override
+							public boolean isErrorResponse() {
+								return true;
+							}
+
+							@Override
+							public String getMessage() {
+								return String.format(Messages.NoContents,
+										location);
+							}
+
+							@Override
+							public RiakObject<byte[]> getResponse() {
+								return null;
+							}
+						});
 					} else {
 						String vclock = toVclock(resp.getVclock());
 						getHandler.handle(resp, vclock);
@@ -416,7 +447,7 @@ public class PbcRiakOperations implements RiakOperations {
 					@Override
 					public boolean handle(Object receive) {
 						if (receive instanceof RpbPutResp) {
-							handler.handle(new AbstractRiakResponse<List<RiakObject<byte[]>>>() {
+							handler.handle(new PbcRiakResponse<List<RiakObject<byte[]>>>() {
 								@Override
 								public List<RiakObject<byte[]>> getResponse() {
 									return Collections.emptyList();
@@ -466,7 +497,7 @@ public class PbcRiakOperations implements RiakOperations {
 									list.add(ro);
 								}
 							}
-							handler.handle(new AbstractRiakResponse<List<RiakObject<byte[]>>>() {
+							handler.handle(new PbcRiakResponse<List<RiakObject<byte[]>>>() {
 								@Override
 								public List<RiakObject<byte[]>> getResponse() {
 									return list;
@@ -649,6 +680,11 @@ public class PbcRiakOperations implements RiakOperations {
 								public MapReduceResponse getResponse() {
 									return response;
 								}
+
+								@Override
+								public void operationComplete() {
+									complete();
+								}
 							});
 							return resp.getDone();
 						}
@@ -668,7 +704,7 @@ public class PbcRiakOperations implements RiakOperations {
 								@Override
 								public String getMessage() {
 									return "pong";
-								};
+								}
 							});
 						}
 						return true;
@@ -685,7 +721,7 @@ public class PbcRiakOperations implements RiakOperations {
 						if (receive instanceof RpbGetClientIdResp) {
 							RpbGetClientIdResp resp = (RpbGetClientIdResp) receive;
 							final String cid = to(resp.getClientId());
-							handler.handle(new AbstractRiakResponse<String>() {
+							handler.handle(new PbcRiakResponse<String>() {
 								@Override
 								public String getResponse() {
 									return cid;
@@ -733,7 +769,7 @@ public class PbcRiakOperations implements RiakOperations {
 							RpbGetServerInfoResp resp = (RpbGetServerInfoResp) receive;
 							final ServerInfo info = new ServerInfo(to(resp
 									.getNode()), to(resp.getServerVersion()));
-							handler.handle(new AbstractRiakResponse<ServerInfo>() {
+							handler.handle(new PbcRiakResponse<ServerInfo>() {
 								@Override
 								public ServerInfo getResponse() {
 									return info;
@@ -751,8 +787,9 @@ public class PbcRiakOperations implements RiakOperations {
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(name);
 		}
+		this.progress.incrementAndGet();
 		ChannelPipeline pipeline = this.channel.getPipeline();
-		pipeline.addLast(name, new NettyUtil.UpstreamHandler<T>(LOG, users) {
+		pipeline.addLast(name, new UpstreamHandler<T>(LOG, users) {
 			@Override
 			public void messageReceived(ChannelHandlerContext ctx,
 					MessageEvent e) throws Exception {
@@ -763,13 +800,20 @@ public class PbcRiakOperations implements RiakOperations {
 				}
 				if (o instanceof RpbErrorResp) {
 					RpbErrorResp error = (RpbErrorResp) o;
-					users.handle(new PbcErrorResponse<T>(error));
+					users.handle(new PbcErrorResponse<T>(error) {
+						@Override
+						public void operationComplete() {
+							complete();
+						}
+					});
 					pipeline.remove(name);
 				} else {
 					if (internal.handle(o)) {
 						pipeline.remove(name);
 					}
 				}
+				progress.decrementAndGet();
+				e.getFuture().addListener(PbcRiakOperations.this);
 			}
 		});
 		try {
@@ -777,8 +821,72 @@ public class PbcRiakOperations implements RiakOperations {
 			return new NettyUtil.FutureAdapter(cf);
 		} catch (Exception e) {
 			pipeline.remove(name);
+			complete();
 			this.channel.close();
 			throw new RiakException(e);
 		}
+	}
+
+	@Override
+	public void operationComplete(ChannelFuture future) throws Exception {
+		if (future.isDone() && this.progress.get() < 1 && this.complete.get()) {
+			LOG.debug(Markers.BOUNDARY, Messages.CLOSE_CHANNEL);
+			future.getChannel().close();
+		}
+	}
+
+	abstract class PbcRiakResponse<T> extends AbstractRiakResponse<T> {
+		@Override
+		public void operationComplete() {
+			complete();
+		}
+	}
+
+	class NoOpResponse extends PbcRiakResponse<_> {
+		@Override
+		public _ getResponse() {
+			return _._;
+		}
+	}
+
+	class UpstreamHandler<T> extends SimpleChannelUpstreamHandler {
+		final Logger logger;
+		final RiakResponseHandler<T> handler;
+
+		public UpstreamHandler(Logger logger, RiakResponseHandler<T> handler) {
+			this.logger = logger;
+			this.handler = handler;
+		}
+
+		@Override
+		public void exceptionCaught(ChannelHandlerContext ctx,
+				final ExceptionEvent e) throws Exception {
+			handler.handle(new AbstractRiakResponse<T>() {
+				@Override
+				public boolean isErrorResponse() {
+					return true;
+				}
+
+				@Override
+				public String getMessage() {
+					return e.getCause().getMessage();
+				}
+
+				@Override
+				public T getResponse() {
+					return null;
+				}
+
+				@Override
+				public void operationComplete() {
+					complete();
+				}
+			});
+			logger.error(e.getCause().getMessage(), e.getCause());
+		}
+	}
+
+	protected void complete() {
+		this.complete.compareAndSet(false, true);
 	}
 }

@@ -9,7 +9,7 @@ import org.handwerkszeug.riak.op.Querying;
  */
 public interface RiakClient<OP extends BucketOperations & ObjectKeyOperations & Querying> {
 
-	<T> T execute(RiakAction<T, OP> action);
+	void execute(RiakAction<OP> action);
 
 	void dispose();
 }

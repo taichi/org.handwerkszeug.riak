@@ -27,4 +27,6 @@ public class Messages {
 
 	public static String LastModified = "Last-Modified: {}";
 
+	public static String CLOSE_CHANNEL = "close channel";
+
 }

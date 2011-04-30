@@ -20,4 +20,6 @@ public interface RiakResponse<T> {
 	 * @throws UnsupportedOperationException
 	 */
 	T getResponse();
+
+	void operationComplete();
 }

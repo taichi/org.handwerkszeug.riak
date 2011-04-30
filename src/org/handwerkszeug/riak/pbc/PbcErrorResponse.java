@@ -5,7 +5,7 @@ import org.handwerkszeug.riak.model.internal.AbstractRiakResponse;
 /**
  * @author taichi
  */
-public class PbcErrorResponse<T> extends AbstractRiakResponse<T> {
+public abstract class PbcErrorResponse<T> extends AbstractRiakResponse<T> {
 
 	final Riakclient.RpbErrorResp error;
 

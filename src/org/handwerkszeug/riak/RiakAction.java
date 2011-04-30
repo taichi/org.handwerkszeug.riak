@@ -9,7 +9,7 @@ import org.handwerkszeug.riak.op.Querying;
  * @param <R>
  * @param <OP>
  */
-public interface RiakAction<R, OP extends BucketOperations & ObjectKeyOperations & Querying> {
+public interface RiakAction<OP extends BucketOperations & ObjectKeyOperations & Querying> {
 
-	R execute(OP operations);
+	void execute(OP operations);
 }

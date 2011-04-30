@@ -412,6 +412,7 @@ public class PbcRiakOperationsTest {
 	public void testPutWithOpt(Location location, final String testdata)
 			throws Exception {
 		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
 
 		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
 			@Override
@@ -419,7 +420,6 @@ public class PbcRiakOperationsTest {
 				return testdata.getBytes();
 			}
 		};
-		final boolean[] is = { false };
 
 		target.put(ro, new DefaultPutOptions() {
 			@Override
