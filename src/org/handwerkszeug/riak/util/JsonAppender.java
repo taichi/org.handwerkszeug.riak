@@ -1,4 +1,4 @@
-package org.handwerkszeug.riak;
+package org.handwerkszeug.riak.util;
 
 import org.codehaus.jackson.JsonNode;
 

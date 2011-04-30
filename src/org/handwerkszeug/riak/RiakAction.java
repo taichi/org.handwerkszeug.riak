@@ -6,7 +6,6 @@ import org.handwerkszeug.riak.op.Querying;
 
 /**
  * @author taichi
- * @param <R>
  * @param <OP>
  */
 public interface RiakAction<OP extends BucketOperations & ObjectKeyOperations & Querying> {

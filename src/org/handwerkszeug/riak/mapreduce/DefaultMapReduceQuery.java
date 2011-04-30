@@ -7,8 +7,8 @@ import java.util.List;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
-import org.handwerkszeug.riak.JsonAppender;
 import org.handwerkszeug.riak.nls.Messages;
+import org.handwerkszeug.riak.util.JsonAppender;
 
 /**
  * @author taichi

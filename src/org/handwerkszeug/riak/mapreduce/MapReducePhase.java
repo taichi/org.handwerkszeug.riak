@@ -2,7 +2,7 @@ package org.handwerkszeug.riak.mapreduce;
 
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
-import org.handwerkszeug.riak.JsonAppender;
+import org.handwerkszeug.riak.util.JsonAppender;
 
 /**
  * @author taichi

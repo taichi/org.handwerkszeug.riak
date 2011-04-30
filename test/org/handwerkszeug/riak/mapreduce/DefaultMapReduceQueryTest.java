@@ -27,7 +27,8 @@ public class DefaultMapReduceQueryTest {
 	@Test
 	public void testPrepareBucket() throws Exception {
 		this.target.setInputs(MapReduceInputs.bucket("testPrepareBucket"));
-		this.target.setQueries(NamedFunctionPhase.map(Erlang.map_object_value));
+		this.target.setQueries(NamedFunctionPhase.map(Erlang.map_object_value,
+				true));
 		assertJson("testPrepareBucket");
 	}
 
@@ -41,7 +42,8 @@ public class DefaultMapReduceQueryTest {
 	public void testPrepareMapReduceInput() throws Exception {
 		this.target.setInputs(MapReduceInputs.keyFilter("rawBucket",
 				Transform.stringToInt(), Predicates.between(10, 20)));
-		this.target.setQueries(NamedFunctionPhase.map(Erlang.map_object_value));
+		this.target.setQueries(NamedFunctionPhase.map(Erlang.map_object_value,
+				true));
 		assertJson("testPrepareLocationInput");
 	}
 }
