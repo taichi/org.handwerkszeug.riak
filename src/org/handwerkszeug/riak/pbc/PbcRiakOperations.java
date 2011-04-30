@@ -121,9 +121,8 @@ public class PbcRiakOperations implements RiakOperations {
 									return list;
 								}
 							});
-							return true;
 						}
-						return false;
+						return true;
 					}
 				});
 	}
@@ -185,9 +184,8 @@ public class PbcRiakOperations implements RiakOperations {
 									return pb;
 								}
 							});
-							return true;
 						}
-						return false;
+						return true;
 					}
 				});
 	}
@@ -210,9 +208,8 @@ public class PbcRiakOperations implements RiakOperations {
 					public boolean handle(Object receive) {
 						if (MessageCodes.RpbSetBucketResp.equals(receive)) {
 							handler.handle(new NoOpResponse());
-							return true;
 						}
-						return false;
+						return true;
 					}
 				});
 	}
@@ -314,9 +311,8 @@ public class PbcRiakOperations implements RiakOperations {
 						String vclock = toVclock(resp.getVclock());
 						getHandler.handle(resp, vclock);
 					}
-					return true;
 				}
-				return false;
+				return true;
 			}
 		});
 	}
@@ -426,9 +422,8 @@ public class PbcRiakOperations implements RiakOperations {
 									return Collections.emptyList();
 								}
 							});
-							return true;
 						}
-						return false;
+						return true;
 					}
 				});
 	}
@@ -477,9 +472,8 @@ public class PbcRiakOperations implements RiakOperations {
 									return list;
 								}
 							});
-							return true;
 						}
-						return false;
+						return true;
 					}
 				});
 
@@ -583,9 +577,8 @@ public class PbcRiakOperations implements RiakOperations {
 					public boolean handle(Object receive) {
 						if (MessageCodes.RpbDelResp.equals(receive)) {
 							handler.handle(new NoOpResponse());
-							return true;
 						}
-						return false;
+						return true;
 					}
 				});
 	}
@@ -625,6 +618,9 @@ public class PbcRiakOperations implements RiakOperations {
 			Output out = ByteString.newOutput();
 			// TODO set JsonGenerator to prepare ?
 			JsonNode node = query.prepare();
+			if (LOG.isDebugEnabled()) {
+				LOG.debug(Markers.BOUNDARY, node.toString());
+			}
 			JsonFactory factory = new JsonFactory(new ObjectMapper());
 			JsonGenerator gen = factory.createJsonGenerator(out,
 					JsonEncoding.UTF8);
@@ -674,9 +670,8 @@ public class PbcRiakOperations implements RiakOperations {
 									return "pong";
 								};
 							});
-							return true;
 						}
-						return false;
+						return true;
 					}
 				});
 	}
@@ -696,17 +691,17 @@ public class PbcRiakOperations implements RiakOperations {
 									return cid;
 								}
 							});
-							return true;
 						}
-						return false;
+						return true;
 					}
 				});
 	}
 
-	@Override
 	/**
-	 * @see <a href="https://github.com/basho/riak_kv/blob/master/src/riak.erl">riak.erl</a>
+	 * @see <a
+	 *      href="https://github.com/basho/riak_kv/blob/master/src/riak.erl">riak.erl</a>
 	 */
+	@Override
 	public RiakFuture setClientId(String id,
 			final RiakResponseHandler<_> handler) {
 		byte[] bytes = id.getBytes();
@@ -721,9 +716,8 @@ public class PbcRiakOperations implements RiakOperations {
 					public boolean handle(Object receive) {
 						if (MessageCodes.RpbSetClientIdResp.equals(receive)) {
 							handler.handle(new NoOpResponse());
-							return true;
 						}
-						return false;
+						return true;
 					}
 				});
 	}
@@ -745,9 +739,8 @@ public class PbcRiakOperations implements RiakOperations {
 									return info;
 								}
 							});
-							return true;
 						}
-						return false;
+						return true;
 					}
 				});
 	}

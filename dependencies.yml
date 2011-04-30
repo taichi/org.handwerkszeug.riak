@@ -8,7 +8,7 @@ repositories :
 dependencies :
   - ch.qos.logback logback-classic 0.9.28
   - org.slf4j slf4j-api 1.6.1
-  - org.codehaus.jackson jackson-mapper-asl 1.7.6
+  - org.codehaus.jackson jackson-mapper-asl 1.8.0
   - com.google.protobuf protobuf-java 2.4.0a
   - org.jboss.netty netty 3.2.4.Final
   - net.iharder base64 2.3.8
