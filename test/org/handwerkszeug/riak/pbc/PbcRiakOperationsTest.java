@@ -84,7 +84,7 @@ public class PbcRiakOperationsTest {
 			public void handle(RiakContentsResponse<String> response)
 					throws RiakException {
 				try {
-					assertEquals("pong", response.getResponse());
+					assertEquals("pong", response.getContents());
 					is[0] = true;
 				} finally {
 					waiter.compareAndSet(false, true);
@@ -110,7 +110,7 @@ public class PbcRiakOperationsTest {
 			public void handle(RiakContentsResponse<List<String>> response)
 					throws RiakException {
 				try {
-					List<String> keys = response.getResponse();
+					List<String> keys = response.getContents();
 					assertNotNull(keys);
 					assertTrue(0 < keys.size());
 
@@ -157,7 +157,7 @@ public class PbcRiakOperationsTest {
 			@Override
 			public void handle(RiakContentsResponse<KeyResponse> response)
 					throws RiakException {
-				KeyResponse kr = response.getResponse();
+				KeyResponse kr = response.getContents();
 				List<String> list = kr.getKeys();
 				counter[0] += list.size();
 
@@ -229,8 +229,8 @@ public class PbcRiakOperationsTest {
 			public void handle(RiakContentsResponse<Bucket> response)
 					throws RiakException {
 				try {
-					assertNotNull(response.getResponse());
-					bu[0] = response.getResponse();
+					assertNotNull(response.getContents());
+					bu[0] = response.getContents();
 					is[0] = true;
 				} finally {
 					waiter.compareAndSet(false, true);
@@ -269,7 +269,7 @@ public class PbcRiakOperationsTest {
 							RiakContentsResponse<RiakObject<byte[]>> response)
 							throws RiakException {
 						try {
-							RiakObject<byte[]> content = response.getResponse();
+							RiakObject<byte[]> content = response.getContents();
 							String actual = new String(content.getContent());
 							assertEquals(testdata, actual);
 							is[0] = true;
@@ -307,7 +307,7 @@ public class PbcRiakOperationsTest {
 							RiakContentsResponse<List<RiakObject<byte[]>>> response)
 							throws RiakException {
 						try {
-							assertEquals(0, response.getResponse().size());
+							assertEquals(0, response.getContents().size());
 							is[0] = true;
 						} finally {
 							waiter.compareAndSet(false, true);
@@ -372,7 +372,7 @@ public class PbcRiakOperationsTest {
 			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
 					throws RiakException {
 				try {
-					RiakObject<byte[]> ro = response.getResponse();
+					RiakObject<byte[]> ro = response.getContents();
 					assertEquals(location, ro.getLocation());
 					assertEquals(testdata, new String(ro.getContent()));
 					is[0] = true;
@@ -422,7 +422,7 @@ public class PbcRiakOperationsTest {
 			@Override
 			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
 					throws RiakException {
-				RiakObject<byte[]> ro = response.getResponse();
+				RiakObject<byte[]> ro = response.getContents();
 				assertEquals(location, ro.getLocation());
 				assertEquals(testdata, new String(ro.getContent()));
 				is[0] = true;
@@ -476,8 +476,8 @@ public class PbcRiakOperationsTest {
 					RiakContentsResponse<List<RiakObject<byte[]>>> response)
 					throws RiakException {
 				try {
-					assertEquals(1, response.getResponse().size());
-					RiakObject<byte[]> res = response.getResponse().get(0);
+					assertEquals(1, response.getContents().size());
+					RiakObject<byte[]> res = response.getContents().get(0);
 					assertEquals(testdata, new String(res.getContent()));
 					is[0] = true;
 				} finally {
@@ -559,11 +559,11 @@ public class PbcRiakOperationsTest {
 			@Override
 			public void handle(RiakContentsResponse<MapReduceResponse> response)
 					throws RiakException {
-				if (response.getResponse().getDone()) {
+				if (response.getContents().getDone()) {
 					waiter.compareAndSet(false, true);
 					is[0] = true;
 				} else {
-					ArrayNode an = (ArrayNode) response.getResponse()
+					ArrayNode an = (ArrayNode) response.getContents()
 							.getResponse();
 					JsonNode jn = an.get(0);
 					actual[0] = jn.getIntValue();
@@ -656,7 +656,7 @@ public class PbcRiakOperationsTest {
 			public void handle(RiakContentsResponse<ServerInfo> response)
 					throws RiakException {
 				try {
-					ServerInfo info = response.getResponse();
+					ServerInfo info = response.getContents();
 					assertNotNull(info.getNode());
 					assertNotNull(info.getServerVersion());
 					is[0] = true;

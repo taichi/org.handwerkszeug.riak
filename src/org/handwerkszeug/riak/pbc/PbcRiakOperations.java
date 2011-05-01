@@ -113,7 +113,7 @@ public class PbcRiakOperations implements RiakOperations {
 							}
 							handler.handle(new PbcRiakResponse<List<String>>() {
 								@Override
-								public List<String> getResponse() {
+								public List<String> getContents() {
 									return list;
 								}
 							});
@@ -145,7 +145,7 @@ public class PbcRiakOperations implements RiakOperations {
 							}
 							final KeyResponse kr = new KeyResponse(list, done);
 							handler.handle(new PbcRiakResponse<KeyResponse>() {
-								public KeyResponse getResponse() {
+								public KeyResponse getContents() {
 									return kr;
 								};
 							});
@@ -176,7 +176,7 @@ public class PbcRiakOperations implements RiakOperations {
 							pb.setAllowMulti(props.getAllowMult());
 							handler.handle(new PbcRiakResponse<Bucket>() {
 								@Override
-								public Bucket getResponse() {
+								public Bucket getContents() {
 									return pb;
 								}
 							});
@@ -433,7 +433,7 @@ public class PbcRiakOperations implements RiakOperations {
 						if (receive instanceof RpbPutResp) {
 							handler.handle(new PbcRiakResponse<List<RiakObject<byte[]>>>() {
 								@Override
-								public List<RiakObject<byte[]>> getResponse() {
+								public List<RiakObject<byte[]>> getContents() {
 									return Collections.emptyList();
 								}
 							});
@@ -483,7 +483,7 @@ public class PbcRiakOperations implements RiakOperations {
 							}
 							handler.handle(new PbcRiakResponse<List<RiakObject<byte[]>>>() {
 								@Override
-								public List<RiakObject<byte[]>> getResponse() {
+								public List<RiakObject<byte[]>> getContents() {
 									return list;
 								}
 							});
@@ -661,7 +661,7 @@ public class PbcRiakOperations implements RiakOperations {
 									resp);
 							handler.handle(new PbcRiakResponse<MapReduceResponse>() {
 								@Override
-								public MapReduceResponse getResponse() {
+								public MapReduceResponse getContents() {
 									return response;
 								}
 
@@ -686,7 +686,7 @@ public class PbcRiakOperations implements RiakOperations {
 						if (MessageCodes.RpbPingResp.equals(receive)) {
 							handler.handle(new PbcRiakResponse<String>() {
 								@Override
-								public String getResponse() {
+								public String getContents() {
 									return "pong";
 								}
 							});
@@ -707,7 +707,7 @@ public class PbcRiakOperations implements RiakOperations {
 							final String cid = to(resp.getClientId());
 							handler.handle(new PbcRiakResponse<String>() {
 								@Override
-								public String getResponse() {
+								public String getContents() {
 									return cid;
 								}
 							});
@@ -755,7 +755,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.getNode()), to(resp.getServerVersion()));
 							handler.handle(new PbcRiakResponse<ServerInfo>() {
 								@Override
-								public ServerInfo getResponse() {
+								public ServerInfo getContents() {
 									return info;
 								}
 							});
@@ -798,7 +798,7 @@ public class PbcRiakOperations implements RiakOperations {
 
 	class NoOpResponse extends PbcRiakResponse<_> {
 		@Override
-		public _ getResponse() {
+		public _ getContents() {
 			return _._;
 		}
 	}

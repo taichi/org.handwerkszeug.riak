@@ -16,7 +16,7 @@ public abstract class DefaultRiakObjectResponse extends AbstractRiakResponse
 	}
 
 	@Override
-	public RiakObject<byte[]> getResponse() {
+	public RiakObject<byte[]> getContents() {
 		return this.response;
 	}
 }

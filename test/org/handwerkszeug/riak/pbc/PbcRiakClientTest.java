@@ -49,7 +49,7 @@ public class PbcRiakClientTest {
 					public void handle(RiakContentsResponse<String> response)
 							throws RiakException {
 						try {
-							assertEquals("pong", response.getResponse());
+							assertEquals("pong", response.getContents());
 							is[0] = true;
 						} finally {
 							response.operationComplete();

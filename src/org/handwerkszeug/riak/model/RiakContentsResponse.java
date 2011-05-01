@@ -8,5 +8,5 @@ public interface RiakContentsResponse<T> extends RiakResponse {
 	/**
 	 * @return
 	 */
-	T getResponse();
+	T getContents();
 }
