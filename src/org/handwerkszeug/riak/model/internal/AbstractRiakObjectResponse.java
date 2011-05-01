@@ -6,17 +6,17 @@ import org.handwerkszeug.riak.model.RiakObject;
 /**
  * @author taichi
  */
-public abstract class DefaultRiakObjectResponse extends AbstractRiakResponse
+public abstract class AbstractRiakObjectResponse extends AbstractRiakResponse
 		implements RiakContentsResponse<RiakObject<byte[]>> {
 
-	final RiakObject<byte[]> response;
+	final RiakObject<byte[]> contents;
 
-	public DefaultRiakObjectResponse(RiakObject<byte[]> response) {
-		this.response = response;
+	public AbstractRiakObjectResponse(RiakObject<byte[]> contents) {
+		this.contents = contents;
 	}
 
 	@Override
 	public RiakObject<byte[]> getContents() {
-		return this.response;
+		return this.contents;
 	}
 }

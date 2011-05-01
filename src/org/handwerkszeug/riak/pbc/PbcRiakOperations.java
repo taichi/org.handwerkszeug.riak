@@ -39,9 +39,10 @@ import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
+import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.model.ServerInfo;
+import org.handwerkszeug.riak.model.internal.AbstractRiakObjectResponse;
 import org.handwerkszeug.riak.model.internal.AbstractRiakResponse;
-import org.handwerkszeug.riak.model.internal.DefaultRiakObjectResponse;
 import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.Querying;
 import org.handwerkszeug.riak.op.RiakOperations;
@@ -252,12 +253,7 @@ public class PbcRiakOperations implements RiakOperations {
 				}
 				RiakObject<byte[]> ro = convert(location, vclock,
 						resp.getContent(0));
-				handler.handle(new DefaultRiakObjectResponse(ro) {
-					@Override
-					public void operationComplete() {
-						complete();
-					}
-				});
+				handler.handle(new PbcRiakObjectResponse(ro));
 			}
 		});
 	}
@@ -279,12 +275,7 @@ public class PbcRiakOperations implements RiakOperations {
 							for (RpbContent c : resp.getContentList()) {
 								RiakObject<byte[]> ro = convert(location,
 										vclock, c);
-								handler.handle(new DefaultRiakObjectResponse(ro) {
-									@Override
-									public void operationComplete() {
-										complete();
-									}
-								});
+								handler.handle(new PbcRiakObjectResponse(ro));
 							}
 						} finally {
 							handler.end();
@@ -664,11 +655,6 @@ public class PbcRiakOperations implements RiakOperations {
 								public MapReduceResponse getContents() {
 									return response;
 								}
-
-								@Override
-								public void operationComplete() {
-									complete();
-								}
 							});
 							return resp.getDone();
 						}
@@ -774,12 +760,7 @@ public class PbcRiakOperations implements RiakOperations {
 					public boolean handle(Object receive) {
 						if (receive instanceof RpbErrorResp) {
 							RpbErrorResp error = (RpbErrorResp) receive;
-							users.onError(new PbcErrorResponse<T>(error) {
-								@Override
-								public void operationComplete() {
-									complete();
-								}
-							});
+							users.onError(new PbcErrorResponse<T>(error));
 							return true;
 						} else {
 							return internal.handle(receive);
@@ -801,6 +782,42 @@ public class PbcRiakOperations implements RiakOperations {
 		public _ getContents() {
 			return _._;
 		}
+	}
+
+	class PbcRiakObjectResponse extends AbstractRiakObjectResponse {
+		public PbcRiakObjectResponse(RiakObject<byte[]> ro) {
+			super(ro);
+		}
+
+		@Override
+		public void operationComplete() {
+			complete();
+		}
+	}
+
+	public class PbcErrorResponse<T> implements RiakResponse {
+
+		final Riakclient.RpbErrorResp error;
+
+		public PbcErrorResponse(Riakclient.RpbErrorResp error) {
+			this.error = error;
+		}
+
+		@Override
+		public int getResponseCode() {
+			return this.error.getErrcode();
+		}
+
+		@Override
+		public String getMessage() {
+			return this.error.getErrmsg().toStringUtf8();
+		}
+
+		@Override
+		public void operationComplete() {
+			complete();
+		}
+
 	}
 
 	protected void complete() {
