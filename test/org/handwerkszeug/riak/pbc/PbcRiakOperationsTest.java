@@ -1,7 +1,9 @@
 package org.handwerkszeug.riak.pbc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.text.SimpleDateFormat;
@@ -396,6 +398,35 @@ public class PbcRiakOperationsTest {
 		} finally {
 			testDelete(location);
 		}
+	}
+
+	@Test
+	public void testGetNoContents() throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+		Location location = new Location("testGetNoContents", "nocont");
+
+		target.get(location, new RiakResponseHandler<RiakObject<byte[]>>() {
+			@Override
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
+					throws RiakException {
+				try {
+					assertNull(response.getContents());
+					assertNotNull(response.getMessage());
+					assertFalse(response.getMessage().isEmpty());
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
+		wait(waiter, is);
 	}
 
 	protected void testGetWithSibling(final Location location,

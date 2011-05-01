@@ -302,15 +302,10 @@ public class PbcRiakOperations implements RiakOperations {
 					RpbGetResp resp = (RpbGetResp) receive;
 					int size = resp.getContentCount();
 					if (size < 1) {
-						handler.onError(new AbstractRiakResponse() {
+						handler.handle(new PbcRiakObjectResponse(null) {
 							public String getMessage() {
 								return String.format(Messages.NoContents,
 										location);
-							}
-
-							@Override
-							public void operationComplete() {
-								complete();
 							}
 						});
 					} else {
