@@ -635,6 +635,18 @@ public class PbcRiakOperations implements RiakOperations {
 		}
 	}
 
+	@Override
+	public RiakFuture mapReduce(String rawJson,
+			RiakResponseHandler<MapReduceResponse> handler) {
+		notNull(rawJson, "rawJson");
+		notNull(handler, "handler");
+
+		RpbMapRedReq.Builder builder = RpbMapRedReq.newBuilder();
+		builder.setContentType(PbcJobEncoding);
+		builder.setRequest(ByteString.copyFromUtf8(rawJson));
+		return mapReduce(builder.build(), handler);
+	}
+
 	protected RiakFuture mapReduce(RpbMapRedReq request,
 			final RiakResponseHandler<MapReduceResponse> handler) {
 		return handle("mapReduce", request, handler,
@@ -790,7 +802,7 @@ public class PbcRiakOperations implements RiakOperations {
 		}
 	}
 
-	public class PbcErrorResponse<T> implements RiakResponse {
+	class PbcErrorResponse<T> implements RiakResponse {
 
 		final Riakclient.RpbErrorResp error;
 

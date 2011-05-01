@@ -6,6 +6,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -39,6 +41,8 @@ import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.model.ServerInfo;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
+import org.handwerkszeug.riak.util.JsonUtil;
+import org.handwerkszeug.riak.util.Streams;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -131,16 +135,19 @@ public class PbcRiakOperationsTest {
 	public void testListKeys() throws Exception {
 		String bucket = "testListKeys";
 		String testdata = new SimpleDateFormat().format(new Date()) + "\n";
-		for (int i = 0; i < 20; i++) {
-			Location l = new Location(bucket, String.valueOf(i));
-			testPut(l, testdata);
-		}
+		try {
+			for (int i = 0; i < 20; i++) {
+				Location l = new Location(bucket, String.valueOf(i));
+				testPut(l, testdata);
+			}
 
-		testListKeys(bucket, 20);
+			testListKeys(bucket, 20);
 
-		for (int i = 0; i < 20; i++) {
-			Location l = new Location(bucket, String.valueOf(i));
-			testDelete(l);
+		} finally {
+			for (int i = 0; i < 20; i++) {
+				Location l = new Location(bucket, String.valueOf(i));
+				testDelete(l);
+			}
 		}
 	}
 
@@ -551,21 +558,23 @@ public class PbcRiakOperationsTest {
 	@Test
 	public void testMapReduce() throws Exception {
 		String bucket = "testMapReduce";
-		for (int i = 0; i < 20; i++) {
-			Location l = new Location(bucket, String.valueOf(i));
-			int val = i + 10;
-			testPut(l, String.valueOf(val));
-		}
+		try {
+			for (int i = 0; i < 20; i++) {
+				Location l = new Location(bucket, String.valueOf(i));
+				int val = i + 10;
+				testPut(l, String.valueOf(val));
+			}
 
-		testMapReduce(bucket, 20);
-
-		for (int i = 0; i < 20; i++) {
-			Location l = new Location(bucket, String.valueOf(i));
-			testDelete(l);
+			testMapReduce(bucket);
+		} finally {
+			for (int i = 0; i < 20; i++) {
+				Location l = new Location(bucket, String.valueOf(i));
+				testDelete(l);
+			}
 		}
 	}
 
-	public void testMapReduce(final String bucket, int keys) throws Exception {
+	public void testMapReduce(final String bucket) throws Exception {
 		final AtomicBoolean waiter = new AtomicBoolean(false);
 		final boolean[] is = { false };
 
@@ -604,6 +613,81 @@ public class PbcRiakOperationsTest {
 
 		wait(waiter, is);
 		assertEquals(165, actual[0]);
+	}
+
+	@Test
+	public void testMapReduceByRawJson() throws Exception {
+		String bucket = "testMapReduceByRawJson";
+		for (int i = 0; i < 20; i++) {
+			Location l = new Location(bucket, String.valueOf(i));
+			int val = i + 10;
+			testPut(l, String.valueOf(val));
+		}
+		try {
+			testMapReduceByRawJson(JsonUtil.getJsonPath(
+					PbcRiakOperationsTest.class, "testMapReduceByRawJson"));
+		} finally {
+			for (int i = 0; i < 20; i++) {
+				Location l = new Location(bucket, String.valueOf(i));
+				testDelete(l);
+			}
+		}
+	}
+
+	public void testMapReduceByRawJson(final String path) throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		final int[] actual = new int[1];
+		target.mapReduce(loadJson(path),
+				new RiakResponseHandler<MapReduceResponse>() {
+					@Override
+					public void onError(RiakResponse response)
+							throws RiakException {
+						waiter.compareAndSet(false, true);
+					}
+
+					@Override
+					public void handle(
+							RiakContentsResponse<MapReduceResponse> response)
+							throws RiakException {
+						if (response.getContents().getDone()) {
+							waiter.compareAndSet(false, true);
+							is[0] = true;
+						} else {
+							ArrayNode an = (ArrayNode) response.getContents()
+									.getResponse();
+							JsonNode jn = an.get(0);
+							actual[0] = jn.getIntValue();
+						}
+					}
+				});
+
+		wait(waiter, is);
+		assertEquals(165, actual[0]);
+	}
+
+	String loadJson(final String path) {
+		final String[] json = new String[1];
+		new Streams.using<InputStream, IOException>() {
+			@Override
+			public InputStream open() throws IOException {
+				ClassLoader cl = PbcRiakOperationsTest.class.getClassLoader();
+				return cl.getResourceAsStream(path);
+			}
+
+			@Override
+			public void handle(InputStream stream) throws IOException {
+				json[0] = Streams.readText(stream);
+			}
+
+			@Override
+			public void happen(IOException exception) {
+				throw new Streams.IORuntimeException(exception);
+			}
+
+		};
+		return json[0];
 	}
 
 	@Test

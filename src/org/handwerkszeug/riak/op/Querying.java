@@ -19,4 +19,10 @@ public interface Querying {
 	 */
 	RiakFuture mapReduce(MapReduceQueryConstructor constructor,
 			RiakResponseHandler<MapReduceResponse> handler);
+
+	/**
+	 * @see <a href="http://wiki.basho.com/MapReduce.html">MapReduce</a>
+	 */
+	RiakFuture mapReduce(String rawJson,
+			RiakResponseHandler<MapReduceResponse> handler);
 }
