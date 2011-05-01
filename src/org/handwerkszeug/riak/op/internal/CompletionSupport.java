@@ -97,20 +97,10 @@ public class CompletionSupport implements ChannelFutureListener {
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx,
 				final ExceptionEvent e) throws Exception {
-			users.handle(new AbstractRiakResponse<T>() {
-				@Override
-				public boolean isErrorResponse() {
-					return true;
-				}
-
+			users.onError(new AbstractRiakResponse() {
 				@Override
 				public String getMessage() {
 					return e.getCause().getMessage();
-				}
-
-				@Override
-				public T getResponse() {
-					return null;
 				}
 
 				@Override

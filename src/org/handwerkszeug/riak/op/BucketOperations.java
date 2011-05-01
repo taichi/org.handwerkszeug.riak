@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.model.Bucket;
+import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
 
 /**
@@ -20,7 +21,7 @@ public interface BucketOperations {
 	 */
 	RiakFuture listBuckets(RiakResponseHandler<List<String>> handler);
 
-	RiakFuture listKeys(String bucket, KeyHandler handler);
+	RiakFuture listKeys(String bucket, RiakResponseHandler<KeyResponse> handler);
 
 	RiakFuture getBucket(String bucket, RiakResponseHandler<Bucket> handler);
 

@@ -1,7 +1,6 @@
 package org.handwerkszeug.riak.pbc;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -9,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakAction;
 import org.handwerkszeug.riak.RiakException;
-import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.junit.After;
@@ -38,13 +37,19 @@ public class PbcRiakClientTest {
 		target.execute(new RiakAction<PbcRiakOperations>() {
 			@Override
 			public void execute(PbcRiakOperations operations) {
-				operations.ping(new RiakResponseHandler<_>() {
+				operations.ping(new RiakResponseHandler<String>() {
 					@Override
-					public void handle(RiakResponse<_> response)
+					public void onError(RiakResponse response)
+							throws RiakException {
+						response.operationComplete();
+						waiter.compareAndSet(false, true);
+					}
+
+					@Override
+					public void handle(RiakContentsResponse<String> response)
 							throws RiakException {
 						try {
-							assertFalse(response.isErrorResponse());
-							assertEquals("pong", response.getMessage());
+							assertEquals("pong", response.getResponse());
 							is[0] = true;
 						} finally {
 							response.operationComplete();

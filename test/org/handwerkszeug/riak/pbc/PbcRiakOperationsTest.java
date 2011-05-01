@@ -1,7 +1,6 @@
 package org.handwerkszeug.riak.pbc;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -29,12 +28,13 @@ import org.handwerkszeug.riak.model.DefaultGetOptions;
 import org.handwerkszeug.riak.model.DefaultPutOptions;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.Erlang;
+import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.Quorum;
+import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.model.ServerInfo;
-import org.handwerkszeug.riak.op.KeyHandler;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -74,12 +74,17 @@ public class PbcRiakOperationsTest {
 		final AtomicBoolean waiter = new AtomicBoolean(false);
 
 		final boolean[] is = { false };
-		this.target.ping(new RiakResponseHandler<_>() {
+		this.target.ping(new RiakResponseHandler<String>() {
 			@Override
-			public void handle(RiakResponse<_> response) throws RiakException {
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<String> response)
+					throws RiakException {
 				try {
-					assertFalse(response.isErrorResponse());
-					assertEquals("pong", response.getMessage());
+					assertEquals("pong", response.getResponse());
 					is[0] = true;
 				} finally {
 					waiter.compareAndSet(false, true);
@@ -97,7 +102,12 @@ public class PbcRiakOperationsTest {
 
 		target.listBuckets(new RiakResponseHandler<List<String>>() {
 			@Override
-			public void handle(RiakResponse<List<String>> response)
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<List<String>> response)
 					throws RiakException {
 				try {
 					List<String> keys = response.getResponse();
@@ -108,6 +118,7 @@ public class PbcRiakOperationsTest {
 				} finally {
 					waiter.compareAndSet(false, true);
 				}
+
 			}
 		});
 
@@ -136,25 +147,25 @@ public class PbcRiakOperationsTest {
 		final boolean[] is = { false };
 
 		final int[] counter = { 0 };
-		target.listKeys(bucket, new KeyHandler() {
+		target.listKeys(bucket, new RiakResponseHandler<KeyResponse>() {
 
 			@Override
-			public void handle(RiakResponse<_> response) throws RiakException {
-				if (response.isErrorResponse()) {
-					waiter.compareAndSet(false, true);
-				}
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
 			}
 
 			@Override
-			public void handleKeys(RiakResponse<List<String>> response,
-					boolean done) {
-				List<String> list = response.getResponse();
+			public void handle(RiakContentsResponse<KeyResponse> response)
+					throws RiakException {
+				KeyResponse kr = response.getResponse();
+				List<String> list = kr.getKeys();
 				counter[0] += list.size();
 
-				if (done) {
+				if (kr.getDone()) {
 					waiter.compareAndSet(false, true);
 					is[0] = true;
 				}
+
 			}
 		});
 
@@ -188,13 +199,15 @@ public class PbcRiakOperationsTest {
 
 		target.setBucket(bucket, new RiakResponseHandler<_>() {
 			@Override
-			public void handle(RiakResponse<_> response) throws RiakException {
-				try {
-					assertFalse(response.isErrorResponse());
-					is[0] = true;
-				} finally {
-					waiter.compareAndSet(false, true);
-				}
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<_> response)
+					throws RiakException {
+				is[0] = true;
+				waiter.compareAndSet(false, true);
 			}
 		});
 
@@ -208,10 +221,14 @@ public class PbcRiakOperationsTest {
 
 		target.getBucket(bucket, new RiakResponseHandler<Bucket>() {
 			@Override
-			public void handle(RiakResponse<Bucket> response)
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<Bucket> response)
 					throws RiakException {
 				try {
-					assertFalse(response.isErrorResponse());
 					assertNotNull(response.getResponse());
 					bu[0] = response.getResponse();
 					is[0] = true;
@@ -242,10 +259,16 @@ public class PbcRiakOperationsTest {
 		this.target.get(location,
 				new RiakResponseHandler<RiakObject<byte[]>>() {
 					@Override
-					public void handle(RiakResponse<RiakObject<byte[]>> response)
+					public void onError(RiakResponse response)
+							throws RiakException {
+						waiter.compareAndSet(false, true);
+					}
+
+					@Override
+					public void handle(
+							RiakContentsResponse<RiakObject<byte[]>> response)
 							throws RiakException {
 						try {
-							assertFalse(response.isErrorResponse());
 							RiakObject<byte[]> content = response.getResponse();
 							String actual = new String(content.getContent());
 							assertEquals(testdata, actual);
@@ -254,6 +277,7 @@ public class PbcRiakOperationsTest {
 							waiter.compareAndSet(false, true);
 						}
 					}
+
 				});
 
 		wait(waiter, is);
@@ -273,11 +297,16 @@ public class PbcRiakOperationsTest {
 		this.target.put(ro,
 				new RiakResponseHandler<List<RiakObject<byte[]>>>() {
 					@Override
+					public void onError(RiakResponse response)
+							throws RiakException {
+						waiter.compareAndSet(false, true);
+					}
+
+					@Override
 					public void handle(
-							RiakResponse<List<RiakObject<byte[]>>> response)
+							RiakContentsResponse<List<RiakObject<byte[]>>> response)
 							throws RiakException {
 						try {
-							assertFalse(response.isErrorResponse());
 							assertEquals(0, response.getResponse().size());
 							is[0] = true;
 						} finally {
@@ -295,13 +324,15 @@ public class PbcRiakOperationsTest {
 
 		target.delete(location, new RiakResponseHandler<_>() {
 			@Override
-			public void handle(RiakResponse<_> response) throws RiakException {
-				try {
-					assertFalse(response.isErrorResponse());
-					is[0] = true;
-				} finally {
-					waiter.compareAndSet(false, true);
-				}
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<_> response)
+					throws RiakException {
+				is[0] = true;
+				waiter.compareAndSet(false, true);
 			}
 		});
 
@@ -333,10 +364,14 @@ public class PbcRiakOperationsTest {
 			}
 		}, new RiakResponseHandler<RiakObject<byte[]>>() {
 			@Override
-			public void handle(RiakResponse<RiakObject<byte[]>> response)
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
 					throws RiakException {
 				try {
-					assertFalse(response.isErrorResponse());
 					RiakObject<byte[]> ro = response.getResponse();
 					assertEquals(location, ro.getLocation());
 					assertEquals(testdata, new String(ro.getContent()));
@@ -380,9 +415,13 @@ public class PbcRiakOperationsTest {
 			}
 
 			@Override
-			public void handle(RiakResponse<RiakObject<byte[]>> response)
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
 					throws RiakException {
-				assertFalse(response.isErrorResponse());
 				RiakObject<byte[]> ro = response.getResponse();
 				assertEquals(location, ro.getLocation());
 				assertEquals(testdata, new String(ro.getContent()));
@@ -428,10 +467,15 @@ public class PbcRiakOperationsTest {
 			}
 		}, new RiakResponseHandler<List<RiakObject<byte[]>>>() {
 			@Override
-			public void handle(RiakResponse<List<RiakObject<byte[]>>> response)
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(
+					RiakContentsResponse<List<RiakObject<byte[]>>> response)
 					throws RiakException {
 				try {
-					assertFalse(response.isErrorResponse());
 					assertEquals(1, response.getResponse().size());
 					RiakObject<byte[]> res = response.getResponse().get(0);
 					assertEquals(testdata, new String(res.getContent()));
@@ -458,13 +502,15 @@ public class PbcRiakOperationsTest {
 
 		target.delete(location, Quorum.of(2), new RiakResponseHandler<_>() {
 			@Override
-			public void handle(RiakResponse<_> response) throws RiakException {
-				try {
-					assertFalse(response.isErrorResponse());
-					is[0] = true;
-				} finally {
-					waiter.compareAndSet(false, true);
-				}
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<_> response)
+					throws RiakException {
+				is[0] = true;
+				waiter.compareAndSet(false, true);
 			}
 		});
 
@@ -506,20 +552,21 @@ public class PbcRiakOperationsTest {
 			}
 		}, new RiakResponseHandler<MapReduceResponse>() {
 			@Override
-			public void handle(RiakResponse<MapReduceResponse> response)
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<MapReduceResponse> response)
 					throws RiakException {
-				if (response.isErrorResponse()) {
+				if (response.getResponse().getDone()) {
 					waiter.compareAndSet(false, true);
+					is[0] = true;
 				} else {
-					if (response.getResponse().getDone()) {
-						waiter.compareAndSet(false, true);
-						is[0] = true;
-					} else {
-						ArrayNode an = (ArrayNode) response.getResponse()
-								.getResponse();
-						JsonNode jn = an.get(0);
-						actual[0] = jn.getIntValue();
-					}
+					ArrayNode an = (ArrayNode) response.getResponse()
+							.getResponse();
+					JsonNode jn = an.get(0);
+					actual[0] = jn.getIntValue();
 				}
 			}
 		});
@@ -537,7 +584,11 @@ public class PbcRiakOperationsTest {
 		try {
 			target.setClientId("12345", new RiakResponseHandler<_>() {
 				@Override
-				public void handle(RiakResponse<_> response)
+				public void onError(RiakResponse response) throws RiakException {
+				}
+
+				@Override
+				public void handle(RiakContentsResponse<_> response)
 						throws RiakException {
 				}
 			});
@@ -553,13 +604,15 @@ public class PbcRiakOperationsTest {
 
 		this.target.setClientId(id, new RiakResponseHandler<_>() {
 			@Override
-			public void handle(RiakResponse<_> response) throws RiakException {
-				try {
-					assertFalse(response.isErrorResponse());
-					is[0] = true;
-				} finally {
-					waiter.compareAndSet(false, true);
-				}
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<_> response)
+					throws RiakException {
+				is[0] = true;
+				waiter.compareAndSet(false, true);
 			}
 		});
 
@@ -572,15 +625,17 @@ public class PbcRiakOperationsTest {
 
 		this.target.getClientId(new RiakResponseHandler<String>() {
 			@Override
-			public void handle(RiakResponse<String> response)
-					throws RiakException {
-				try {
-					assertEquals(id, response.getResponse());
-					is[0] = true;
-				} finally {
-					waiter.compareAndSet(false, true);
-				}
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
 			}
+
+			@Override
+			public void handle(RiakContentsResponse<String> response)
+					throws RiakException {
+				is[0] = true;
+				waiter.compareAndSet(false, true);
+			}
+
 		});
 
 		wait(waiter, is);
@@ -593,7 +648,12 @@ public class PbcRiakOperationsTest {
 
 		this.target.getServerInfo(new RiakResponseHandler<ServerInfo>() {
 			@Override
-			public void handle(RiakResponse<ServerInfo> response)
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<ServerInfo> response)
 					throws RiakException {
 				try {
 					ServerInfo info = response.getResponse();

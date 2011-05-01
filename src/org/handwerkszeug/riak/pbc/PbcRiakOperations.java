@@ -31,17 +31,18 @@ import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.GetOptions;
+import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.Quorum;
+import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.ServerInfo;
 import org.handwerkszeug.riak.model.internal.AbstractRiakResponse;
 import org.handwerkszeug.riak.model.internal.DefaultRiakObjectResponse;
 import org.handwerkszeug.riak.nls.Messages;
-import org.handwerkszeug.riak.op.KeyHandler;
 import org.handwerkszeug.riak.op.Querying;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
@@ -123,7 +124,8 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	@Override
-	public RiakFuture listKeys(String bucket, final KeyHandler handler) {
+	public RiakFuture listKeys(String bucket,
+			final RiakResponseHandler<KeyResponse> handler) {
 		notNull(bucket, "bucket");
 		notNull(handler, "handler");
 
@@ -136,18 +138,17 @@ public class PbcRiakOperations implements RiakOperations {
 						if (receive instanceof RpbListKeysResp) {
 							RpbListKeysResp resp = (RpbListKeysResp) receive;
 							boolean done = resp.getDone();
-							final List<String> list = new ArrayList<String>(
-									resp.getKeysCount());
+							List<String> list = new ArrayList<String>(resp
+									.getKeysCount());
 							for (ByteString bs : resp.getKeysList()) {
 								list.add(to(bs));
 							}
-							handler.handleKeys(
-									new PbcRiakResponse<List<String>>() {
-										@Override
-										public List<String> getResponse() {
-											return list;
-										}
-									}, done);
+							final KeyResponse kr = new KeyResponse(list, done);
+							handler.handle(new PbcRiakResponse<KeyResponse>() {
+								public KeyResponse getResponse() {
+									return kr;
+								};
+							});
 							return done;
 						}
 						return true;
@@ -310,21 +311,15 @@ public class PbcRiakOperations implements RiakOperations {
 					RpbGetResp resp = (RpbGetResp) receive;
 					int size = resp.getContentCount();
 					if (size < 1) {
-						handler.handle(new PbcRiakResponse<RiakObject<byte[]>>() {
-							@Override
-							public boolean isErrorResponse() {
-								return true;
-							}
-
-							@Override
+						handler.onError(new AbstractRiakResponse() {
 							public String getMessage() {
 								return String.format(Messages.NoContents,
 										location);
 							}
 
 							@Override
-							public RiakObject<byte[]> getResponse() {
-								return null;
+							public void operationComplete() {
+								complete();
 							}
 						});
 					} else {
@@ -664,7 +659,7 @@ public class PbcRiakOperations implements RiakOperations {
 							RpbMapRedResp resp = (RpbMapRedResp) receive;
 							final PbcMapReduceResponse response = new PbcMapReduceResponse(
 									resp);
-							handler.handle(new AbstractRiakResponse<MapReduceResponse>() {
+							handler.handle(new PbcRiakResponse<MapReduceResponse>() {
 								@Override
 								public MapReduceResponse getResponse() {
 									return response;
@@ -683,15 +678,15 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	@Override
-	public RiakFuture ping(final RiakResponseHandler<_> handler) {
+	public RiakFuture ping(final RiakResponseHandler<String> handler) {
 		return handle("ping", MessageCodes.RpbPingReq, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) {
 						if (MessageCodes.RpbPingResp.equals(receive)) {
-							handler.handle(new NoOpResponse() {
+							handler.handle(new PbcRiakResponse<String>() {
 								@Override
-								public String getMessage() {
+								public String getResponse() {
 									return "pong";
 								}
 							});
@@ -779,7 +774,7 @@ public class PbcRiakOperations implements RiakOperations {
 					public boolean handle(Object receive) {
 						if (receive instanceof RpbErrorResp) {
 							RpbErrorResp error = (RpbErrorResp) receive;
-							users.handle(new PbcErrorResponse<T>(error) {
+							users.onError(new PbcErrorResponse<T>(error) {
 								@Override
 								public void operationComplete() {
 									complete();
@@ -793,7 +788,8 @@ public class PbcRiakOperations implements RiakOperations {
 				});
 	}
 
-	abstract class PbcRiakResponse<T> extends AbstractRiakResponse<T> {
+	abstract class PbcRiakResponse<T> extends AbstractRiakResponse implements
+			RiakContentsResponse<T> {
 		@Override
 		public void operationComplete() {
 			complete();

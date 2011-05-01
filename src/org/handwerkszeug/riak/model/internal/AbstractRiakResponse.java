@@ -5,14 +5,9 @@ import org.handwerkszeug.riak.model.RiakResponse;
 /**
  * @author taichi
  */
-public abstract class AbstractRiakResponse<T> implements RiakResponse<T> {
+public abstract class AbstractRiakResponse implements RiakResponse {
 
 	public AbstractRiakResponse() {
-	}
-
-	@Override
-	public boolean isErrorResponse() {
-		return false;
 	}
 
 	@Override

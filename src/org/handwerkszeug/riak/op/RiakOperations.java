@@ -16,7 +16,7 @@ public interface RiakOperations extends BucketOperations, ObjectKeyOperations,
 	 * @param handler
 	 * @return
 	 */
-	RiakFuture ping(RiakResponseHandler<_> handler);
+	RiakFuture ping(RiakResponseHandler<String> handler);
 
 	/**
 	 * Get the client id used for this connection. Client ids are used for

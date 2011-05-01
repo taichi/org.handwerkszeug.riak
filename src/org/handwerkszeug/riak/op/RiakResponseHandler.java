@@ -1,6 +1,7 @@
 package org.handwerkszeug.riak.op;
 
 import org.handwerkszeug.riak.RiakException;
+import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakResponse;
 
 /**
@@ -11,5 +12,7 @@ import org.handwerkszeug.riak.model.RiakResponse;
  */
 public interface RiakResponseHandler<T> {
 
-	void handle(RiakResponse<T> response) throws RiakException;
+	void onError(RiakResponse response) throws RiakException;
+
+	void handle(RiakContentsResponse<T> response) throws RiakException;
 }

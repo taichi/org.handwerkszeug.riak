@@ -5,17 +5,12 @@ import org.handwerkszeug.riak.model.internal.AbstractRiakResponse;
 /**
  * @author taichi
  */
-public abstract class PbcErrorResponse<T> extends AbstractRiakResponse<T> {
+public abstract class PbcErrorResponse<T> extends AbstractRiakResponse {
 
 	final Riakclient.RpbErrorResp error;
 
 	public PbcErrorResponse(Riakclient.RpbErrorResp error) {
 		this.error = error;
-	}
-
-	@Override
-	public boolean isErrorResponse() {
-		return true;
 	}
 
 	@Override
@@ -28,8 +23,4 @@ public abstract class PbcErrorResponse<T> extends AbstractRiakResponse<T> {
 		return this.error.getErrmsg().toStringUtf8();
 	}
 
-	@Override
-	public T getResponse() {
-		throw new UnsupportedOperationException();
-	}
 }
