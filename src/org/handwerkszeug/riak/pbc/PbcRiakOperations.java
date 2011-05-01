@@ -689,7 +689,15 @@ public class PbcRiakOperations implements RiakOperations {
 				});
 	}
 
-	@Override
+	/**
+	 * Get the client id used for this connection. Client ids are used for
+	 * conflict resolution and each unique actor in the system should be
+	 * assigned one. A client id is assigned randomly when the socket is
+	 * connected and can be changed using SetClientId below.
+	 * 
+	 * @param handler
+	 * @return
+	 */
 	public RiakFuture getClientId(final RiakResponseHandler<String> handler) {
 		return handle("getClientId", MessageCodes.RpbGetClientIdReq, handler,
 				new NettyUtil.MessageHandler() {
@@ -711,10 +719,16 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	/**
+	 * Set the client id for this connection. A library may want to set the
+	 * client id if it has a good way to uniquely identify actors across
+	 * reconnects. This will reduce vector clock bloat.
+	 * 
+	 * @param id
+	 * @param handler
+	 * @return
 	 * @see <a
 	 *      href="https://github.com/basho/riak_kv/blob/master/src/riak.erl">riak.erl</a>
 	 */
-	@Override
 	public RiakFuture setClientId(String id,
 			final RiakResponseHandler<_> handler) {
 		byte[] bytes = id.getBytes();
@@ -735,7 +749,12 @@ public class PbcRiakOperations implements RiakOperations {
 				});
 	}
 
-	@Override
+	/**
+	 * get server information.
+	 * 
+	 * @param handler
+	 * @return
+	 */
 	public RiakFuture getServerInfo(
 			final RiakResponseHandler<ServerInfo> handler) {
 		return handle("getServerInfo", MessageCodes.RpbGetServerInfoReq,

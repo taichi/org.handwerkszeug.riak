@@ -30,6 +30,8 @@ public class Hosts {
 
 	public static int RIAK_PB_PORT = 8087;
 
+	public static int RIAK_HTTP_PORT = 8098;
+
 	public static String RIAK_URL = "http://127.0.0.1:8098/riak";
 
 	static {
@@ -43,11 +45,14 @@ public class Hosts {
 			RIAK_PB_PORT = Integer.valueOf(prop.getProperty("pb.port",
 					String.valueOf(RIAK_PB_PORT)));
 
+			RIAK_HTTP_PORT = Integer.valueOf(prop.getProperty("http.port",
+					String.valueOf(RIAK_HTTP_PORT)));
+
 			StringBuilder stb = new StringBuilder();
 			stb.append("http://");
 			stb.append(RIAK_HOST);
 			stb.append(":");
-			stb.append(prop.getProperty("http.port", "8098"));
+			stb.append(RIAK_HTTP_PORT);
 			stb.append("/riak");
 			RIAK_URL = stb.toString();
 		} catch (IOException e) {
@@ -55,12 +60,16 @@ public class Hosts {
 		}
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(Markers.BOUNDARY, "RIAK_HOST    {}", RIAK_HOST);
-			LOG.debug(Markers.BOUNDARY, "RIAK_PB_PORT {}", RIAK_PB_PORT);
+			LOG.debug(Markers.BOUNDARY, "RIAK_PORT PB {} HTTP {}",
+					RIAK_PB_PORT, RIAK_HTTP_PORT);
 			LOG.debug(Markers.BOUNDARY, "RIAK_URL     {}", RIAK_URL);
 		}
 	}
 
-	public static InetSocketAddress RIAK_ADDR = new InetSocketAddress(
+	public static InetSocketAddress RIAK_PB_ADDR = new InetSocketAddress(
 			RIAK_HOST, RIAK_PB_PORT);
+
+	public static InetSocketAddress RIAK_HTTP_ADDR = new InetSocketAddress(
+			RIAK_HOST, RIAK_HTTP_PORT);
 
 }

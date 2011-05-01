@@ -21,7 +21,7 @@ public class PbcRiakClientTest {
 
 	@Before
 	public void setUp() throws Exception {
-		target = new PbcRiakClient(Hosts.RIAK_ADDR);
+		target = new PbcRiakClient(Hosts.RIAK_PB_ADDR);
 	}
 
 	@After
