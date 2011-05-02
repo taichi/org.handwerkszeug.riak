@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -91,6 +92,7 @@ public abstract class RiakOperationsTest {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
 				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -117,6 +119,7 @@ public abstract class RiakOperationsTest {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
 				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -168,6 +171,7 @@ public abstract class RiakOperationsTest {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
 				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -217,6 +221,7 @@ public abstract class RiakOperationsTest {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
 				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -239,6 +244,7 @@ public abstract class RiakOperationsTest {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
 				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -278,6 +284,7 @@ public abstract class RiakOperationsTest {
 					public void onError(RiakResponse response)
 							throws RiakException {
 						waiter.compareAndSet(false, true);
+						fail(response.getMessage());
 					}
 
 					@Override
@@ -316,6 +323,7 @@ public abstract class RiakOperationsTest {
 					public void onError(RiakResponse response)
 							throws RiakException {
 						waiter.compareAndSet(false, true);
+						fail(response.getMessage());
 					}
 
 					@Override
@@ -342,6 +350,7 @@ public abstract class RiakOperationsTest {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
 				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -382,6 +391,7 @@ public abstract class RiakOperationsTest {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
 				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -424,6 +434,7 @@ public abstract class RiakOperationsTest {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
 				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -462,6 +473,7 @@ public abstract class RiakOperationsTest {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
 				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -514,6 +526,7 @@ public abstract class RiakOperationsTest {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
 				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -549,6 +562,7 @@ public abstract class RiakOperationsTest {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
 				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -601,6 +615,7 @@ public abstract class RiakOperationsTest {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
 				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -652,6 +667,7 @@ public abstract class RiakOperationsTest {
 					public void onError(RiakResponse response)
 							throws RiakException {
 						waiter.compareAndSet(false, true);
+						fail(response.getMessage());
 					}
 
 					@Override

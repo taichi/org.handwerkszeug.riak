@@ -22,6 +22,8 @@ public interface RiakObject<T> {
 
 	void setVectorClock(String clock);
 
+	String DEFAULT_CONTENT_TYPE = "text/plain";
+
 	String getContentType();
 
 	void setContentType(String contentType);

@@ -21,4 +21,16 @@ public class Link {
 	public String getTag() {
 		return this.tag;
 	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("Link [location=");
+		builder.append(location);
+		builder.append(", tag=");
+		builder.append(tag);
+		builder.append("]");
+		return builder.toString();
+	}
+
 }

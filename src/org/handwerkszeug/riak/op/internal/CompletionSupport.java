@@ -64,15 +64,21 @@ public class CompletionSupport implements ChannelFutureListener {
 			public void messageReceived(ChannelHandlerContext ctx,
 					MessageEvent e) throws Exception {
 				ChannelPipeline pipeline = e.getChannel().getPipeline();
-				Object receive = e.getMessage();
-				if (LOG.isDebugEnabled()) {
-					LOG.debug(Markers.DETAIL, Messages.Receive, name, receive);
-				}
-				if (handler.handle(receive)) {
+				try {
+					Object receive = e.getMessage();
+					if (LOG.isDebugEnabled()) {
+						LOG.debug(Markers.DETAIL, Messages.Receive, name,
+								receive);
+					}
+					if (handler.handle(receive)) {
+						pipeline.remove(name);
+						progress.decrementAndGet();
+					}
+					e.getFuture().addListener(CompletionSupport.this);
+				} catch (Exception ex) {
 					pipeline.remove(name);
-					progress.decrementAndGet();
+					throw ex;
 				}
-				e.getFuture().addListener(CompletionSupport.this);
 			}
 		});
 

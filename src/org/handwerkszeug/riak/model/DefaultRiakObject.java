@@ -14,7 +14,7 @@ public class DefaultRiakObject implements RiakObject<byte[]> {
 	private Location location;
 	private byte[] content;
 	private String vectorClock;
-	private String contentType;
+	private String contentType = DEFAULT_CONTENT_TYPE;
 	private String charset;
 	private String contentEncoding;
 	private String vtag;

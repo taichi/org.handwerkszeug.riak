@@ -4,18 +4,22 @@ import java.util.concurrent.TimeUnit;
 
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
 /**
  * @author taichi
  */
 public class NettyUtil {
 
+	private NettyUtil() {
+	}
+
 	public interface MessageHandler {
 		/**
 		 * @param receive
 		 * @return true : handle finished / false : do more handle.
 		 */
-		boolean handle(Object receive);
+		boolean handle(Object receive) throws Exception;
 	}
 
 	public static class FutureAdapter implements RiakFuture {
@@ -39,4 +43,13 @@ public class NettyUtil {
 		}
 	}
 
+	public static boolean isError(HttpResponseStatus status) {
+		int i = status.getCode();
+		return 400 <= i && i <= 599;
+	}
+
+	public static boolean isSuccessful(HttpResponseStatus status) {
+		int i = status.getCode();
+		return 200 <= i && i <= 299;
+	}
 }

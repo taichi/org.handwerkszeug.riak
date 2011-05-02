@@ -104,7 +104,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return handle("listBuckets", MessageCodes.RpbListBucketsReq, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbListBucketsResp) {
 							RpbListBucketsResp resp = (RpbListBucketsResp) receive;
 							final List<String> list = new ArrayList<String>(
@@ -135,7 +135,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return handle("listKeys", request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbListKeysResp) {
 							RpbListKeysResp resp = (RpbListKeysResp) receive;
 							boolean done = resp.getDone();
@@ -168,7 +168,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return handle("getBucket", request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbGetBucketResp) {
 							RpbGetBucketResp resp = (RpbGetBucketResp) receive;
 							RpbBucketProps props = resp.getProps();
@@ -202,7 +202,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return handle("setBucket", request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbSetBucketResp.equals(receive)) {
 							handler.handle(new NoOpResponse());
 						}
@@ -245,7 +245,7 @@ public class PbcRiakOperations implements RiakOperations {
 			final RiakResponseHandler<RiakObject<byte[]>> handler) {
 		return _get("get/single", builder, location, handler, new GetHandler() {
 			@Override
-			public void handle(RpbGetResp resp, String vclock) {
+			public void handle(RpbGetResp resp, String vclock) throws Exception {
 				int size = resp.getContentCount();
 				if (1 < size) {
 					LOG.warn(Markers.BOUNDARY, Messages.SiblingExists, vclock,
@@ -269,7 +269,8 @@ public class PbcRiakOperations implements RiakOperations {
 		return _get("get/sibling", builder, location, handler,
 				new GetHandler() {
 					@Override
-					public void handle(RpbGetResp resp, String vclock) {
+					public void handle(RpbGetResp resp, String vclock)
+							throws Exception {
 						try {
 							handler.begin();
 							for (RpbContent c : resp.getContentList()) {
@@ -285,7 +286,7 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	interface GetHandler {
-		void handle(RpbGetResp resp, String vclock);
+		void handle(RpbGetResp resp, String vclock) throws Exception;
 	}
 
 	protected RiakFuture _get(String name, RpbGetReq.Builder builder,
@@ -297,7 +298,7 @@ public class PbcRiakOperations implements RiakOperations {
 				.setKey(ByteString.copyFromUtf8(location.getKey())).build();
 		return handle(name, request, handler, new NettyUtil.MessageHandler() {
 			@Override
-			public boolean handle(Object receive) {
+			public boolean handle(Object receive) throws Exception {
 				if (receive instanceof RpbGetResp) {
 					RpbGetResp resp = (RpbGetResp) receive;
 					int size = resp.getContentCount();
@@ -415,7 +416,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return handle("put", builder.build(), handler,
 				new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbPutResp) {
 							handler.handle(new PbcRiakResponse<List<RiakObject<byte[]>>>() {
 								@Override
@@ -454,7 +455,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return handle("put/opt", builder.build(), handler,
 				new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbPutResp) {
 							RpbPutResp resp = (RpbPutResp) receive;
 							final List<RiakObject<byte[]>> list = new ArrayList<RiakObject<byte[]>>(
@@ -575,7 +576,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return handle(name, builder.build(), handler,
 				new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbDelResp.equals(receive)) {
 							handler.handle(new NoOpResponse());
 						}
@@ -652,7 +653,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return handle("mapReduce", request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbMapRedResp) {
 							RpbMapRedResp resp = (RpbMapRedResp) receive;
 							final PbcMapReduceResponse response = new PbcMapReduceResponse(
@@ -675,7 +676,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return handle("ping", MessageCodes.RpbPingReq, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbPingResp.equals(receive)) {
 							handler.handle(new PbcRiakResponse<String>() {
 								@Override
@@ -702,7 +703,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return handle("getClientId", MessageCodes.RpbGetClientIdReq, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbGetClientIdResp) {
 							RpbGetClientIdResp resp = (RpbGetClientIdResp) receive;
 							final String cid = to(resp.getClientId());
@@ -740,7 +741,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return handle("setClientId", request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbSetClientIdResp.equals(receive)) {
 							handler.handle(new NoOpResponse());
 						}
@@ -760,7 +761,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return handle("getServerInfo", MessageCodes.RpbGetServerInfoReq,
 				handler, new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbGetServerInfoResp) {
 							RpbGetServerInfoResp resp = (RpbGetServerInfoResp) receive;
 							final ServerInfo info = new ServerInfo(to(resp
@@ -783,7 +784,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return this.support.handle(name, send, users,
 				new NettyUtil.MessageHandler() {
 					@Override
-					public boolean handle(Object receive) {
+					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbErrorResp) {
 							RpbErrorResp error = (RpbErrorResp) receive;
 							users.onError(new PbcErrorResponse<T>(error));
