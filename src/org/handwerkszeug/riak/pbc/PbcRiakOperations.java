@@ -15,11 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 import net.iharder.Base64;
 
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
@@ -607,28 +602,16 @@ public class PbcRiakOperations implements RiakOperations {
 		notNull(constructor, "constructor");
 		notNull(handler, "handler");
 
-		try {
-			DefaultMapReduceQuery query = new DefaultMapReduceQuery();
-			constructor.cunstruct(query);
-			RpbMapRedReq.Builder builder = RpbMapRedReq.newBuilder();
-			builder.setContentType(PbcJobEncoding);
-			Output out = ByteString.newOutput();
-			// TODO set JsonGenerator to prepare ?
-			JsonNode node = query.prepare();
-			if (LOG.isDebugEnabled()) {
-				LOG.debug(Markers.BOUNDARY, node.toString());
-			}
-			JsonFactory factory = new JsonFactory(new ObjectMapper());
-			JsonGenerator gen = factory.createJsonGenerator(out,
-					JsonEncoding.UTF8);
-			gen.writeTree(node);
-			gen.close();
-			ByteString byteJson = out.toByteString();
-			builder.setRequest(byteJson);
-			return mapReduce(builder.build(), handler);
-		} catch (IOException e) {
-			throw new RiakException(e);
-		}
+		DefaultMapReduceQuery query = new DefaultMapReduceQuery();
+		constructor.cunstruct(query);
+		RpbMapRedReq.Builder builder = RpbMapRedReq.newBuilder();
+		builder.setContentType(PbcJobEncoding);
+		Output out = ByteString.newOutput();
+		query.prepare(out);
+		ByteString byteJson = out.toByteString();
+		builder.setRequest(byteJson);
+
+		return mapReduce(builder.build(), handler);
 	}
 
 	@Override

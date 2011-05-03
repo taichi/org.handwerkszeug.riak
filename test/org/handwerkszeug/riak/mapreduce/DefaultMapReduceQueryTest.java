@@ -3,6 +3,7 @@ package org.handwerkszeug.riak.mapreduce;
 import static org.junit.Assert.assertEquals;
 
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.mapreduce.MapReduceKeyFilters.Predicates;
 import org.handwerkszeug.riak.mapreduce.MapReduceKeyFilters.Transform;
@@ -33,7 +34,7 @@ public class DefaultMapReduceQueryTest {
 	}
 
 	protected void assertJson(String expectectedJsonFile) {
-		ObjectNode act = this.target.prepare();
+		ObjectNode act = this.target.prepare(new ObjectMapper());
 		JsonNode exp = read(expectectedJsonFile);
 		assertEquals(exp, act);
 	}
