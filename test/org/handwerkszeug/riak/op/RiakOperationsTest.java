@@ -715,8 +715,12 @@ public abstract class RiakOperationsTest {
 
 	protected void wait(final AtomicBoolean waiter, final boolean[] is)
 			throws InterruptedException {
+		int counter = 0;
 		while (waiter.get() == false) {
 			Thread.sleep(10);
+			if (300 < counter++) {
+				fail("test is incomplete.");
+			}
 		}
 		assertTrue(is[0]);
 	}
