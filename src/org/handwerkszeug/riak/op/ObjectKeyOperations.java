@@ -62,6 +62,6 @@ public interface ObjectKeyOperations {
 	 *            an object. (default is set at the bucket level)
 	 * @return
 	 */
-	RiakFuture delete(Location location, Quorum quorum,
+	RiakFuture delete(Location location, Quorum readWrite,
 			RiakResponseHandler<_> handler);
 }

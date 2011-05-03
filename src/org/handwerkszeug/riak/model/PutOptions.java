@@ -2,7 +2,6 @@ package org.handwerkszeug.riak.model;
 
 import java.util.Date;
 
-
 /**
  * 
  * @author taichi
@@ -14,6 +13,12 @@ public interface PutOptions {
 	 * this is a new key or you deliberately want to create a sibling
 	 */
 	String getVectorClock();
+
+	/**
+	 * how many replicas need to agree when retrieving an existing object before
+	 * the write (default is defined by the bucket|#Set bucket properties)
+	 */
+	Quorum getReadQuorum();
 
 	/**
 	 * how many replicas to write to before returning a successful response;

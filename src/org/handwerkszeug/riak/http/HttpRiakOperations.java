@@ -28,8 +28,8 @@ public interface HttpRiakOperations extends RiakOperations, LuwakSupport {
 	/**
 	 * Stores a new object in a bucket with a random Riak-assigned key.
 	 */
-	RiakFuture post(RiakObject<byte[]> content, PutOptions options,
-			RiakResponseHandler<RiakObject<byte[]>> handler);
+	RiakFuture post(String bucket, RiakObject<byte[]> content,
+			PutOptions options, RiakResponseHandler<RiakObject<byte[]>> handler);
 
 	/**
 	 * @see <a href="http://wiki.basho.com/Links.html">Links</a>

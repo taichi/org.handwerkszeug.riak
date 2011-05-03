@@ -1,5 +1,7 @@
 package org.handwerkszeug.riak.model;
 
+import static org.handwerkszeug.riak.util.Validation.notNull;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -22,7 +24,11 @@ public class DefaultRiakObject implements RiakObject<byte[]> {
 	private Date lastModified;
 	private Map<String, String> userMetadata = Collections.emptyMap();
 
+	public DefaultRiakObject() {
+	}
+
 	public DefaultRiakObject(Location location) {
+		notNull(location, "location");
 		this.location = location;
 	}
 

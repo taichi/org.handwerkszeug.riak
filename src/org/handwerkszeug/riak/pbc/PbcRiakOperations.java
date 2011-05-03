@@ -3,14 +3,12 @@ package org.handwerkszeug.riak.pbc;
 import static org.handwerkszeug.riak.util.Validation.notNull;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -70,6 +68,7 @@ import org.handwerkszeug.riak.pbc.Riakclient.RpbPutReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbPutResp;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbSetBucketReq;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbSetClientIdReq;
+import org.handwerkszeug.riak.util.HttpUtil;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
 import org.jboss.netty.channel.Channel;
@@ -236,7 +235,6 @@ public class PbcRiakOperations implements RiakOperations {
 			builder.setR(options.getReadQuorum().getInteger());
 		}
 		// TODO PR support.
-		// TODO emulate other options.
 		return builder;
 	}
 
@@ -375,11 +373,8 @@ public class PbcRiakOperations implements RiakOperations {
 		o.setLastModified(c.getTime());
 
 		if (LOG.isDebugEnabled()) {
-			SimpleDateFormat fmt = new SimpleDateFormat(
-					"EEE, d MMM yyyy HH:mm:ss z", Locale.ENGLISH);
-			fmt.setCalendar(c);
 			LOG.debug(Markers.DETAIL, Messages.LastModified,
-					fmt.format(c.getTime()));
+					HttpUtil.format(c.getTime()));
 		}
 
 		Map<String, String> map = new HashMap<String, String>(
@@ -592,14 +587,14 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	@Override
-	public RiakFuture delete(Location location, Quorum quorum,
+	public RiakFuture delete(Location location, Quorum readWrite,
 			RiakResponseHandler<_> handler) {
 		notNull(location, "location");
-		notNull(quorum, "quorum");
+		notNull(readWrite, "readWrite");
 		notNull(handler, "handler");
 
 		RpbDelReq.Builder builder = buildDeleteRequest(location);
-		builder.setRw(quorum.getInteger());
+		builder.setRw(readWrite.getInteger());
 		return _delete("delete/quorum", handler, builder);
 	}
 

@@ -8,9 +8,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -27,6 +31,7 @@ import org.handwerkszeug.riak.http.RiakHttpHeaders;
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
 import org.handwerkszeug.riak.model.Bucket;
+import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.GetOptions;
 import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.Link;
@@ -37,7 +42,9 @@ import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
+import org.handwerkszeug.riak.model.internal.AbstractRiakObjectResponse;
 import org.handwerkszeug.riak.model.internal.AbstractRiakResponse;
+import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.op.internal.CompletionSupport;
@@ -57,6 +64,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.codec.http.QueryStringEncoder;
 import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -323,15 +331,133 @@ public class RestRiakOperations implements HttpRiakOperations {
 	@Override
 	public RiakFuture get(Location location,
 			RiakResponseHandler<RiakObject<byte[]>> handler) {
-		// TODO Auto-generated method stub
-		return null;
+		notNull(location, "location");
+		notNull(handler, "handler");
+
+		return getSingle(buildGetRequst(location), location, handler);
 	}
 
 	@Override
 	public RiakFuture get(Location location, GetOptions options,
 			RiakResponseHandler<RiakObject<byte[]>> handler) {
-		// TODO Auto-generated method stub
-		return null;
+		notNull(location, "location");
+		notNull(options, "options");
+		notNull(handler, "handler");
+
+		return getSingle(buildGetRequst(location, options), location, handler);
+	}
+
+	protected HttpRequest buildGetRequst(Location location) {
+		HttpRequest request = build(
+				"/" + location.getBucket() + "/" + location.getKey(),
+				HttpMethod.GET);
+		return request;
+	}
+
+	protected HttpRequest buildGetRequst(Location location, GetOptions options) {
+		HttpRequest request = buildGetRequst(location);
+		QueryStringEncoder params = new QueryStringEncoder(request.getUri());
+		if (options.getReadQuorum() != null) {
+			params.addParam("r", options.getReadQuorum().getString());
+		}
+		// TODO PR support.
+
+		if (StringUtil.isEmpty(options.getIfNoneMatch()) == false) {
+			request.setHeader(HttpHeaders.Names.IF_NONE_MATCH,
+					options.getIfNoneMatch());
+		}
+
+		if (StringUtil.isEmpty(options.getIfMatch()) == false) {
+			request.setHeader(HttpHeaders.Names.IF_MATCH, options.getIfMatch());
+		}
+
+		if (options.getIfModifiedSince() != null) {
+			request.setHeader(HttpHeaders.Names.IF_MODIFIED_SINCE,
+					HttpUtil.format(options.getIfModifiedSince()));
+		}
+
+		request.setUri(params.toString());
+		return request;
+	}
+
+	protected RiakFuture getSingle(HttpRequest request,
+			final Location location,
+			final RiakResponseHandler<RiakObject<byte[]>> handler) {
+
+		return handle("get/single", request, handler,
+				new NettyUtil.ChunkedMessageAggregator(
+						new NettyUtil.ChunkedMessageHandler() {
+							@Override
+							public void handle(HttpResponse response,
+									ChannelBuffer buffer) throws Exception {
+								RiakObject<byte[]> ro = convert(response,
+										buffer, location);
+								handler.handle(new RestRiakObjectResponse(ro));
+							}
+						}));
+	}
+
+	protected RiakObject<byte[]> convert(HttpResponse response,
+			ChannelBuffer buffer, Location location) {
+		DefaultRiakObject ro = new DefaultRiakObject(location);
+		ro.setContent(buffer.array());
+
+		ro.setVectorClock(response.getHeader(RiakHttpHeaders.VECTOR_CLOCK));
+
+		ro.setContentType(response.getHeader(HttpHeaders.Names.CONTENT_TYPE));
+
+		// NOP ro.setCharset(charset);
+
+		ro.setContentEncoding(response
+				.getHeader(HttpHeaders.Names.CONTENT_ENCODING));
+
+		// NOP ro.setVtag(vtag);
+
+		List<String> links = response.getHeaders(RiakHttpHeaders.LINK);
+		ro.setLinks(parse(links));
+
+		String lastmod = response.getHeader(HttpHeaders.Names.LAST_MODIFIED);
+		if (StringUtil.isEmpty(lastmod) == false) {
+			Date d = HttpUtil.parse(lastmod);
+			ro.setLastModified(d);
+			if (LOG.isDebugEnabled()) {
+				LOG.debug(Markers.DETAIL, Messages.LastModified, lastmod);
+			}
+		}
+
+		Map<String, String> map = new HashMap<String, String>();
+		for (String name : response.getHeaderNames()) {
+			if (RiakHttpHeaders.isUsermeta(name)) {
+				String key = RiakHttpHeaders.fromUsermeta(name);
+				map.put(key, response.getHeader(name));
+			}
+		}
+		ro.setUserMetadata(map);
+
+		return ro;
+	}
+
+	static final Pattern LINK_PATTERN = Pattern
+			.compile("</\\w+/(\\w+)/(\\w+)>;\\s+riaktag=\"([^\"\\r\\n]+)\"");
+	static final int LINK_BUCKET = 1;
+	static final int LINK_KEY = 2;
+	static final int LINK_TAG = 3;
+
+	protected List<Link> parse(List<String> links) {
+		List<Link> result = new ArrayList<Link>();
+		for (String raw : links) {
+			Matcher m = LINK_PATTERN.matcher(raw);
+			while (m.find()) {
+				String b = m.group(LINK_BUCKET);
+				String k = m.group(LINK_KEY);
+				String t = m.group(LINK_TAG);
+				if (b != null && k != null && t != null) {
+					Link l = new Link(new Location(b, k), t);
+					result.add(l);
+				}
+			}
+		}
+		return result;
 	}
 
 	@Override
@@ -455,15 +581,71 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	@Override
-	public RiakFuture put(RiakObject<byte[]> content, PutOptions options,
-			RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
-		// TODO Auto-generated method stub
-		return null;
+	public RiakFuture put(final RiakObject<byte[]> content, PutOptions options,
+			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
+		notNull(content, "content");
+		notNull(options, "options");
+		notNull(handler, "handler");
+
+		HttpRequest request = buildPutRequest(content, options);
+		return handle("put", request, handler,
+				new NettyUtil.ChunkedMessageAggregator(
+						new NettyUtil.ChunkedMessageHandler() {
+							@Override
+							public void handle(HttpResponse response,
+									ChannelBuffer buffer) throws Exception {
+								if (NettyUtil.isSuccessful(response.getStatus())) {
+									RiakObject<byte[]> ro = convert(response,
+											buffer, content.getLocation());
+									final List<RiakObject<byte[]>> list = new ArrayList<RiakObject<byte[]>>();
+									list.add(ro);
+									handler.handle(new RestRiakResponse<List<RiakObject<byte[]>>>() {
+										@Override
+										public List<RiakObject<byte[]>> getContents() {
+											return list;
+										}
+									});
+									return;
+								} else if (response.getStatus().getCode() == 300) {
+									// TODO multipart ?
+								}
+								throw new IllegalStateException();
+							}
+						}));
+	}
+
+	protected HttpRequest buildPutRequest(RiakObject<byte[]> content,
+			PutOptions options) {
+		HttpRequest request = buildPutRequest(content);
+
+		QueryStringEncoder params = to(options, request);
+		request.setUri(params.toString());
+		return request;
+	}
+
+	protected QueryStringEncoder to(PutOptions options, HttpRequest request) {
+		QueryStringEncoder params = new QueryStringEncoder(request.getUri());
+
+		if (options.getReadQuorum() != null) {
+			// PBC-API does't support this parameter. why not?
+			params.addParam("r", options.getReadQuorum().getString());
+		}
+		if (options.getWriteQuorum() != null) {
+			params.addParam("w", options.getWriteQuorum().getString());
+		}
+		if (options.getDurableWriteQuorum() != null) {
+			params.addParam("dw", options.getDurableWriteQuorum().getString());
+		}
+		if (options.getReturnBody()) {
+			params.addParam("returnbody",
+					String.valueOf(options.getReturnBody()));
+		}
+		return params;
 	}
 
 	@Override
-	public RiakFuture post(RiakObject<byte[]> content, PutOptions options,
-			RiakResponseHandler<RiakObject<byte[]>> handler) {
+	public RiakFuture post(String bucket, RiakObject<byte[]> content,
+			PutOptions options, RiakResponseHandler<RiakObject<byte[]>> handler) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -475,6 +657,18 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(handler, "handler");
 
 		HttpRequest request = buildDeleteRequest(location);
+		return _delete("delete", handler, request);
+	}
+
+	protected HttpRequest buildDeleteRequest(Location location) {
+		HttpRequest request = build(
+				"/" + location.getBucket() + "/" + location.getKey(),
+				HttpMethod.DELETE);
+		return request;
+	}
+
+	protected RiakFuture _delete(String name,
+			final RiakResponseHandler<_> handler, HttpRequest request) {
 		return handle("delete", request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
@@ -491,18 +685,22 @@ public class RestRiakOperations implements HttpRiakOperations {
 				});
 	}
 
-	protected HttpRequest buildDeleteRequest(Location location) {
-		HttpRequest request = build(
-				"/" + location.getBucket() + "/" + location.getKey(),
-				HttpMethod.DELETE);
-		return request;
+	@Override
+	public RiakFuture delete(Location location, Quorum readWrite,
+			RiakResponseHandler<_> handler) {
+		notNull(location, "location");
+		notNull(readWrite, "readWrite");
+
+		HttpRequest request = buildDeleteRequest(location, readWrite);
+		return _delete("delete/quorum", handler, request);
 	}
 
-	@Override
-	public RiakFuture delete(Location location, Quorum quorum,
-			RiakResponseHandler<_> handler) {
-		// TODO Auto-generated method stub
-		return null;
+	protected HttpRequest buildDeleteRequest(Location location, Quorum readWrite) {
+		HttpRequest request = buildDeleteRequest(location);
+		QueryStringEncoder params = new QueryStringEncoder(request.getUri());
+		params.addParam("rw", readWrite.getString());
+		request.setUri(params.toString());
+		return request;
 	}
 
 	@Override
@@ -567,6 +765,17 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	abstract class RestRiakResponse<T> extends AbstractRiakResponse implements
 			RiakContentsResponse<T> {
+		@Override
+		public void operationComplete() {
+			complete();
+		}
+	}
+
+	class RestRiakObjectResponse extends AbstractRiakObjectResponse {
+		public RestRiakObjectResponse(RiakObject<byte[]> ro) {
+			super(ro);
+		}
+
 		@Override
 		public void operationComplete() {
 			complete();

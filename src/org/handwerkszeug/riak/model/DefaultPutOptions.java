@@ -16,6 +16,11 @@ public class DefaultPutOptions implements PutOptions {
 	}
 
 	@Override
+	public Quorum getReadQuorum() {
+		return null;
+	}
+
+	@Override
 	public Quorum getWriteQuorum() {
 		return null;
 	}
