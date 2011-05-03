@@ -1,5 +1,7 @@
 package org.handwerkszeug.riak.pbc;
 
+import java.util.List;
+
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.Erlang;
 import org.handwerkszeug.riak.model.Function;
@@ -53,17 +55,37 @@ public class PbcBucket implements Bucket {
 	}
 
 	@Override
-	public void setPrecommit(Function erlang) {
+	public List<Function> getPrecommits() {
 		throw new UnsupportedOperationException(Messages.UnsupportedBucketProps);
 	}
 
 	@Override
-	public void setPostcommit(Erlang erlang) {
+	public void setPrecommits(List<Function> functions) {
+		throw new UnsupportedOperationException(Messages.UnsupportedBucketProps);
+	}
+
+	@Override
+	public List<Erlang> getPostcommits() {
+		throw new UnsupportedOperationException(Messages.UnsupportedBucketProps);
+	}
+
+	@Override
+	public void setPostcommits(List<Erlang> functions) {
+		throw new UnsupportedOperationException(Messages.UnsupportedBucketProps);
+	}
+
+	@Override
+	public Erlang getKeyHashFunction() {
 		throw new UnsupportedOperationException(Messages.UnsupportedBucketProps);
 	}
 
 	@Override
 	public void setKeyHashFunction(Erlang erlang) {
+		throw new UnsupportedOperationException(Messages.UnsupportedBucketProps);
+	}
+
+	@Override
+	public Erlang getLinkFunction() {
 		throw new UnsupportedOperationException(Messages.UnsupportedBucketProps);
 	}
 
@@ -108,7 +130,7 @@ public class PbcBucket implements Bucket {
 	}
 
 	@Override
-	public void setDefaultReadWriteQuorum() {
+	public void setDefaultReadWriteQuorum(Quorum quorum) {
 		throw new UnsupportedOperationException(Messages.UnsupportedBucketProps);
 	}
 

@@ -1,0 +1,32 @@
+{
+   "n_val":2,
+   "allow_mult":false,
+   "name":"bucket",
+   "last_write_wins":false,
+   "precommit":[
+
+   ],
+   "postcommit":[
+      {
+         "mod":"riak_core_util",
+         "fun":"chash_std_keyfun1"
+      },
+      {
+         "mod":"riak_core_util",
+         "fun":"chash_std_keyfun2"
+      }
+   ],
+   "chash_keyfun":{
+      "mod":"riak_core_util",
+      "fun":"chash_std_keyfun"
+   },
+   "linkfun":{
+      "mod":"riak_kv_wm_link_walker",
+      "fun":"mapreduce_linkfun"
+   },
+   "r":"all",
+   "w":"default",
+   "dw":"quorum",
+   "rw":2,
+   "backend":"storenode"
+}

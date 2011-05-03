@@ -1,0 +1,254 @@
+package org.handwerkszeug.riak.http.rest;
+
+import static org.handwerkszeug.riak.util.Validation.notNull;
+
+import java.util.List;
+
+import org.codehaus.jackson.annotate.JsonAutoDetect;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.annotate.JsonMethod;
+import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.map.annotate.JsonDeserialize;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.codehaus.jackson.map.annotate.JsonSerialize.Typing;
+import org.handwerkszeug.riak.model.Bucket;
+import org.handwerkszeug.riak.model.Erlang;
+import org.handwerkszeug.riak.model.Function;
+import org.handwerkszeug.riak.model.Quorum;
+
+/**
+ * @author taichi
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonAutoDetect(JsonMethod.NONE)
+public class JsonBucket implements Bucket {
+
+	@JsonProperty("name")
+	String name;
+
+	@JsonProperty("n_val")
+	int numberOfReplicas;
+
+	@JsonProperty("allow_mult")
+	boolean allowMulti;
+
+	@JsonProperty("last_write_wins")
+	boolean lastWriteWins;
+
+	@JsonSerialize(contentUsing = FunctionJsonSerializer.class, contentAs = Function.class, typing = Typing.STATIC)
+	@JsonDeserialize(contentUsing = FunctionJsonDeserializer.class, contentAs = Function.class)
+	@JsonProperty("precommit")
+	List<Function> precommits;
+
+	@JsonSerialize(contentUsing = FunctionJsonSerializer.class, contentAs = Erlang.class, typing = Typing.STATIC)
+	@JsonDeserialize(contentUsing = FunctionJsonDeserializer.class, contentAs = Erlang.class)
+	@JsonProperty("postcommit")
+	List<Erlang> postcommits;
+
+	@JsonSerialize(using = FunctionJsonSerializer.class)
+	@JsonDeserialize(using = FunctionJsonDeserializer.class)
+	@JsonProperty("chash_keyfun")
+	Erlang keyHashFunction;
+
+	@JsonSerialize(using = FunctionJsonSerializer.class)
+	@JsonDeserialize(using = FunctionJsonDeserializer.class)
+	@JsonProperty("linkfun")
+	Erlang linkFunction;
+
+	@JsonSerialize(using = QuorumJsonSerializer.class)
+	@JsonDeserialize(using = QuorumJsonDeserializer.class)
+	@JsonProperty("r")
+	Quorum defaultReadQuorum;
+
+	@JsonSerialize(using = QuorumJsonSerializer.class)
+	@JsonDeserialize(using = QuorumJsonDeserializer.class)
+	@JsonProperty("w")
+	Quorum defaultWriteQuorum;
+
+	@JsonSerialize(using = QuorumJsonSerializer.class)
+	@JsonDeserialize(using = QuorumJsonDeserializer.class)
+	@JsonProperty("dw")
+	Quorum defaultDurableWriteQuorum;
+
+	@JsonSerialize(using = QuorumJsonSerializer.class)
+	@JsonDeserialize(using = QuorumJsonDeserializer.class)
+	@JsonProperty("rw")
+	Quorum defaultReadWriteQuorum;
+
+	@JsonProperty("backend")
+	String backend;
+
+	public JsonBucket() {
+	}
+
+	@Override
+	public String getName() {
+		return this.name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	@Override
+	public int getNumberOfReplicas() {
+		return this.numberOfReplicas;
+	}
+
+	@Override
+	public void setNumberOfReplicas(int nval) {
+		this.numberOfReplicas = nval;
+	}
+
+	@Override
+	public boolean getAllowMulti() {
+		return this.allowMulti;
+	}
+
+	@Override
+	public void setAllowMulti(boolean allow) {
+		this.allowMulti = allow;
+	}
+
+	@Override
+	public boolean getLastWriteWins() {
+		return this.lastWriteWins;
+	}
+
+	@Override
+	public void setLastWriteWins(boolean is) {
+		this.lastWriteWins = is;
+	}
+
+	@Override
+	public List<Function> getPrecommits() {
+		return this.precommits;
+	}
+
+	@Override
+	public void setPrecommits(List<Function> functions) {
+		notNull(functions, "functions");
+		this.precommits = functions;
+	}
+
+	@Override
+	public List<Erlang> getPostcommits() {
+		return this.postcommits;
+	}
+
+	@Override
+	public void setPostcommits(List<Erlang> functions) {
+		notNull(functions, "functions");
+		this.postcommits = functions;
+	}
+
+	@Override
+	public Erlang getKeyHashFunction() {
+		return this.keyHashFunction;
+	}
+
+	@Override
+	public void setKeyHashFunction(Erlang erlang) {
+		notNull(erlang, "erlang");
+		this.keyHashFunction = erlang;
+	}
+
+	@Override
+	public Erlang getLinkFunction() {
+		return this.linkFunction;
+	}
+
+	@Override
+	public void setLinkFunction(Erlang erlang) {
+		notNull(erlang, "erlang");
+		this.linkFunction = erlang;
+	}
+
+	@Override
+	public Quorum getDefaultReadQuorum() {
+		return this.defaultReadQuorum;
+	}
+
+	@Override
+	public void setDefaultReadQuorum(Quorum quorum) {
+		notNull(quorum, "quorum");
+		this.defaultReadQuorum = quorum;
+	}
+
+	@Override
+	public Quorum getDefaultWriteQuorum() {
+		return this.defaultWriteQuorum;
+	}
+
+	@Override
+	public void setDefaultWriteQuorum(Quorum quorum) {
+		notNull(quorum, "quorum");
+		this.defaultWriteQuorum = quorum;
+	}
+
+	@Override
+	public Quorum getDefaultDurableWriteQuorum() {
+		return this.defaultDurableWriteQuorum;
+	}
+
+	@Override
+	public void setDefaultDurableWriteQuorum(Quorum quorum) {
+		notNull(quorum, "quorum");
+		this.defaultDurableWriteQuorum = quorum;
+	}
+
+	@Override
+	public Quorum getDefaultReadWriteQuorum() {
+		return this.defaultReadWriteQuorum;
+	}
+
+	@Override
+	public void setDefaultReadWriteQuorum(Quorum quorum) {
+		notNull(quorum, "quorum");
+		this.defaultReadWriteQuorum = quorum;
+	}
+
+	@Override
+	public String getBackend() {
+		return this.backend;
+	}
+
+	@Override
+	public void setBackend(String name) {
+		notNull(name, "name");
+		this.backend = name;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("RestBucket [name=");
+		builder.append(name);
+		builder.append(", numberOfReplicas=");
+		builder.append(numberOfReplicas);
+		builder.append(", allowMulti=");
+		builder.append(allowMulti);
+		builder.append(", lastWriteWins=");
+		builder.append(lastWriteWins);
+		builder.append(", precommits=");
+		builder.append(precommits);
+		builder.append(", postcommits=");
+		builder.append(postcommits);
+		builder.append(", keyHashFunction=");
+		builder.append(keyHashFunction);
+		builder.append(", linkFunction=");
+		builder.append(linkFunction);
+		builder.append(", defaultReadQuorum=");
+		builder.append(defaultReadQuorum);
+		builder.append(", defaultWriteQuorum=");
+		builder.append(defaultWriteQuorum);
+		builder.append(", defaultDurableWriteQuorum=");
+		builder.append(defaultDurableWriteQuorum);
+		builder.append(", defaultReadWriteQuorum=");
+		builder.append(defaultReadWriteQuorum);
+		builder.append(", backend=");
+		builder.append(backend);
+		builder.append("]");
+		return builder.toString();
+	}
+}

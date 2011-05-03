@@ -23,9 +23,22 @@ public class JavaScript implements Function {
 		return LANG;
 	}
 
+	public String getName() {
+		return this.name;
+	}
+
 	@Override
 	public void appendTo(ObjectNode json) {
 		json.put("name", this.name);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("JavaScript [name=");
+		builder.append(name);
+		builder.append("]");
+		return builder.toString();
 	}
 
 	// TODO list built-in functions

@@ -46,6 +46,17 @@ public class Erlang implements Function {
 		json.put("function", this.getFunction());
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("Erlang [module=");
+		builder.append(module);
+		builder.append(", function=");
+		builder.append(function);
+		builder.append("]");
+		return builder.toString();
+	}
+
 	public static Erlang riak_kv_mapreduce(String function) {
 		return new Erlang("riak_kv_mapreduce", function);
 	}
