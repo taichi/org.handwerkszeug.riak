@@ -14,6 +14,7 @@ import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.JavaType;
+import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.util.JsonUtil;
 import org.junit.Test;
 
@@ -46,8 +47,8 @@ public class JsonBucketTest {
 		assertEquals(expected, actual);
 	}
 
-	protected JsonNode to(ObjectMapper om, JsonBucket bucket)
-			throws IOException, JsonGenerationException, JsonMappingException,
+	protected JsonNode to(ObjectMapper om, Bucket bucket) throws IOException,
+			JsonGenerationException, JsonMappingException,
 			JsonProcessingException {
 		JsonFactory factory = new JsonFactory();
 		StringWriter sw = new StringWriter();
@@ -61,8 +62,8 @@ public class JsonBucketTest {
 	public void testProps() throws Exception {
 		JsonNode node = JsonUtil.read(JsonBucketTest.class, "props");
 		ObjectMapper om = new ObjectMapper();
-		JavaType jt = om.getTypeFactory().constructType(JsonBucketHolder.class);
-		JsonBucketHolder holder = om.readValue(node, jt);
+		JavaType jt = om.getTypeFactory().constructType(BucketHolder.class);
+		BucketHolder holder = om.readValue(node, jt);
 
 		JsonNode expected = JsonUtil.read(JsonBucketTest.class, "test");
 		JsonNode actual = to(om, holder.props);

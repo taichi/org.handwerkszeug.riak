@@ -13,5 +13,6 @@
 	<classpathentry exported="true" kind="lib" path="lib/base64-2.3.8.jar" rootpath="." sourcepath="lib/base64-2.3.8-sources.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jackson-core-asl-1.8.0.jar" rootpath="." sourcepath="lib/jackson-core-asl-1.8.0-sources.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jackson-mapper-asl-1.8.0.jar" rootpath="." sourcepath="lib/jackson-mapper-asl-1.8.0-sources.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/slf4j-api-1.6.1-tests.jar" rootpath="."/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
