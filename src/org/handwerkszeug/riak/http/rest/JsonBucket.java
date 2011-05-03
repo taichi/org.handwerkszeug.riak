@@ -1,7 +1,5 @@
 package org.handwerkszeug.riak.http.rest;
 
-import static org.handwerkszeug.riak.util.Validation.notNull;
-
 import java.util.List;
 
 import org.codehaus.jackson.annotate.JsonAutoDetect;
@@ -80,16 +78,13 @@ public class JsonBucket implements Bucket {
 	@JsonProperty("backend")
 	String backend;
 
-	public JsonBucket() {
+	public JsonBucket(@JsonProperty("name") String name) {
+		this.name = name;
 	}
 
 	@Override
 	public String getName() {
 		return this.name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
 	}
 
 	@Override
@@ -129,7 +124,6 @@ public class JsonBucket implements Bucket {
 
 	@Override
 	public void setPrecommits(List<Function> functions) {
-		notNull(functions, "functions");
 		this.precommits = functions;
 	}
 
@@ -140,7 +134,6 @@ public class JsonBucket implements Bucket {
 
 	@Override
 	public void setPostcommits(List<Erlang> functions) {
-		notNull(functions, "functions");
 		this.postcommits = functions;
 	}
 
@@ -151,7 +144,6 @@ public class JsonBucket implements Bucket {
 
 	@Override
 	public void setKeyHashFunction(Erlang erlang) {
-		notNull(erlang, "erlang");
 		this.keyHashFunction = erlang;
 	}
 
@@ -162,7 +154,6 @@ public class JsonBucket implements Bucket {
 
 	@Override
 	public void setLinkFunction(Erlang erlang) {
-		notNull(erlang, "erlang");
 		this.linkFunction = erlang;
 	}
 
@@ -173,7 +164,6 @@ public class JsonBucket implements Bucket {
 
 	@Override
 	public void setDefaultReadQuorum(Quorum quorum) {
-		notNull(quorum, "quorum");
 		this.defaultReadQuorum = quorum;
 	}
 
@@ -184,7 +174,6 @@ public class JsonBucket implements Bucket {
 
 	@Override
 	public void setDefaultWriteQuorum(Quorum quorum) {
-		notNull(quorum, "quorum");
 		this.defaultWriteQuorum = quorum;
 	}
 
@@ -195,7 +184,6 @@ public class JsonBucket implements Bucket {
 
 	@Override
 	public void setDefaultDurableWriteQuorum(Quorum quorum) {
-		notNull(quorum, "quorum");
 		this.defaultDurableWriteQuorum = quorum;
 	}
 
@@ -206,7 +194,6 @@ public class JsonBucket implements Bucket {
 
 	@Override
 	public void setDefaultReadWriteQuorum(Quorum quorum) {
-		notNull(quorum, "quorum");
 		this.defaultReadWriteQuorum = quorum;
 	}
 
@@ -217,7 +204,6 @@ public class JsonBucket implements Bucket {
 
 	@Override
 	public void setBackend(String name) {
-		notNull(name, "name");
 		this.backend = name;
 	}
 

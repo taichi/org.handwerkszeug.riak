@@ -6,6 +6,9 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
 import org.jboss.netty.handler.codec.http.HttpContentDecompressor;
 
+/**
+ * @author taichi
+ */
 public class RestPipelineFactory implements ChannelPipelineFactory {
 
 	@Override
