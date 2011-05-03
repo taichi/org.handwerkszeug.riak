@@ -10,6 +10,7 @@ import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonDeserialize;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
 import org.codehaus.jackson.map.annotate.JsonSerialize.Typing;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.Erlang;
@@ -21,6 +22,7 @@ import org.handwerkszeug.riak.model.Quorum;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonAutoDetect(JsonMethod.NONE)
+@JsonSerialize(include = Inclusion.NON_NULL)
 public class JsonBucket implements Bucket {
 
 	@JsonProperty("name")
@@ -35,42 +37,42 @@ public class JsonBucket implements Bucket {
 	@JsonProperty("last_write_wins")
 	boolean lastWriteWins;
 
-	@JsonSerialize(contentUsing = FunctionJsonSerializer.class, contentAs = Function.class, typing = Typing.STATIC)
+	@JsonSerialize(contentUsing = FunctionJsonSerializer.class, include = Inclusion.NON_NULL, contentAs = Function.class, typing = Typing.STATIC)
 	@JsonDeserialize(contentUsing = FunctionJsonDeserializer.class, contentAs = Function.class)
 	@JsonProperty("precommit")
 	List<Function> precommits;
 
-	@JsonSerialize(contentUsing = FunctionJsonSerializer.class, contentAs = Erlang.class, typing = Typing.STATIC)
+	@JsonSerialize(contentUsing = FunctionJsonSerializer.class, include = Inclusion.NON_NULL, contentAs = Erlang.class, typing = Typing.STATIC)
 	@JsonDeserialize(contentUsing = FunctionJsonDeserializer.class, contentAs = Erlang.class)
 	@JsonProperty("postcommit")
 	List<Erlang> postcommits;
 
-	@JsonSerialize(using = FunctionJsonSerializer.class)
+	@JsonSerialize(using = FunctionJsonSerializer.class, include = Inclusion.NON_NULL)
 	@JsonDeserialize(using = FunctionJsonDeserializer.class)
 	@JsonProperty("chash_keyfun")
 	Erlang keyHashFunction;
 
-	@JsonSerialize(using = FunctionJsonSerializer.class)
+	@JsonSerialize(using = FunctionJsonSerializer.class, include = Inclusion.NON_NULL)
 	@JsonDeserialize(using = FunctionJsonDeserializer.class)
 	@JsonProperty("linkfun")
 	Erlang linkFunction;
 
-	@JsonSerialize(using = QuorumJsonSerializer.class)
+	@JsonSerialize(using = QuorumJsonSerializer.class, include = Inclusion.NON_NULL)
 	@JsonDeserialize(using = QuorumJsonDeserializer.class)
 	@JsonProperty("r")
 	Quorum defaultReadQuorum;
 
-	@JsonSerialize(using = QuorumJsonSerializer.class)
+	@JsonSerialize(using = QuorumJsonSerializer.class, include = Inclusion.NON_NULL)
 	@JsonDeserialize(using = QuorumJsonDeserializer.class)
 	@JsonProperty("w")
 	Quorum defaultWriteQuorum;
 
-	@JsonSerialize(using = QuorumJsonSerializer.class)
+	@JsonSerialize(using = QuorumJsonSerializer.class, include = Inclusion.NON_NULL)
 	@JsonDeserialize(using = QuorumJsonDeserializer.class)
 	@JsonProperty("dw")
 	Quorum defaultDurableWriteQuorum;
 
-	@JsonSerialize(using = QuorumJsonSerializer.class)
+	@JsonSerialize(using = QuorumJsonSerializer.class, include = Inclusion.NON_NULL)
 	@JsonDeserialize(using = QuorumJsonDeserializer.class)
 	@JsonProperty("rw")
 	Quorum defaultReadWriteQuorum;

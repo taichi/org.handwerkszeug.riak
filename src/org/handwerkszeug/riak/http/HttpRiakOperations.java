@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.model.Location;
+import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakOperations;
@@ -23,6 +24,12 @@ import org.handwerkszeug.riak.op.RiakResponseHandler;
  *      >Riak REST Server code</a>
  */
 public interface HttpRiakOperations extends RiakOperations, LuwakSupport {
+
+	/**
+	 * Stores a new object in a bucket with a random Riak-assigned key.
+	 */
+	RiakFuture post(RiakObject<byte[]> content, PutOptions options,
+			RiakResponseHandler<RiakObject<byte[]>> handler);
 
 	/**
 	 * @see <a href="http://wiki.basho.com/Links.html">Links</a>
