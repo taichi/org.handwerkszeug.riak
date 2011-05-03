@@ -28,6 +28,7 @@ import org.handwerkszeug.riak.http.InputStreamHandler;
 import org.handwerkszeug.riak.http.LinkCondition;
 import org.handwerkszeug.riak.http.OutputStreamHandler;
 import org.handwerkszeug.riak.http.RiakHttpHeaders;
+import org.handwerkszeug.riak.mapreduce.DefaultMapReduceQuery;
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
 import org.handwerkszeug.riak.model.Bucket;
@@ -76,18 +77,18 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	static final Logger LOG = LoggerFactory.getLogger(RestRiakOperations.class);
 
-	String riakURI;
+	String host;
 	String riakPath;
 	CompletionSupport support;
 
 	ObjectMapper objectMapper = new ObjectMapper();
 
-	public RestRiakOperations(String riakURI, Channel channel) {
-		notNull(riakURI, "riakURI");
+	public RestRiakOperations(String host, String riakPath, Channel channel) {
+		notNull(host, "host");
 		notNull(channel, "channel");
-		this.riakURI = removeSlashIfNeed(riakURI);
+		this.host = removeSlashIfNeed(host);
 		this.support = new CompletionSupport(channel);
-		this.riakPath = riakURI.substring(this.riakURI.lastIndexOf('/'));
+		this.riakPath = riakPath;
 	}
 
 	protected String removeSlashIfNeed(String uri) {
@@ -119,8 +120,13 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	protected HttpRequest build(String path, HttpMethod method) {
+		return build(this.host + "/" + this.riakPath, path, method);
+	}
+
+	protected HttpRequest build(String app, String path, HttpMethod method) {
 		try {
-			URI uri = new URI(this.riakURI + path);
+			URI uri = new URI(app + path);
+
 			LOG.debug(Markers.BOUNDARY, uri.toASCIIString());
 			HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1,
 					method, uri.toASCIIString());
@@ -168,7 +174,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 	@SuppressWarnings("unchecked")
 	<T extends JsonNode> T to(ChannelBuffer buffer, T... t) {
 		try {
-			if (buffer.readable()) {
+			if (buffer != null && buffer.readable()) {
 				JsonNode node = this.objectMapper
 						.readTree(new ChannelBufferInputStream(buffer));
 				Class<?> clazz = t.getClass().getComponentType();
@@ -706,15 +712,67 @@ public class RestRiakOperations implements HttpRiakOperations {
 	@Override
 	public RiakFuture mapReduce(MapReduceQueryConstructor constructor,
 			RiakResponseHandler<MapReduceResponse> handler) {
-		// TODO Auto-generated method stub
-		return null;
+		notNull(constructor, "constructor");
+		notNull(handler, "handler");
+
+		DefaultMapReduceQuery query = new DefaultMapReduceQuery();
+		constructor.cunstruct(query);
+
+		HttpRequest request = buildMapReduceRequest();
+		ChannelBuffer buffer = ChannelBuffers.dynamicBuffer(1024);
+		query.prepare(new ChannelBufferOutputStream(buffer));
+		HttpHeaders.setContentLength(request, buffer.readableBytes());
+		request.setContent(buffer);
+
+		return mapReduce(request, handler);
+	}
+
+	protected RiakFuture mapReduce(HttpRequest request,
+			final RiakResponseHandler<MapReduceResponse> handler) {
+		return handle("mapReduce", request, handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof HttpResponse) {
+							return false;
+						} else if (receive instanceof HttpChunk) {
+							HttpChunk chunk = (HttpChunk) receive;
+							boolean done = chunk.isLast();
+							ObjectNode node = to(chunk.getContent());
+							final MapReduceResponse response = new RestMapReduceResponse(
+									node, done);
+							handler.handle(new RestRiakResponse<MapReduceResponse>() {
+								@Override
+								public MapReduceResponse getContents() {
+									return response;
+								}
+							});
+							return done;
+						}
+						throw new IllegalStateException();
+					}
+				});
+	}
+
+	protected HttpRequest buildMapReduceRequest() {
+		HttpRequest request = build(this.host, "/mapred?chunked=true",
+				HttpMethod.POST);
+		request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
+				RiakHttpHeaders.CONTENT_JSON);
+
+		return request;
 	}
 
 	@Override
 	public RiakFuture mapReduce(String rawJson,
 			RiakResponseHandler<MapReduceResponse> handler) {
-		// TODO Auto-generated method stub
-		return null;
+		notNull(rawJson, "rawJson");
+		notNull(handler, "handler");
+		HttpRequest request = buildMapReduceRequest();
+		HttpHeaders.setContentLength(request, rawJson.length());
+		request.setContent(ChannelBuffers.wrappedBuffer(rawJson.getBytes()));
+
+		return mapReduce(request, handler);
 	}
 
 	@Override

@@ -32,7 +32,7 @@ public class Hosts {
 
 	public static int RIAK_HTTP_PORT = 8098;
 
-	public static String RIAK_URL = "http://127.0.0.1:8098/riak";
+	public static String RIAK_URL = "http://127.0.0.1:8098";
 
 	static {
 		try {
@@ -53,7 +53,6 @@ public class Hosts {
 			stb.append(RIAK_HOST);
 			stb.append(":");
 			stb.append(RIAK_HTTP_PORT);
-			stb.append("/riak");
 			RIAK_URL = stb.toString();
 		} catch (IOException e) {
 			LOG.error(Markers.BOUNDARY, e.getMessage(), e);

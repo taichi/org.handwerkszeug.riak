@@ -5,6 +5,7 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
 import org.jboss.netty.handler.codec.http.HttpContentDecompressor;
+import org.jboss.netty.handler.codec.http.MultipartChunkedResponseDecoder;
 
 /**
  * @author taichi
@@ -17,6 +18,8 @@ public class RestPipelineFactory implements ChannelPipelineFactory {
 
 		pipeline.addLast("codec", new HttpClientCodec());
 		pipeline.addLast("inflater", new HttpContentDecompressor());
+		pipeline.addLast("multipart/mixed",
+				new MultipartChunkedResponseDecoder());
 
 		return pipeline;
 	}

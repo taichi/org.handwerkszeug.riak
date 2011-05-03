@@ -26,7 +26,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	@Override
 	protected RiakOperations newTarget(Channel channel) {
-		this.target = new RestRiakOperations(Hosts.RIAK_URL, channel);
+		this.target = new RestRiakOperations(Hosts.RIAK_URL, "riak", channel);
 		return this.target;
 	}
 
