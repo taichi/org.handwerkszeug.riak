@@ -441,8 +441,8 @@ public abstract class RiakOperationsTest {
 	protected abstract void testSetClientId(String id) throws Exception;
 
 	@Test
-	public void testGetWithSibling() throws Exception {
-		final Location location = new Location("testGetWithSibling", "testKey");
+	public void testSibling() throws Exception {
+		final Location location = new Location("testSibling", "testKey");
 		testPut(location, "1");
 		try {
 			Bucket bucket = testBucketGet(location.getBucket());
@@ -469,10 +469,11 @@ public abstract class RiakOperationsTest {
 			testPut(location, testdatas.get(1));
 
 			testSetClientId("CCCC");
-			testPut(location, testdatas.get(2));
+			testPutWithSibling(location, testdatas.get(2), testdatas);
 
 			testGetWithSibling(location, testdatas);
 		} finally {
+			// for CUI manually check.
 			// testDelete(location);
 		}
 	}
@@ -481,12 +482,13 @@ public abstract class RiakOperationsTest {
 			final List<String> testdatas) throws InterruptedException {
 		final AtomicBoolean waiter = new AtomicBoolean(false);
 		final boolean[] is = { false };
+		final boolean[] beginEnd = new boolean[2];
 
 		final List<String> actuals = new ArrayList<String>();
 		target.get(location, new DefaultGetOptions(), new SiblingHandler() {
 			@Override
 			public void begin() {
-				assertTrue(true);
+				beginEnd[0] = true;
 			}
 
 			@Override
@@ -506,6 +508,7 @@ public abstract class RiakOperationsTest {
 
 			@Override
 			public void end() {
+				beginEnd[1] = true;
 				waiter.compareAndSet(false, true);
 			}
 		});
@@ -514,6 +517,68 @@ public abstract class RiakOperationsTest {
 		for (String s : testdatas) {
 			assertTrue(s, actuals.contains(s));
 		}
+		assertTrue("begin", beginEnd[0]);
+		assertTrue("end", beginEnd[1]);
+
+	}
+
+	protected void testPutWithSibling(final Location location,
+			final String testdata, final List<String> testdatas)
+			throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+		final boolean[] beginEnd = new boolean[2];
+
+		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
+			@Override
+			public byte[] getContent() {
+				return testdata.getBytes();
+			}
+		};
+
+		final List<String> actuals = new ArrayList<String>();
+		target.put(ro, new DefaultPutOptions() {
+			@Override
+			public boolean getReturnBody() {
+				return true;
+			}
+		}, new SiblingHandler() {
+
+			@Override
+			public void onError(RiakResponse response) throws Exception {
+				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
+			}
+
+			@Override
+			public void begin() {
+				beginEnd[0] = true;
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
+					throws Exception {
+				RiakObject<byte[]> ro = response.getContents();
+				assertEquals(location, ro.getLocation());
+				actuals.add(new String(ro.getContent()));
+				is[0] = true;
+			}
+
+			@Override
+			public void end() {
+				beginEnd[1] = true;
+				waiter.compareAndSet(false, true);
+			}
+
+		});
+
+		wait(waiter, is);
+		assertEquals(3, actuals.size());
+		for (String s : testdatas) {
+			assertTrue(s, actuals.contains(s));
+		}
+		assertTrue("begin", beginEnd[0]);
+		assertTrue("end", beginEnd[1]);
 	}
 
 	@Test
@@ -532,6 +597,7 @@ public abstract class RiakOperationsTest {
 			throws Exception {
 		final AtomicBoolean waiter = new AtomicBoolean(false);
 		final boolean[] is = { false };
+		final boolean[] beginEnd = new boolean[2];
 
 		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
 			@Override
@@ -545,29 +611,38 @@ public abstract class RiakOperationsTest {
 			public boolean getReturnBody() {
 				return true;
 			}
-		}, new RiakResponseHandler<List<RiakObject<byte[]>>>() {
+		}, new SiblingHandler() {
+
 			@Override
-			public void onError(RiakResponse response) throws RiakException {
+			public void onError(RiakResponse response) throws Exception {
 				waiter.compareAndSet(false, true);
 				fail(response.getMessage());
 			}
 
 			@Override
-			public void handle(
-					RiakContentsResponse<List<RiakObject<byte[]>>> response)
-					throws RiakException {
-				try {
-					assertEquals(1, response.getContents().size());
-					RiakObject<byte[]> res = response.getContents().get(0);
-					assertEquals(testdata, new String(res.getContent()));
-					is[0] = true;
-				} finally {
-					waiter.compareAndSet(false, true);
-				}
+			public void begin() {
+				beginEnd[0] = true;
 			}
+
+			@Override
+			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
+					throws Exception {
+				RiakObject<byte[]> ro = response.getContents();
+				assertEquals(testdata, new String(ro.getContent()));
+				is[0] = true;
+			}
+
+			@Override
+			public void end() {
+				beginEnd[1] = true;
+				waiter.compareAndSet(false, true);
+			}
+
 		});
 
 		wait(waiter, is);
+		assertTrue("begin", beginEnd[0]);
+		assertTrue("end", beginEnd[1]);
 	}
 
 	@Test

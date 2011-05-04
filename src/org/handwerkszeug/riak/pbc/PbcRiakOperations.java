@@ -434,7 +434,7 @@ public class PbcRiakOperations implements RiakOperations {
 
 	@Override
 	public RiakFuture put(RiakObject<byte[]> content, PutOptions options,
-			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
+			final SiblingHandler handler) {
 		notNull(content, "content");
 		notNull(options, "options");
 		notNull(handler, "handler");
@@ -447,22 +447,20 @@ public class PbcRiakOperations implements RiakOperations {
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbPutResp) {
 							RpbPutResp resp = (RpbPutResp) receive;
-							final List<RiakObject<byte[]>> list = new ArrayList<RiakObject<byte[]>>(
-									resp.getContentCount());
-							if (0 < resp.getContentCount()) {
-								String vclock = toVclock(resp.getVclock());
-								for (RpbContent c : resp.getContentList()) {
-									RiakObject<byte[]> ro = convert(location,
-											vclock, c);
-									list.add(ro);
+							try {
+								handler.begin();
+								if (0 < resp.getContentCount()) {
+									String vclock = toVclock(resp.getVclock());
+									for (RpbContent c : resp.getContentList()) {
+										RiakObject<byte[]> ro = convert(
+												location, vclock, c);
+										handler.handle(support.new RiakObjectResponse(
+												ro));
+									}
 								}
+							} finally {
+								handler.end();
 							}
-							handler.handle(support.new AbstractCompletionRiakResponse<List<RiakObject<byte[]>>>() {
-								@Override
-								public List<RiakObject<byte[]>> getContents() {
-									return list;
-								}
-							});
 						}
 						return true;
 					}

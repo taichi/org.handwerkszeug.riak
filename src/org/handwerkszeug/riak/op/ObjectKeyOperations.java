@@ -1,7 +1,5 @@
 package org.handwerkszeug.riak.op;
 
-import java.util.List;
-
 import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.model.GetOptions;
 import org.handwerkszeug.riak.model.Location;
@@ -50,7 +48,7 @@ public interface ObjectKeyOperations {
 	RiakFuture put(RiakObject<byte[]> content, RiakResponseHandler<_> handler);
 
 	RiakFuture put(RiakObject<byte[]> content, PutOptions options,
-			RiakResponseHandler<List<RiakObject<byte[]>>> handler);
+			SiblingHandler handler);
 
 	RiakFuture delete(Location location, RiakResponseHandler<_> handler);
 

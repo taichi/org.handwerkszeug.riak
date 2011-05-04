@@ -504,16 +504,15 @@ public class RestRiakOperations implements HttpRiakOperations {
 							handler.begin();
 							return false;
 						} else if (receive instanceof PartMessage) {
-							PartMessage chunk = (PartMessage) receive;
-							boolean done = chunk.isLast();
-							chunk.setHeader(RiakHttpHeaders.VECTOR_CLOCK,
-									vclock);
+							PartMessage part = (PartMessage) receive;
+							boolean done = part.isLast();
+							part.setHeader(RiakHttpHeaders.VECTOR_CLOCK, vclock);
 
 							if (done) {
 								handler.end();
 							} else {
-								RiakObject<byte[]> ro = convert(chunk,
-										chunk.getContent(), location);
+								RiakObject<byte[]> ro = convert(part,
+										part.getContent(), location);
 								handler.handle(support.new RiakObjectResponse(
 										ro));
 							}
@@ -633,37 +632,40 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	@Override
-	public RiakFuture put(final RiakObject<byte[]> content, PutOptions options,
-			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
+	public RiakFuture put(final RiakObject<byte[]> content,
+			final PutOptions options, final SiblingHandler handler) {
 		notNull(content, "content");
 		notNull(options, "options");
 		notNull(handler, "handler");
 
 		HttpRequest request = buildPutRequest(content, options);
-		return handle("put", request, handler,
-				new NettyUtil.ChunkedMessageAggregator(
-						new NettyUtil.ChunkedMessageHandler() {
-							@Override
-							public void handle(HttpResponse response,
-									ChannelBuffer buffer) throws Exception {
-								if (NettyUtil.isSuccessful(response.getStatus())) {
+
+		return handle("put/sibling", request, handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof HttpResponse) {
+							HttpResponse response = (HttpResponse) receive;
+							if (NettyUtil.isSuccessful(response.getStatus())) {
+								try {
+									handler.begin();
 									RiakObject<byte[]> ro = convert(response,
-											buffer, content.getLocation());
-									final List<RiakObject<byte[]>> list = new ArrayList<RiakObject<byte[]>>();
-									list.add(ro);
-									handler.handle(support.new AbstractCompletionRiakResponse<List<RiakObject<byte[]>>>() {
-										@Override
-										public List<RiakObject<byte[]>> getContents() {
-											return list;
-										}
-									});
-									return;
-								} else if (response.getStatus().getCode() == 300) {
-									// TODO multipart ?
+											response.getContent(),
+											content.getLocation());
+									handler.handle(support.new RiakObjectResponse(
+											ro));
+								} finally {
+									handler.end();
 								}
-								throw new IllegalStateException();
+							} else if (response.getStatus().getCode() == 300) {
+								dispatchToGetSibling(content.getLocation(),
+										options, handler);
 							}
-						}));
+							return true;
+						}
+						throw new IllegalStateException();
+					}
+				});
 	}
 
 	protected HttpRequest buildPutRequest(RiakObject<byte[]> content,
@@ -693,6 +695,31 @@ public class RestRiakOperations implements HttpRiakOperations {
 					String.valueOf(options.getReturnBody()));
 		}
 		return params;
+	}
+
+	protected void dispatchToGetSibling(Location location,
+			final PutOptions options, SiblingHandler handler) {
+		get(location, new GetOptions() {
+			@Override
+			public Quorum getReadQuorum() {
+				return options.getReadQuorum();
+			}
+
+			@Override
+			public String getIfNoneMatch() {
+				return options.getIfNoneMatch();
+			}
+
+			@Override
+			public String getIfMatch() {
+				return options.getIfMatch();
+			}
+
+			@Override
+			public Date getIfModifiedSince() {
+				return options.getIfModifiedSince();
+			}
+		}, handler);
 	}
 
 	@Override
