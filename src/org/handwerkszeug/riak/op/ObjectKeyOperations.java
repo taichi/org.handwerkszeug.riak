@@ -47,8 +47,7 @@ public interface ObjectKeyOperations {
 
 	RiakFuture get(Location location, GetOptions options, SiblingHandler handler);
 
-	RiakFuture put(RiakObject<byte[]> content,
-			RiakResponseHandler<List<RiakObject<byte[]>>> handler);
+	RiakFuture put(RiakObject<byte[]> content, RiakResponseHandler<_> handler);
 
 	RiakFuture put(RiakObject<byte[]> content, PutOptions options,
 			RiakResponseHandler<List<RiakObject<byte[]>>> handler);

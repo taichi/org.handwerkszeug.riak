@@ -319,27 +319,23 @@ public abstract class RiakOperationsTest {
 			}
 		};
 		final boolean[] is = { false };
-		this.target.put(ro,
-				new RiakResponseHandler<List<RiakObject<byte[]>>>() {
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						waiter.compareAndSet(false, true);
-						fail(response.getMessage());
-					}
+		this.target.put(ro, new RiakResponseHandler<_>() {
+			@Override
+			public void onError(RiakResponse response) throws RiakException {
+				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
+			}
 
-					@Override
-					public void handle(
-							RiakContentsResponse<List<RiakObject<byte[]>>> response)
-							throws RiakException {
-						try {
-							assertEquals(0, response.getContents().size());
-							is[0] = true;
-						} finally {
-							waiter.compareAndSet(false, true);
-						}
-					}
-				});
+			@Override
+			public void handle(RiakContentsResponse<_> response)
+					throws RiakException {
+				try {
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
 
 		wait(waiter, is);
 	}

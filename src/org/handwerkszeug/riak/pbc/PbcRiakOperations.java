@@ -5,7 +5,6 @@ import static org.handwerkszeug.riak.util.Validation.notNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -402,7 +401,7 @@ public class PbcRiakOperations implements RiakOperations {
 
 	@Override
 	public RiakFuture put(RiakObject<byte[]> content,
-			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
+			final RiakResponseHandler<_> handler) {
 		notNull(content, "content");
 		notNull(handler, "handler");
 
@@ -413,12 +412,7 @@ public class PbcRiakOperations implements RiakOperations {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbPutResp) {
-							handler.handle(support.new AbstractCompletionRiakResponse<List<RiakObject<byte[]>>>() {
-								@Override
-								public List<RiakObject<byte[]>> getContents() {
-									return Collections.emptyList();
-								}
-							});
+							handler.handle(support.new NoOpResponse());
 						}
 						return true;
 					}

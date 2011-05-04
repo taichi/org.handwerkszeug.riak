@@ -527,7 +527,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	@Override
 	public RiakFuture put(RiakObject<byte[]> content,
-			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
+			final RiakResponseHandler<_> handler) {
 		notNull(content, "content");
 		notNull(handler, "handler");
 
@@ -539,14 +539,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 				if (receive instanceof HttpResponse) {
 					HttpResponse response = (HttpResponse) receive;
 					HttpResponseStatus status = response.getStatus();
-					if (NettyUtil.isSuccessful(status)
-							|| status.getCode() == 300) {
-						handler.handle(support.new AbstractCompletionRiakResponse<List<RiakObject<byte[]>>>() {
-							@Override
-							public List<RiakObject<byte[]>> getContents() {
-								return Collections.emptyList();
-							}
-						});
+					if (NettyUtil.isSuccessful(status)) {
+						handler.handle(support.new NoOpResponse());
 						return true;
 					}
 				}
