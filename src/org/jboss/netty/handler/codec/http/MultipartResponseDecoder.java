@@ -3,22 +3,17 @@ package org.jboss.netty.handler.codec.http;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.handwerkszeug.riak.Markers;
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author taichi
  */
 public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
-
-	static final Logger LOG = LoggerFactory
-			.getLogger(MultipartResponseDecoder.class);
 
 	String dashBoundary;
 	String closeBoundary;
@@ -35,11 +30,15 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 			this.closeBoundary = null;
 			HttpResponse response = (HttpResponse) o;
 			if (response.isChunked()) {
-				String b = getBoundary(response);
-				if (b != null) {
-					this.dashBoundary = "--" + b;
-					this.closeBoundary = this.dashBoundary + "--";
-				}
+				setUpBoundary(response);
+			} else if (response.getStatus().getCode() == 300
+					&& setUpBoundary(response)) {
+				ChannelBuffer buffer = response.getContent();
+				response.setContent(ChannelBuffers.EMPTY_BUFFER);
+				Channels.fireMessageReceived(ctx, response,
+						e.getRemoteAddress());
+				splitMultipart(ctx, e, buffer);
+				return;
 			}
 		} else if (o instanceof HttpChunk) {
 			HttpChunk chunk = (HttpChunk) o;
@@ -48,13 +47,23 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 					this.dashBoundary = null;
 					this.closeBoundary = null;
 				} else {
-					PartMessage mpc = to(chunk);
-					Channels.fireMessageReceived(ctx, mpc, e.getRemoteAddress());
+					ChannelBuffer buffer = chunk.getContent();
+					splitMultipart(ctx, e, buffer);
 				}
 				return;
 			}
 		}
 		ctx.sendUpstream(e);
+	}
+
+	protected boolean setUpBoundary(HttpResponse response) {
+		String b = getBoundary(response);
+		if (b != null) {
+			this.dashBoundary = "--" + b;
+			this.closeBoundary = this.dashBoundary + "--";
+			return true;
+		}
+		return false;
 	}
 
 	static final Pattern MultiPart = Pattern
@@ -78,13 +87,20 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		return null;
 	}
 
-	enum State {
-		SKIP_CONTROL_CHARS, READ_BOUNDARY, READ_HEADERS, READ_CONTENT, READ_FIXED_LENGTH_CONTENT, EPILOGUE;
+	protected void splitMultipart(ChannelHandlerContext ctx, MessageEvent e,
+			ChannelBuffer buffer) {
+		while (buffer.readable()) {
+			PartMessage msg = parse(buffer);
+			Channels.fireMessageReceived(ctx, msg, e.getRemoteAddress());
+		}
 	}
 
-	protected PartMessage to(HttpChunk chunk) {
+	enum State {
+		SKIP_CONTROL_CHARS, READ_BOUNDARY, READ_HEADERS, READ_CONTENT, EPILOGUE;
+	}
+
+	protected PartMessage parse(ChannelBuffer buffer) {
 		DefaultPartMessage multipart = new DefaultPartMessage();
-		ChannelBuffer buffer = chunk.getContent();
 		State state = State.SKIP_CONTROL_CHARS;
 		for (;;) {
 			switch (state) {
@@ -103,7 +119,10 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 				break;
 			}
 			case READ_CONTENT: {
-				multipart.setContent(buffer.readBytes(buffer.readableBytes()));
+				State[] next = new State[1];
+				int length = seekNextBoundary(buffer, next);
+				multipart.setContent(buffer.readBytes(length));
+				state = next[0];
 				return multipart;
 			}
 			case EPILOGUE: {
@@ -129,16 +148,15 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 
 	private State readBoundary(ChannelBuffer buffer) {
 		String line = readLine(buffer);
-		LOG.debug(Markers.BOUNDARY, line);
 		if (this.dashBoundary.equals(line)) {
 			return State.READ_HEADERS;
 		} else if (line.equals(this.closeBoundary)) {
 			return State.EPILOGUE;
 		}
-		throw new IllegalStateException("Unknown Boundary");
+		throw new UnknownBoundaryException(line);
 	}
 
-	private void readHeaders(ChannelBuffer buffer, DefaultPartMessage chunk) {
+	private void readHeaders(ChannelBuffer buffer, DefaultPartMessage message) {
 		String line = readLine(buffer);
 		String name = null;
 		String value = null;
@@ -148,7 +166,7 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 				value = value + ' ' + line.trim();
 			} else {
 				if (name != null) {
-					chunk.addHeader(name, value);
+					message.addHeader(name, value);
 				}
 				String[] header = splitHeader(line);
 				name = header[0];
@@ -159,13 +177,12 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		} while (line.isEmpty() == false && buffer.readable());
 
 		if (name != null) {
-			chunk.addHeader(name, value);
+			message.addHeader(name, value);
 		}
 	}
 
 	private String readLine(ChannelBuffer buffer) {
 		StringBuilder sb = new StringBuilder(64);
-		int readerIndex = buffer.readerIndex();
 		while (buffer.readable()) {
 			byte nextByte = buffer.readByte();
 			if (nextByte == HttpCodecUtil.CR) {
@@ -179,8 +196,7 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 				sb.append((char) nextByte);
 			}
 		}
-		buffer.readerIndex(readerIndex);
-		throw new IllegalStateException("NotEnough");
+		return "";
 	}
 
 	private String[] splitHeader(String sb) {
@@ -234,5 +250,32 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 			}
 		}
 		return result;
+	}
+
+	private int seekNextBoundary(ChannelBuffer buffer, State[] next) {
+		int readerIndex = buffer.readerIndex();
+		int length = 0;
+		String line = "";
+		while (buffer.readable()) {
+			line = readLine(buffer);
+			if (line.isEmpty()) {
+				next[0] = State.EPILOGUE;
+				break;
+			} else if (this.dashBoundary.equals(line)) {
+				length -= this.dashBoundary.length();
+				length -= 4; // CRLF x 2
+				next[0] = State.READ_BOUNDARY;
+				break;
+			} else if (this.closeBoundary.equals(line)) {
+				length -= this.closeBoundary.length();
+				length -= 4;
+				next[0] = State.READ_BOUNDARY;
+				break;
+			}
+		}
+
+		length += (buffer.readerIndex() - readerIndex);
+		buffer.readerIndex(readerIndex);
+		return length;
 	}
 }
