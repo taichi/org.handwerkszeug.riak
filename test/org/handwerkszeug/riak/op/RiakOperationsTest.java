@@ -11,8 +11,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -412,19 +415,6 @@ public abstract class RiakOperationsTest {
 	}
 
 	@Test
-	public void testGetWithSibling() throws Exception {
-		final Location location = new Location("testGetWithSibling", "testKey");
-		final String testdata = new SimpleDateFormat().format(new Date())
-				+ "\n";
-		testPut(location, testdata);
-		try {
-			testGetWithSibling(location, testdata);
-		} finally {
-			testDelete(location);
-		}
-	}
-
-	@Test
 	public void testGetNoContents() throws Exception {
 		final AtomicBoolean waiter = new AtomicBoolean(false);
 		final boolean[] is = { false };
@@ -454,17 +444,52 @@ public abstract class RiakOperationsTest {
 		wait(waiter, is);
 	}
 
+	protected abstract void testSetClientId(String id) throws Exception;
+
+	@Test
+	public void testGetWithSibling() throws Exception {
+		final Location location = new Location("testGetWithSibling", "testKey");
+		testPut(location, "1");
+		try {
+			Bucket bucket = testBucketGet(location.getBucket());
+			bucket.setAllowMulti(true);
+			testBucketSet(bucket);
+
+			// remove current entry.
+			testDelete(location);
+
+			List<String> testdatas = new ArrayList<String>();
+			Random r = new Random();
+			byte[] bytes = new byte[20];
+			r.nextBytes(bytes);
+			testdatas.add(Arrays.toString(bytes));
+			r.nextBytes(bytes);
+			testdatas.add(Arrays.toString(bytes));
+			r.nextBytes(bytes);
+			testdatas.add(Arrays.toString(bytes));
+
+			testSetClientId("AAAA");
+			testPut(location, testdatas.get(0));
+
+			testSetClientId("BBBB");
+			testPut(location, testdatas.get(1));
+
+			testSetClientId("CCCC");
+			testPut(location, testdatas.get(2));
+
+			testGetWithSibling(location, testdatas);
+		} finally {
+			// testDelete(location);
+		}
+	}
+
 	protected void testGetWithSibling(final Location location,
-			final String testdata) throws InterruptedException {
+			final List<String> testdatas) throws InterruptedException {
 		final AtomicBoolean waiter = new AtomicBoolean(false);
 		final boolean[] is = { false };
 
-		target.get(location, new DefaultGetOptions() {
-			@Override
-			public Quorum getReadQuorum() {
-				return Quorum.of(2);
-			}
-		}, new SiblingHandler() {
+		final List<String> actuals = new ArrayList<String>();
+		target.get(location, new DefaultGetOptions(), new SiblingHandler() {
 			@Override
 			public void begin() {
 				assertTrue(true);
@@ -481,7 +506,7 @@ public abstract class RiakOperationsTest {
 					throws RiakException {
 				RiakObject<byte[]> ro = response.getContents();
 				assertEquals(location, ro.getLocation());
-				assertEquals(testdata, new String(ro.getContent()));
+				actuals.add(new String(ro.getContent()));
 				is[0] = true;
 			}
 
@@ -491,6 +516,10 @@ public abstract class RiakOperationsTest {
 			}
 		});
 		wait(waiter, is);
+		assertEquals(3, actuals.size());
+		for (String s : testdatas) {
+			assertTrue(s, actuals.contains(s));
+		}
 	}
 
 	@Test
@@ -719,7 +748,7 @@ public abstract class RiakOperationsTest {
 		while (waiter.get() == false) {
 			Thread.sleep(10);
 			if (300 < counter++) {
-				fail("test is incomplete.");
+				// fail("test is incomplete.");
 			}
 		}
 		assertTrue(is[0]);

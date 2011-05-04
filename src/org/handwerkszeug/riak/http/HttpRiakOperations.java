@@ -26,6 +26,18 @@ import org.handwerkszeug.riak.op.RiakResponseHandler;
 public interface HttpRiakOperations extends RiakOperations, LuwakSupport {
 
 	/**
+	 * All requests should include the “X-Riak-ClientId” header, which can be
+	 * any string that uniquely identifies the client, for purposes of tracing
+	 * object modifications in the vector clock.<br/>
+	 * if you set clientId null, don't send clientId.
+	 * 
+	 * @param clientId
+	 */
+	void setClientId(String clientId);
+
+	String getClientId();
+
+	/**
 	 * Stores a new object in a bucket with a random Riak-assigned key.
 	 */
 	RiakFuture post(String bucket, RiakObject<byte[]> content,

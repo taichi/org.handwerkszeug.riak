@@ -60,11 +60,13 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpMessage;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.codec.http.PartMessage;
 import org.jboss.netty.handler.codec.http.QueryStringEncoder;
 import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
@@ -80,6 +82,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 	String host;
 	String riakPath;
 	CompletionSupport support;
+
+	String clientId;
 
 	ObjectMapper objectMapper = new ObjectMapper();
 
@@ -119,6 +123,16 @@ public class RestRiakOperations implements HttpRiakOperations {
 		});
 	}
 
+	@Override
+	public void setClientId(String clientId) {
+		this.clientId = clientId;
+	}
+
+	@Override
+	public String getClientId() {
+		return this.clientId;
+	}
+
 	protected HttpRequest build(String path, HttpMethod method) {
 		return build(this.host + "/" + this.riakPath, path, method);
 	}
@@ -133,7 +147,9 @@ public class RestRiakOperations implements HttpRiakOperations {
 			request.setHeader(HttpHeaders.Names.HOST, uri.getHost());
 			request.setHeader(HttpHeaders.Names.CONNECTION,
 					HttpHeaders.Values.KEEP_ALIVE);
-
+			if (StringUtil.isEmpty(this.clientId) == false) {
+				request.setHeader(RiakHttpHeaders.CLIENT_ID, this.clientId);
+			}
 			return request;
 		} catch (URISyntaxException e) {
 			throw new RiakException(e);
@@ -403,26 +419,26 @@ public class RestRiakOperations implements HttpRiakOperations {
 						}));
 	}
 
-	protected RiakObject<byte[]> convert(HttpResponse response,
+	protected RiakObject<byte[]> convert(HttpMessage headers,
 			ChannelBuffer buffer, Location location) {
 		DefaultRiakObject ro = new DefaultRiakObject(location);
 		ro.setContent(buffer.array());
 
-		ro.setVectorClock(response.getHeader(RiakHttpHeaders.VECTOR_CLOCK));
+		ro.setVectorClock(headers.getHeader(RiakHttpHeaders.VECTOR_CLOCK));
 
-		ro.setContentType(response.getHeader(HttpHeaders.Names.CONTENT_TYPE));
+		ro.setContentType(headers.getHeader(HttpHeaders.Names.CONTENT_TYPE));
 
 		// NOP ro.setCharset(charset);
 
-		ro.setContentEncoding(response
+		ro.setContentEncoding(headers
 				.getHeader(HttpHeaders.Names.CONTENT_ENCODING));
 
 		// NOP ro.setVtag(vtag);
 
-		List<String> links = response.getHeaders(RiakHttpHeaders.LINK);
+		List<String> links = headers.getHeaders(RiakHttpHeaders.LINK);
 		ro.setLinks(parse(links));
 
-		String lastmod = response.getHeader(HttpHeaders.Names.LAST_MODIFIED);
+		String lastmod = headers.getHeader(HttpHeaders.Names.LAST_MODIFIED);
 		if (StringUtil.isEmpty(lastmod) == false) {
 			Date d = HttpUtil.parse(lastmod);
 			ro.setLastModified(d);
@@ -432,10 +448,10 @@ public class RestRiakOperations implements HttpRiakOperations {
 		}
 
 		Map<String, String> map = new HashMap<String, String>();
-		for (String name : response.getHeaderNames()) {
+		for (String name : headers.getHeaderNames()) {
 			if (RiakHttpHeaders.isUsermeta(name)) {
 				String key = RiakHttpHeaders.fromUsermeta(name);
-				map.put(key, response.getHeader(name));
+				map.put(key, headers.getHeader(name));
 			}
 		}
 		ro.setUserMetadata(map);
@@ -467,10 +483,47 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	@Override
-	public RiakFuture get(Location location, GetOptions options,
-			SiblingHandler handler) {
-		// TODO Auto-generated method stub
-		return null;
+	public RiakFuture get(final Location location, GetOptions options,
+			final SiblingHandler handler) {
+		notNull(location, "location");
+		notNull(options, "options");
+		notNull(handler, "handler");
+
+		HttpRequest request = buildGetRequst(location, options);
+		request.setHeader(HttpHeaders.Names.ACCEPT, RiakHttpHeaders.MULTI_PART);
+
+		return handle("get/sibling", request, handler,
+				new NettyUtil.MessageHandler() {
+
+					String vclock;
+
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof HttpResponse) {
+							HttpResponse response = (HttpResponse) receive;
+							vclock = response
+									.getHeader(RiakHttpHeaders.VECTOR_CLOCK);
+							handler.begin();
+							return false;
+						} else if (receive instanceof PartMessage) {
+							PartMessage chunk = (PartMessage) receive;
+							boolean done = chunk.isLast();
+							chunk.setHeader(RiakHttpHeaders.VECTOR_CLOCK,
+									vclock);
+
+							if (done) {
+								handler.end();
+							} else {
+								RiakObject<byte[]> ro = convert(chunk,
+										chunk.getContent(), location);
+								handler.handle(new RestRiakObjectResponse(ro));
+							}
+
+							return done;
+						}
+						throw new IllegalStateException();
+					}
+				});
 	}
 
 	@Override

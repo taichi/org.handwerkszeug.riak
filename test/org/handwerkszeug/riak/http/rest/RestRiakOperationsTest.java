@@ -51,4 +51,10 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		assertEquals(new Location("hb", "third"), third.getLocation());
 		assertEquals("bar", third.getTag());
 	}
+
+	@Override
+	protected void testSetClientId(String id) throws Exception {
+		this.target.setClientId(id);
+		assertEquals(id, this.target.getClientId());
+	}
 }

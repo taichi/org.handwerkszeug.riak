@@ -7,7 +7,7 @@ import java.util.Date;
  */
 public class DefaultGetOptions implements GetOptions {
 
-	protected DefaultGetOptions() {
+	public DefaultGetOptions() {
 	}
 
 	@Override

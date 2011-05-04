@@ -3,25 +3,27 @@ package org.jboss.netty.handler.codec.http;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.handwerkszeug.riak.Markers;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author taichi
  */
-public class MultipartChunkedResponseDecoder extends
-		SimpleChannelUpstreamHandler {
+public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 
-	String boundary;
+	static final Logger LOG = LoggerFactory
+			.getLogger(MultipartResponseDecoder.class);
 
-	static final Pattern MultiPart = Pattern.compile(
-			"multipart/mixed;\\s*boundary=([\\w'\\(\\),-./:=\\?]{1,70})",
-			Pattern.CASE_INSENSITIVE);
+	String dashBoundary;
+	String closeBoundary;
 
-	public MultipartChunkedResponseDecoder() {
+	public MultipartResponseDecoder() {
 	}
 
 	@Override
@@ -29,21 +31,24 @@ public class MultipartChunkedResponseDecoder extends
 			throws Exception {
 		Object o = e.getMessage();
 		if (o instanceof HttpResponse) {
-			this.boundary = null;
+			this.dashBoundary = null;
+			this.closeBoundary = null;
 			HttpResponse response = (HttpResponse) o;
 			if (response.isChunked()) {
 				String b = getBoundary(response);
 				if (b != null) {
-					this.boundary = b;
+					this.dashBoundary = "--" + b;
+					this.closeBoundary = this.dashBoundary + "--";
 				}
 			}
 		} else if (o instanceof HttpChunk) {
 			HttpChunk chunk = (HttpChunk) o;
-			if (this.boundary != null) {
+			if (this.dashBoundary != null) {
 				if (chunk.isLast()) {
-					this.boundary = null;
+					this.dashBoundary = null;
+					this.closeBoundary = null;
 				} else {
-					MultiPartChunk mpc = to(chunk);
+					PartMessage mpc = to(chunk);
 					Channels.fireMessageReceived(ctx, mpc, e.getRemoteAddress());
 				}
 				return;
@@ -52,21 +57,33 @@ public class MultipartChunkedResponseDecoder extends
 		ctx.sendUpstream(e);
 	}
 
+	static final Pattern MultiPart = Pattern
+			.compile(
+					"multipart/mixed;\\s*boundary=(([\\w'\\(\\),-./:=\\?]{1,70})|\"([\\w'\\(\\),-./:=\\?]{1,70})\")",
+					Pattern.CASE_INSENSITIVE);
+
 	protected String getBoundary(HttpResponse response) {
 		String type = response.getHeader(HttpHeaders.Names.CONTENT_TYPE);
 		if (type != null && type.isEmpty() == false) {
 			Matcher m = MultiPart.matcher(type);
 			String b = null;
 			if (m.find()) {
-				b = "--" + m.group(1);
+				b = m.group(2);
+				if (b == null) {
+					b = m.group(3);
+				}
 			}
 			return b;
 		}
 		return null;
 	}
 
-	protected MultiPartChunk to(HttpChunk chunk) {
-		DefaultMultiPartChunk multipart = new DefaultMultiPartChunk();
+	enum State {
+		SKIP_CONTROL_CHARS, READ_BOUNDARY, READ_HEADERS, READ_CONTENT, READ_FIXED_LENGTH_CONTENT, EPILOGUE;
+	}
+
+	protected PartMessage to(HttpChunk chunk) {
+		DefaultPartMessage multipart = new DefaultPartMessage();
 		ChannelBuffer buffer = chunk.getContent();
 		State state = State.SKIP_CONTROL_CHARS;
 		for (;;) {
@@ -89,7 +106,7 @@ public class MultipartChunkedResponseDecoder extends
 				multipart.setContent(buffer.readBytes(buffer.readableBytes()));
 				return multipart;
 			}
-			case END: {
+			case EPILOGUE: {
 				multipart.setLast(true);
 				return multipart;
 			}
@@ -110,21 +127,18 @@ public class MultipartChunkedResponseDecoder extends
 		}
 	}
 
-	enum State {
-		SKIP_CONTROL_CHARS, READ_BOUNDARY, READ_HEADERS, READ_CONTENT, END;
-	}
-
 	private State readBoundary(ChannelBuffer buffer) {
 		String line = readLine(buffer);
-		if (this.boundary.equals(line)) {
+		LOG.debug(Markers.BOUNDARY, line);
+		if (this.dashBoundary.equals(line)) {
 			return State.READ_HEADERS;
-		} else if (line.equals(this.boundary + "--")) {
-			return State.END;
+		} else if (line.equals(this.closeBoundary)) {
+			return State.EPILOGUE;
 		}
 		throw new IllegalStateException("Unknown Boundary");
 	}
 
-	private void readHeaders(ChannelBuffer buffer, DefaultMultiPartChunk chunk) {
+	private void readHeaders(ChannelBuffer buffer, DefaultPartMessage chunk) {
 		String line = readLine(buffer);
 		String name = null;
 		String value = null;

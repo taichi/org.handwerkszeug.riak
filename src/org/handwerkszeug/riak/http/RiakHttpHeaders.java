@@ -2,7 +2,12 @@ package org.handwerkszeug.riak.http;
 
 import static org.handwerkszeug.riak.util.Validation.notNull;
 
+/**
+ * @author taichi
+ */
 public class RiakHttpHeaders {
+
+	public static final String CLIENT_ID = "X-Riak-ClientId";
 
 	public static final String VECTOR_CLOCK = "X-Riak-Vclock";
 
