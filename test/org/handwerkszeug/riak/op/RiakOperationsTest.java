@@ -3,7 +3,6 @@ package org.handwerkszeug.riak.op;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -423,21 +422,20 @@ public abstract class RiakOperationsTest {
 		target.get(location, new RiakResponseHandler<RiakObject<byte[]>>() {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
-				waiter.compareAndSet(false, true);
-				fail(response.getMessage());
-			}
-
-			@Override
-			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
-					throws RiakException {
 				try {
-					assertNull(response.getContents());
 					assertNotNull(response.getMessage());
 					assertFalse(response.getMessage().isEmpty());
 					is[0] = true;
 				} finally {
 					waiter.compareAndSet(false, true);
 				}
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
+					throws RiakException {
+				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
 			}
 		});
 
@@ -748,7 +746,7 @@ public abstract class RiakOperationsTest {
 		while (waiter.get() == false) {
 			Thread.sleep(10);
 			if (300 < counter++) {
-				// fail("test is incomplete.");
+				fail("test is incomplete.");
 			}
 		}
 		assertTrue(is[0]);

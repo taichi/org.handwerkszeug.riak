@@ -296,11 +296,18 @@ public class PbcRiakOperations implements RiakOperations {
 					RpbGetResp resp = (RpbGetResp) receive;
 					int size = resp.getContentCount();
 					if (size < 1) {
-						handler.handle(new PbcRiakObjectResponse(null) {
+						// in this case, REST API returns 404. PBC do so.
+						handler.onError(new PbcRiakObjectResponse(null) {
 							public String getMessage() {
 								return String.format(Messages.NoContents,
 										location);
 							}
+
+							public int getResponseCode() {
+								// a numeric code. Currently only
+								// RIAKC_ERR_GENERAL=1 is defined.
+								return 1;
+							};
 						});
 					} else {
 						String vclock = toVclock(resp.getVclock());
@@ -765,7 +772,7 @@ public class PbcRiakOperations implements RiakOperations {
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbErrorResp) {
 							RpbErrorResp error = (RpbErrorResp) receive;
-							users.onError(new PbcErrorResponse<T>(error));
+							users.onError(new PbcErrorResponse(error));
 							return true;
 						} else {
 							return internal.handle(receive);
@@ -800,7 +807,7 @@ public class PbcRiakOperations implements RiakOperations {
 		}
 	}
 
-	class PbcErrorResponse<T> implements RiakResponse {
+	class PbcErrorResponse implements RiakResponse {
 
 		final Riakclient.RpbErrorResp error;
 
