@@ -21,6 +21,9 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.junit.Test;
 
+/**
+ * @author taichi
+ */
 public class PbcRiakOperationsTest extends RiakOperationsTest {
 
 	PbcRiakOperations target;

@@ -38,6 +38,7 @@ import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.op.internal.CompletionSupport;
+import org.handwerkszeug.riak.op.internal.IncomprehensibleProtocolException;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbBucketProps;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbContent;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbDelReq;
@@ -91,7 +92,8 @@ public class PbcRiakOperations implements RiakOperations {
 			final RiakResponseHandler<List<String>> handler) {
 		notNull(handler, "handler");
 
-		return handle("listBuckets", MessageCodes.RpbListBucketsReq, handler,
+		final String procedure = "listBuckets";
+		return handle(procedure, MessageCodes.RpbListBucketsReq, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -108,8 +110,9 @@ public class PbcRiakOperations implements RiakOperations {
 									return list;
 								}
 							});
+							return true;
 						}
-						return true;
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -122,7 +125,9 @@ public class PbcRiakOperations implements RiakOperations {
 
 		RpbListKeysReq request = RpbListKeysReq.newBuilder()
 				.setBucket(ByteString.copyFromUtf8(bucket)).build();
-		return handle("listKeys", request, handler,
+
+		final String procedure = "listKeys";
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -142,7 +147,7 @@ public class PbcRiakOperations implements RiakOperations {
 							});
 							return done;
 						}
-						return true;
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -155,7 +160,8 @@ public class PbcRiakOperations implements RiakOperations {
 
 		RpbGetBucketReq request = RpbGetBucketReq.newBuilder()
 				.setBucket(ByteString.copyFromUtf8(bucket)).build();
-		return handle("getBucket", request, handler,
+		final String procedure = "getBucket";
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -171,8 +177,9 @@ public class PbcRiakOperations implements RiakOperations {
 									return pb;
 								}
 							});
+							return true;
 						}
-						return true;
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -189,14 +196,17 @@ public class PbcRiakOperations implements RiakOperations {
 		RpbSetBucketReq request = RpbSetBucketReq.newBuilder()
 				.setBucket(ByteString.copyFromUtf8(bucket.getName()))
 				.setProps(props).build();
-		return handle("setBucket", request, handler,
+
+		final String procedure = "setBucket";
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbSetBucketResp.equals(receive)) {
 							handler.handle(support.new NoOpResponse());
+							return true;
 						}
-						return true;
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -279,13 +289,14 @@ public class PbcRiakOperations implements RiakOperations {
 		void handle(RpbGetResp resp, String vclock) throws Exception;
 	}
 
-	protected RiakFuture _get(String name, RpbGetReq.Builder builder,
+	protected RiakFuture _get(final String name, RpbGetReq.Builder builder,
 			final Location location,
 			final RiakResponseHandler<RiakObject<byte[]>> handler,
 			final GetHandler getHandler) {
 		RpbGetReq request = builder
 				.setBucket(ByteString.copyFromUtf8(location.getBucket()))
 				.setKey(ByteString.copyFromUtf8(location.getKey())).build();
+
 		return handle(name, request, handler, new NettyUtil.MessageHandler() {
 			@Override
 			public boolean handle(Object receive) throws Exception {
@@ -310,8 +321,9 @@ public class PbcRiakOperations implements RiakOperations {
 						String vclock = toVclock(resp.getVclock());
 						getHandler.handle(resp, vclock);
 					}
+					return true;
 				}
-				return true;
+				throw new IncomprehensibleProtocolException(name);
 			}
 		});
 	}
@@ -407,14 +419,16 @@ public class PbcRiakOperations implements RiakOperations {
 
 		Location loc = content.getLocation();
 		RpbPutReq.Builder builder = buildPutRequest(content, loc);
-		return handle("put", builder.build(), handler,
+		final String procedure = "put";
+		return handle(procedure, builder.build(), handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbPutResp) {
 							handler.handle(support.new NoOpResponse());
+							return true;
 						}
-						return true;
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -441,7 +455,8 @@ public class PbcRiakOperations implements RiakOperations {
 
 		final Location location = content.getLocation();
 		RpbPutReq.Builder builder = buildPutRequest(content, location, options);
-		return handle("put/opt", builder.build(), handler,
+		final String procedure = "put/opt";
+		return handle(procedure, builder.build(), handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -461,8 +476,9 @@ public class PbcRiakOperations implements RiakOperations {
 							} finally {
 								handler.end();
 							}
+							return true;
 						}
-						return true;
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 
@@ -558,7 +574,7 @@ public class PbcRiakOperations implements RiakOperations {
 		return _delete("delete", handler, builder);
 	}
 
-	protected RiakFuture _delete(String name,
+	protected RiakFuture _delete(final String name,
 			final RiakResponseHandler<_> handler, RpbDelReq.Builder builder) {
 		return handle(name, builder.build(), handler,
 				new NettyUtil.MessageHandler() {
@@ -566,8 +582,9 @@ public class PbcRiakOperations implements RiakOperations {
 					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbDelResp.equals(receive)) {
 							handler.handle(support.new NoOpResponse());
+							return true;
 						}
-						return true;
+						throw new IncomprehensibleProtocolException(name);
 					}
 				});
 	}
@@ -625,7 +642,8 @@ public class PbcRiakOperations implements RiakOperations {
 
 	protected RiakFuture mapReduce(RpbMapRedReq request,
 			final RiakResponseHandler<MapReduceResponse> handler) {
-		return handle("mapReduce", request, handler,
+		final String procedure = "mapReduce";
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -641,14 +659,15 @@ public class PbcRiakOperations implements RiakOperations {
 							});
 							return resp.getDone();
 						}
-						return true;
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
 
 	@Override
 	public RiakFuture ping(final RiakResponseHandler<String> handler) {
-		return handle("ping", MessageCodes.RpbPingReq, handler,
+		final String procedure = "ping";
+		return handle(procedure, MessageCodes.RpbPingReq, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -659,8 +678,9 @@ public class PbcRiakOperations implements RiakOperations {
 									return "pong";
 								}
 							});
+							return true;
 						}
-						return true;
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -675,7 +695,8 @@ public class PbcRiakOperations implements RiakOperations {
 	 * @return
 	 */
 	public RiakFuture getClientId(final RiakResponseHandler<String> handler) {
-		return handle("getClientId", MessageCodes.RpbGetClientIdReq, handler,
+		final String procedure = "getClientId";
+		return handle(procedure, MessageCodes.RpbGetClientIdReq, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -689,7 +710,7 @@ public class PbcRiakOperations implements RiakOperations {
 								}
 							});
 						}
-						return true;
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -713,14 +734,15 @@ public class PbcRiakOperations implements RiakOperations {
 		}
 		RpbSetClientIdReq request = RpbSetClientIdReq.newBuilder()
 				.setClientId(ByteString.copyFromUtf8(id)).build();
-		return handle("setClientId", request, handler,
+		final String procedure = "setClientId";
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbSetClientIdResp.equals(receive)) {
 							handler.handle(support.new NoOpResponse());
 						}
-						return true;
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -733,8 +755,9 @@ public class PbcRiakOperations implements RiakOperations {
 	 */
 	public RiakFuture getServerInfo(
 			final RiakResponseHandler<ServerInfo> handler) {
-		return handle("getServerInfo", MessageCodes.RpbGetServerInfoReq,
-				handler, new NettyUtil.MessageHandler() {
+		final String procedure = "getServerInfo";
+		return handle(procedure, MessageCodes.RpbGetServerInfoReq, handler,
+				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbGetServerInfoResp) {
@@ -748,7 +771,7 @@ public class PbcRiakOperations implements RiakOperations {
 								}
 							});
 						}
-						return true;
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}

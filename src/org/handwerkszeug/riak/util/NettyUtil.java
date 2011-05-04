@@ -3,6 +3,7 @@ package org.handwerkszeug.riak.util;
 import java.util.concurrent.TimeUnit;
 
 import org.handwerkszeug.riak.model.RiakFuture;
+import org.handwerkszeug.riak.op.internal.IncomprehensibleProtocolException;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
@@ -36,9 +37,12 @@ public class NettyUtil {
 		ChannelBuffer chunkBuffer;
 		HttpResponse chunkedResponse;
 
+		final String procedure;
 		final ChunkedMessageHandler handler;
 
-		public ChunkedMessageAggregator(ChunkedMessageHandler handler) {
+		public ChunkedMessageAggregator(String procedure,
+				ChunkedMessageHandler handler) {
+			this.procedure = procedure;
 			this.handler = handler;
 		}
 
@@ -48,10 +52,10 @@ public class NettyUtil {
 				HttpResponse response = (HttpResponse) receive;
 				if (NettyUtil.isSuccessful(response.getStatus())) {
 					if (response.isChunked()) {
-						chunkBuffer = ChannelBuffers.dynamicBuffer(2048);
-						chunkedResponse = response;
+						this.chunkBuffer = ChannelBuffers.dynamicBuffer(2048);
+						this.chunkedResponse = response;
 					} else {
-						handler.handle(response, response.getContent());
+						this.handler.handle(response, response.getContent());
 						return true;
 					}
 				}
@@ -59,13 +63,13 @@ public class NettyUtil {
 				HttpChunk chunk = (HttpChunk) receive;
 				boolean done = chunk.isLast();
 				if (done) {
-					handler.handle(chunkedResponse, chunkBuffer);
+					this.handler.handle(this.chunkedResponse, this.chunkBuffer);
 				} else {
-					chunkBuffer.writeBytes(chunk.getContent());
+					this.chunkBuffer.writeBytes(chunk.getContent());
 				}
 				return done;
 			}
-			throw new IllegalStateException();
+			throw new IncomprehensibleProtocolException(this.procedure);
 		}
 	}
 

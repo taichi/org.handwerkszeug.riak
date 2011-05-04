@@ -46,6 +46,7 @@ import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.op.internal.CompletionSupport;
+import org.handwerkszeug.riak.op.internal.IncomprehensibleProtocolException;
 import org.handwerkszeug.riak.util.HttpUtil;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
@@ -101,23 +102,25 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(handler, "handler");
 
 		HttpRequest request = build("/ping", HttpMethod.GET);
-		return handle("ping", request, handler, new NettyUtil.MessageHandler() {
-			@Override
-			public boolean handle(Object receive) throws Exception {
-				if (receive instanceof HttpResponse) {
-					HttpResponse response = (HttpResponse) receive;
-					if (NettyUtil.isSuccessful(response.getStatus())) {
-						handler.handle(support.new AbstractCompletionRiakResponse<String>() {
-							public String getContents() {
-								return "pong";
-							};
-						});
-						return true;
+		final String procedure = "ping";
+		return handle(procedure, request, handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof HttpResponse) {
+							HttpResponse response = (HttpResponse) receive;
+							if (NettyUtil.isSuccessful(response.getStatus())) {
+								handler.handle(support.new AbstractCompletionRiakResponse<String>() {
+									public String getContents() {
+										return "pong";
+									};
+								});
+								return true;
+							}
+						}
+						throw new IncomprehensibleProtocolException(procedure);
 					}
-				}
-				throw new IllegalStateException();
-			}
-		});
+				});
 	}
 
 	@Override
@@ -159,7 +162,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(handler, "handler");
 
 		HttpRequest request = build("?buckets=true", HttpMethod.GET);
-		return handle("listBuckets", request, handler,
+		final String procedure = "listBuckets";
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -179,7 +183,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 								return true;
 							}
 						}
-						throw new IllegalStateException();
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -223,7 +227,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		HttpRequest request = build("/" + bucket + "?props=false&keys=stream",
 				HttpMethod.GET);
-		return handle("listKeys", request, handler,
+		final String procedure = "listKeys";
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -244,7 +249,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							}
 							return done;
 						}
-						throw new IllegalStateException();
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -276,7 +281,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 		HttpRequest request = build("/" + bucket + "?props=true",
 				HttpMethod.GET);
 
-		return handle("getBucket", request, handler,
+		final String procedure = "getBucket";
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -297,7 +303,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 								return true;
 							}
 						}
-						throw new IllegalStateException();
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -309,7 +315,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(handler, "handler");
 
 		HttpRequest request = buildSetBucketRequest(bucket);
-		return handle("setBucket", request, handler,
+		final String procedure = "setBucket";
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -320,7 +327,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 								return true;
 							}
 						}
-						throw new IllegalStateException();
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -403,8 +410,9 @@ public class RestRiakOperations implements HttpRiakOperations {
 			final Location location,
 			final RiakResponseHandler<RiakObject<byte[]>> handler) {
 
-		return handle("get/single", request, handler,
-				new NettyUtil.ChunkedMessageAggregator(
+		String procedure = "get/single";
+		return handle(procedure, request, handler,
+				new NettyUtil.ChunkedMessageAggregator(procedure,
 						new NettyUtil.ChunkedMessageHandler() {
 							@Override
 							public void handle(HttpResponse response,
@@ -490,9 +498,9 @@ public class RestRiakOperations implements HttpRiakOperations {
 		HttpRequest request = buildGetRequst(location, options);
 		request.setHeader(HttpHeaders.Names.ACCEPT, RiakHttpHeaders.MULTI_PART);
 
-		return handle("get/sibling", request, handler,
+		final String procedure = "get/sibling";
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
-
 					String vclock;
 
 					@Override
@@ -516,10 +524,9 @@ public class RestRiakOperations implements HttpRiakOperations {
 								handler.handle(support.new RiakObjectResponse(
 										ro));
 							}
-
 							return done;
 						}
-						throw new IllegalStateException();
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -532,20 +539,22 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		HttpRequest request = buildPutRequest(content);
 
-		return handle("put", request, handler, new NettyUtil.MessageHandler() {
-			@Override
-			public boolean handle(Object receive) throws Exception {
-				if (receive instanceof HttpResponse) {
-					HttpResponse response = (HttpResponse) receive;
-					HttpResponseStatus status = response.getStatus();
-					if (NettyUtil.isSuccessful(status)) {
-						handler.handle(support.new NoOpResponse());
-						return true;
+		final String procedure = "put";
+		return handle(procedure, request, handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof HttpResponse) {
+							HttpResponse response = (HttpResponse) receive;
+							HttpResponseStatus status = response.getStatus();
+							if (NettyUtil.isSuccessful(status)) {
+								handler.handle(support.new NoOpResponse());
+								return true;
+							}
+						}
+						throw new IncomprehensibleProtocolException(procedure);
 					}
-				}
-				throw new IllegalStateException();
-			}
-		});
+				});
 	}
 
 	protected HttpRequest buildPutRequest(RiakObject<byte[]> content) {
@@ -640,7 +649,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		HttpRequest request = buildPutRequest(content, options);
 
-		return handle("put/sibling", request, handler,
+		final String procedure = "put/sibling";
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -663,7 +673,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							}
 							return true;
 						}
-						throw new IllegalStateException();
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -748,7 +758,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	protected RiakFuture _delete(String name,
 			final RiakResponseHandler<_> handler, HttpRequest request) {
-		return handle("delete", request, handler,
+		final String procedure = name;
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -759,7 +770,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 								return true;
 							}
 						}
-						throw new IllegalStateException();
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -802,7 +813,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	protected RiakFuture mapReduce(HttpRequest request,
 			final RiakResponseHandler<MapReduceResponse> handler) {
-		return handle("mapReduce", request, handler,
+		final String procedure = "mapReduce";
+		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -822,7 +834,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							});
 							return done;
 						}
-						throw new IllegalStateException();
+						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
 	}
@@ -918,11 +930,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		@Override
 		public void operationComplete() {
-			complete();
+			support.complete();
 		}
-	}
-
-	protected void complete() {
-		this.support.complete();
 	}
 }

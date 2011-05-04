@@ -15,6 +15,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * @author taichi
+ */
 public class PbcRiakClientTest {
 
 	PbcRiakClient target;
