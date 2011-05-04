@@ -7,10 +7,8 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -18,7 +16,6 @@ import java.util.regex.Pattern;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.RiakException;
@@ -48,6 +45,7 @@ import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.op.internal.CompletionSupport;
 import org.handwerkszeug.riak.op.internal.IncomprehensibleProtocolException;
 import org.handwerkszeug.riak.util.HttpUtil;
+import org.handwerkszeug.riak.util.JsonUtil;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -172,7 +170,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							ChannelBuffer buffer = response.getContent();
 							ObjectNode node = to(buffer);
 							if (node != null) {
-								final List<String> list = to(node
+								final List<String> list = JsonUtil.to(node
 										.get("buckets"));
 								handler.handle(support.new AbstractCompletionRiakResponse<List<String>>() {
 									@Override
@@ -204,19 +202,6 @@ public class RestRiakOperations implements HttpRiakOperations {
 			throw new RiakException(e);
 		}
 		return null;
-	}
-
-	List<String> to(JsonNode node) {
-		if (node != null && node.isArray()) {
-			ArrayNode an = (ArrayNode) node;
-			List<String> list = new ArrayList<String>(an.size());
-			for (Iterator<JsonNode> i = an.getElements(); i.hasNext();) {
-				String key = i.next().getValueAsText();
-				list.add(key);
-			}
-			return list;
-		}
-		return Collections.emptyList();
 	}
 
 	@Override
@@ -260,7 +245,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		if (on != null) {
 			JsonNode node = on.get("keys");
 			if (node != null) {
-				final List<String> list = to(node);
+				final List<String> list = JsonUtil.to(node);
 				final KeyResponse kr = new KeyResponse(list, list.isEmpty());
 				handler.handle(support.new AbstractCompletionRiakResponse<KeyResponse>() {
 					@Override
@@ -640,6 +625,10 @@ public class RestRiakOperations implements HttpRiakOperations {
 		}
 	}
 
+	/**
+	 * if returning body has sibling then call get with silibling call
+	 * automatically.
+	 */
 	@Override
 	public RiakFuture put(final RiakObject<byte[]> content,
 			final PutOptions options, final SiblingHandler handler) {

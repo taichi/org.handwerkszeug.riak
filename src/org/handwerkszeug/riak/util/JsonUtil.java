@@ -3,9 +3,14 @@ package org.handwerkszeug.riak.util;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
 import org.handwerkszeug.riak.util.Streams.IORuntimeException;
 
 /**
@@ -51,6 +56,19 @@ public class JsonUtil {
 			}
 		};
 		return result[0];
+	}
+
+	public static List<String> to(JsonNode node) {
+		if (node != null && node.isArray()) {
+			ArrayNode an = (ArrayNode) node;
+			List<String> list = new ArrayList<String>(an.size());
+			for (Iterator<JsonNode> i = an.getElements(); i.hasNext();) {
+				String key = i.next().getValueAsText();
+				list.add(key);
+			}
+			return list;
+		}
+		return Collections.emptyList();
 	}
 
 }
