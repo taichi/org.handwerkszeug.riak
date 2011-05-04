@@ -134,11 +134,4 @@ public class PbcRiakOperationsTest extends RiakOperationsTest {
 		wait(waiter, is);
 	}
 
-	protected void wait(final AtomicBoolean waiter, final boolean[] is)
-			throws InterruptedException {
-		while (waiter.get() == false) {
-			Thread.sleep(10);
-		}
-		assertTrue(is[0]);
-	}
 }

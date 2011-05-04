@@ -39,12 +39,9 @@ import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.Quorum;
-import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
-import org.handwerkszeug.riak.model.internal.AbstractRiakObjectResponse;
-import org.handwerkszeug.riak.model.internal.AbstractRiakResponse;
 import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
@@ -110,7 +107,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 				if (receive instanceof HttpResponse) {
 					HttpResponse response = (HttpResponse) receive;
 					if (NettyUtil.isSuccessful(response.getStatus())) {
-						handler.handle(new RestRiakResponse<String>() {
+						handler.handle(support.new AbstractCompletionRiakResponse<String>() {
 							public String getContents() {
 								return "pong";
 							};
@@ -173,7 +170,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							if (node != null) {
 								final List<String> list = to(node
 										.get("buckets"));
-								handler.handle(new RestRiakResponse<List<String>>() {
+								handler.handle(support.new AbstractCompletionRiakResponse<List<String>>() {
 									@Override
 									public List<String> getContents() {
 										return list;
@@ -260,7 +257,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 			if (node != null) {
 				final List<String> list = to(node);
 				final KeyResponse kr = new KeyResponse(list, list.isEmpty());
-				handler.handle(new RestRiakResponse<KeyResponse>() {
+				handler.handle(support.new AbstractCompletionRiakResponse<KeyResponse>() {
 					@Override
 					public KeyResponse getContents() {
 						return kr;
@@ -291,7 +288,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 												new ChannelBufferInputStream(
 														response.getContent()),
 												BucketHolder.class);
-								handler.handle(new RestRiakResponse<Bucket>() {
+								handler.handle(support.new AbstractCompletionRiakResponse<Bucket>() {
 									@Override
 									public Bucket getContents() {
 										return holder.props;
@@ -319,7 +316,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 						if (receive instanceof HttpResponse) {
 							HttpResponse response = (HttpResponse) receive;
 							if (NettyUtil.isSuccessful(response.getStatus())) {
-								handler.handle(new NoOpResponse());
+								handler.handle(support.new NoOpResponse());
 								return true;
 							}
 						}
@@ -414,7 +411,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 									ChannelBuffer buffer) throws Exception {
 								RiakObject<byte[]> ro = convert(response,
 										buffer, location);
-								handler.handle(new RestRiakObjectResponse(ro));
+								handler.handle(support.new RiakObjectResponse(
+										ro));
 							}
 						}));
 	}
@@ -516,7 +514,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 							} else {
 								RiakObject<byte[]> ro = convert(chunk,
 										chunk.getContent(), location);
-								handler.handle(new RestRiakObjectResponse(ro));
+								handler.handle(support.new RiakObjectResponse(
+										ro));
 							}
 
 							return done;
@@ -542,7 +541,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 					HttpResponseStatus status = response.getStatus();
 					if (NettyUtil.isSuccessful(status)
 							|| status.getCode() == 300) {
-						handler.handle(new RestRiakResponse<List<RiakObject<byte[]>>>() {
+						handler.handle(support.new AbstractCompletionRiakResponse<List<RiakObject<byte[]>>>() {
 							@Override
 							public List<RiakObject<byte[]>> getContents() {
 								return Collections.emptyList();
@@ -658,7 +657,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 											buffer, content.getLocation());
 									final List<RiakObject<byte[]>> list = new ArrayList<RiakObject<byte[]>>();
 									list.add(ro);
-									handler.handle(new RestRiakResponse<List<RiakObject<byte[]>>>() {
+									handler.handle(support.new AbstractCompletionRiakResponse<List<RiakObject<byte[]>>>() {
 										@Override
 										public List<RiakObject<byte[]>> getContents() {
 											return list;
@@ -735,7 +734,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 						if (receive instanceof HttpResponse) {
 							HttpResponse response = (HttpResponse) receive;
 							if (NettyUtil.isSuccessful(response.getStatus())) {
-								handler.handle(new NoOpResponse());
+								handler.handle(support.new NoOpResponse());
 								return true;
 							}
 						}
@@ -794,7 +793,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							ObjectNode node = to(chunk.getContent());
 							final MapReduceResponse response = new RestMapReduceResponse(
 									node, done);
-							handler.handle(new RestRiakResponse<MapReduceResponse>() {
+							handler.handle(support.new AbstractCompletionRiakResponse<MapReduceResponse>() {
 								@Override
 								public MapReduceResponse getContents() {
 									return response;
@@ -872,32 +871,6 @@ public class RestRiakOperations implements HttpRiakOperations {
 						return internal.handle(receive);
 					}
 				});
-	}
-
-	abstract class RestRiakResponse<T> extends AbstractRiakResponse implements
-			RiakContentsResponse<T> {
-		@Override
-		public void operationComplete() {
-			complete();
-		}
-	}
-
-	class RestRiakObjectResponse extends AbstractRiakObjectResponse {
-		public RestRiakObjectResponse(RiakObject<byte[]> ro) {
-			super(ro);
-		}
-
-		@Override
-		public void operationComplete() {
-			complete();
-		}
-	}
-
-	class NoOpResponse extends RestRiakResponse<_> {
-		@Override
-		public _ getContents() {
-			return _._;
-		}
 	}
 
 	class RestErrorResponse implements RiakResponse {

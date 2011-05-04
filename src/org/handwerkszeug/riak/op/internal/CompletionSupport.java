@@ -7,7 +7,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.RiakException;
+import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
+import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.internal.AbstractRiakResponse;
 import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
@@ -115,6 +118,36 @@ public class CompletionSupport implements ChannelFutureListener {
 				}
 			});
 			LOG.error(e.getCause().getMessage(), e.getCause());
+		}
+	}
+
+	public abstract class AbstractCompletionRiakResponse<T> extends
+			AbstractRiakResponse implements RiakContentsResponse<T> {
+		@Override
+		public void operationComplete() {
+			complete();
+		}
+	}
+
+	public class NoOpResponse extends AbstractCompletionRiakResponse<_> {
+		@Override
+		public _ getContents() {
+			return _._;
+		}
+	}
+
+	public class RiakObjectResponse extends
+			AbstractCompletionRiakResponse<RiakObject<byte[]>> {
+
+		final RiakObject<byte[]> contents;
+
+		public RiakObjectResponse(RiakObject<byte[]> ro) {
+			this.contents = ro;
+		}
+
+		@Override
+		public RiakObject<byte[]> getContents() {
+			return this.contents;
 		}
 	}
 }
