@@ -108,11 +108,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 						if (receive instanceof HttpResponse) {
 							HttpResponse response = (HttpResponse) receive;
 							if (NettyUtil.isSuccessful(response.getStatus())) {
-								handler.handle(support.new AbstractCompletionRiakResponse<String>() {
-									public String getContents() {
-										return "pong";
-									};
-								});
+								handler.handle(support.newResponse("pong"));
 								return true;
 							}
 						}
@@ -170,14 +166,9 @@ public class RestRiakOperations implements HttpRiakOperations {
 							ChannelBuffer buffer = response.getContent();
 							ObjectNode node = to(buffer);
 							if (node != null) {
-								final List<String> list = JsonUtil.to(node
+								List<String> list = JsonUtil.to(node
 										.get("buckets"));
-								handler.handle(support.new AbstractCompletionRiakResponse<List<String>>() {
-									@Override
-									public List<String> getContents() {
-										return list;
-									}
-								});
+								handler.handle(support.newResponse(list));
 								return true;
 							}
 						}
@@ -245,14 +236,9 @@ public class RestRiakOperations implements HttpRiakOperations {
 		if (on != null) {
 			JsonNode node = on.get("keys");
 			if (node != null) {
-				final List<String> list = JsonUtil.to(node);
-				final KeyResponse kr = new KeyResponse(list, list.isEmpty());
-				handler.handle(support.new AbstractCompletionRiakResponse<KeyResponse>() {
-					@Override
-					public KeyResponse getContents() {
-						return kr;
-					}
-				});
+				List<String> list = JsonUtil.to(node);
+				KeyResponse kr = new KeyResponse(list, list.isEmpty());
+				handler.handle(support.newResponse(kr));
 			}
 		}
 	}
@@ -274,17 +260,12 @@ public class RestRiakOperations implements HttpRiakOperations {
 						if (receive instanceof HttpResponse) {
 							HttpResponse response = (HttpResponse) receive;
 							if (NettyUtil.isSuccessful(response.getStatus())) {
-								final BucketHolder holder = objectMapper
-										.readValue(
-												new ChannelBufferInputStream(
-														response.getContent()),
-												BucketHolder.class);
-								handler.handle(support.new AbstractCompletionRiakResponse<Bucket>() {
-									@Override
-									public Bucket getContents() {
-										return holder.props;
-									}
-								});
+								BucketHolder holder = objectMapper.readValue(
+										new ChannelBufferInputStream(response
+												.getContent()),
+										BucketHolder.class);
+								handler.handle(support
+										.newResponse(holder.props));
 								return true;
 							}
 						}
@@ -308,7 +289,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 						if (receive instanceof HttpResponse) {
 							HttpResponse response = (HttpResponse) receive;
 							if (NettyUtil.isSuccessful(response.getStatus())) {
-								handler.handle(support.new NoOpResponse());
+								handler.handle(support.newResponse());
 								return true;
 							}
 						}
@@ -324,7 +305,6 @@ public class RestRiakOperations implements HttpRiakOperations {
 			ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
 			OutputStream out = new ChannelBufferOutputStream(buffer);
 			objectMapper.writeValue(out, holder);
-			System.out.println(buffer.toString(CharsetUtil.UTF_8));
 			HttpRequest request = build("/" + bucket.getName(), HttpMethod.PUT);
 			request.setHeader(HttpHeaders.Names.CONTENT_LENGTH,
 					buffer.readableBytes());
@@ -404,8 +384,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 									ChannelBuffer buffer) throws Exception {
 								RiakObject<byte[]> ro = convert(response,
 										buffer, location);
-								handler.handle(support.new RiakObjectResponse(
-										ro));
+								handler.handle(support.newResponse(ro));
 							}
 						}));
 	}
@@ -506,8 +485,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							} else {
 								RiakObject<byte[]> ro = convert(part,
 										part.getContent(), location);
-								handler.handle(support.new RiakObjectResponse(
-										ro));
+								handler.handle(support.newResponse(ro));
 							}
 							return done;
 						}
@@ -533,7 +511,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							HttpResponse response = (HttpResponse) receive;
 							HttpResponseStatus status = response.getStatus();
 							if (NettyUtil.isSuccessful(status)) {
-								handler.handle(support.new NoOpResponse());
+								handler.handle(support.newResponse());
 								return true;
 							}
 						}
@@ -651,8 +629,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 									RiakObject<byte[]> ro = convert(response,
 											response.getContent(),
 											content.getLocation());
-									handler.handle(support.new RiakObjectResponse(
-											ro));
+									handler.handle(support.newResponse(ro));
 								} finally {
 									handler.end();
 								}
@@ -755,7 +732,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 						if (receive instanceof HttpResponse) {
 							HttpResponse response = (HttpResponse) receive;
 							if (NettyUtil.isSuccessful(response.getStatus())) {
-								handler.handle(support.new NoOpResponse());
+								handler.handle(support.newResponse());
 								return true;
 							}
 						}
@@ -813,14 +790,9 @@ public class RestRiakOperations implements HttpRiakOperations {
 							HttpChunk chunk = (HttpChunk) receive;
 							boolean done = chunk.isLast();
 							ObjectNode node = to(chunk.getContent());
-							final MapReduceResponse response = new RestMapReduceResponse(
+							MapReduceResponse response = new RestMapReduceResponse(
 									node, done);
-							handler.handle(support.new AbstractCompletionRiakResponse<MapReduceResponse>() {
-								@Override
-								public MapReduceResponse getContents() {
-									return response;
-								}
-							});
+							handler.handle(support.newResponse(response));
 							return done;
 						}
 						throw new IncomprehensibleProtocolException(procedure);
