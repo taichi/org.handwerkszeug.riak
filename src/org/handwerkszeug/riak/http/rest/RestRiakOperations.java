@@ -746,6 +746,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 			RiakResponseHandler<_> handler) {
 		notNull(location, "location");
 		notNull(readWrite, "readWrite");
+		notNull(handler, "handler");
 
 		HttpRequest request = buildDeleteRequest(location, readWrite);
 		return _delete("delete/quorum", handler, request);
