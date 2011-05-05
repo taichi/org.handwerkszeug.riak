@@ -24,9 +24,6 @@ public class DefaultRiakObject implements RiakObject<byte[]> {
 	private Date lastModified;
 	private Map<String, String> userMetadata = Collections.emptyMap();
 
-	public DefaultRiakObject() {
-	}
-
 	public DefaultRiakObject(Location location) {
 		notNull(location, "location");
 		this.location = location;

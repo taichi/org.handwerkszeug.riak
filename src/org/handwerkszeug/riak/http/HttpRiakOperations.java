@@ -38,9 +38,16 @@ public interface HttpRiakOperations extends RiakOperations, LuwakSupport {
 	String getClientId();
 
 	/**
-	 * Stores a new object in a bucket with a random Riak-assigned key.
+	 * Stores a new object in a bucket with a random Riak-assigned key.<br/>
+	 * set Location key as empty string.
 	 */
-	RiakFuture post(String bucket, RiakObject<byte[]> content,
+	RiakFuture post(RiakObject<byte[]> content,
+			 RiakResponseHandler<RiakObject<byte[]>> handler);
+	/**
+	 * Stores a new object in a bucket with a random Riak-assigned key.<br/>
+	 * set Location key as empty string.
+	 */
+	RiakFuture post(RiakObject<byte[]> content,
 			PutOptions options, RiakResponseHandler<RiakObject<byte[]>> handler);
 
 	/**

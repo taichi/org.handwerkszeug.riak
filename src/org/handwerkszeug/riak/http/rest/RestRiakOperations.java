@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -604,7 +605,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	/**
-	 * if returning body has sibling then call get with silibling call
+	 * if returning body has sibling then call get with sibling call
 	 * automatically.
 	 */
 	@Override
@@ -699,10 +700,119 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	@Override
-	public RiakFuture post(String bucket, RiakObject<byte[]> content,
-			PutOptions options, RiakResponseHandler<RiakObject<byte[]>> handler) {
-		// TODO Auto-generated method stub
+	public RiakFuture post(RiakObject<byte[]> content,
+			final RiakResponseHandler<RiakObject<byte[]>> handler) {
+		notNull(content, "content");
+		notNull(handler, "handler");
+
+		HttpRequest request = buildPostRequest(content);
+		return _post(content, handler, request);
+	}
+
+	private RiakFuture _post(RiakObject<byte[]> content,
+			final RiakResponseHandler<RiakObject<byte[]>> handler,
+			HttpRequest request) {
+		final RiakObject<byte[]> copied = copy(content);
+		final String procedure = "post";
+		return handle(procedure, request, handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof HttpResponse) {
+							HttpResponse response = (HttpResponse) receive;
+							if (NettyUtil.isSuccessful(response.getStatus())) {
+								Location location = to(response);
+								if (location != null) {
+									copied.setLocation(location);
+									handler.handle(support.newResponse(copied));
+									return true;
+								}
+							}
+						}
+						throw new IncomprehensibleProtocolException(procedure);
+					}
+				});
+	}
+
+	protected RiakObject<byte[]> copy(RiakObject<byte[]> src) {
+		DefaultRiakObject ro = new DefaultRiakObject(src.getLocation());
+		ro.setContent(Arrays.copyOf(src.getContent(), src.getContent().length));
+		ro.setVectorClock(src.getVectorClock());
+		ro.setContentType(src.getContentType());
+		ro.setCharset(src.getCharset());
+		ro.setContentEncoding(src.getContentEncoding());
+		ro.setVtag(src.getVtag());
+		List<Link> links = src.getLinks();
+		if (links != null && links.isEmpty() == false) {
+			ro.setLinks(new ArrayList<Link>(links));
+		}
+		Date d = src.getLastModified();
+		if (d != null) {
+			ro.setLastModified(new Date(d.getTime()));
+		}
+		Map<String, String> metas = src.getUserMetadata();
+		if (metas != null && metas.isEmpty() == false) {
+			ro.setUserMetadata(new HashMap<String, String>(metas));
+		}
+		return ro;
+	}
+
+	protected Location to(HttpResponse response) {
+		String loc = response.getHeader(HttpHeaders.Names.LOCATION);
+		if (loc != null && loc.isEmpty() == false) {
+			String[] slashed = loc.split("/");
+			if (slashed != null && 3 < slashed.length) {
+				Location location = new Location(slashed[2], slashed[3]);
+				return location;
+			}
+		}
 		return null;
+	}
+
+	protected HttpRequest buildPostRequest(RiakObject<byte[]> content) {
+		HttpRequest request = build("/" + content.getLocation().getBucket(),
+				HttpMethod.POST);
+		merge(request, content);
+		return request;
+	}
+
+	@Override
+	public RiakFuture post(RiakObject<byte[]> content, PutOptions options,
+			final RiakResponseHandler<RiakObject<byte[]>> handler) {
+		notNull(content, "content");
+		notNull(options, "options");
+		notNull(handler, "handler");
+
+		HttpRequest request = buildPostRequest(content, options);
+		if (options.getReturnBody() == false) {
+			return _post(content, handler, request);
+		}
+		final String procedure = "post/returnbody";
+		return handle(procedure, request, handler,
+				new NettyUtil.ChunkedMessageAggregator(procedure,
+						new NettyUtil.ChunkedMessageHandler() {
+							@Override
+							public void handle(HttpResponse response,
+									ChannelBuffer buffer) throws Exception {
+								Location location = to(response);
+								if (location == null) {
+									throw new IncomprehensibleProtocolException(
+											procedure);
+								}
+								RiakObject<byte[]> ro = convert(response,
+										buffer, location);
+								handler.handle(support.newResponse(ro));
+
+							}
+						}));
+	}
+
+	protected HttpRequest buildPostRequest(RiakObject<byte[]> content,
+			PutOptions options) {
+		HttpRequest request = buildPostRequest(content);
+		QueryStringEncoder params = to(options, request);
+		request.setUri(params.toString());
+		return request;
 	}
 
 	@Override
