@@ -42,15 +42,18 @@ public interface HttpRiakOperations extends RiakOperations, LuwakSupport {
 	 * set Location key as empty string.
 	 */
 	RiakFuture post(RiakObject<byte[]> content,
-			 RiakResponseHandler<RiakObject<byte[]>> handler);
+			RiakResponseHandler<RiakObject<byte[]>> handler);
+
 	/**
 	 * Stores a new object in a bucket with a random Riak-assigned key.<br/>
 	 * set Location key as empty string.
 	 */
-	RiakFuture post(RiakObject<byte[]> content,
-			PutOptions options, RiakResponseHandler<RiakObject<byte[]>> handler);
+	RiakFuture post(RiakObject<byte[]> content, PutOptions options,
+			RiakResponseHandler<RiakObject<byte[]>> handler);
 
 	/**
+	 * notify messages for every steps.
+	 * 
 	 * @see <a href="http://wiki.basho.com/Links.html">Links</a>
 	 * @see <a
 	 *      href="http://blog.basho.com/2010/02/24/link-walking-by-example/">Link

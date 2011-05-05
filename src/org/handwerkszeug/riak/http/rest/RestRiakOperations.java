@@ -63,6 +63,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.codec.http.MultipartResponseDecoder;
 import org.jboss.netty.handler.codec.http.PartMessage;
 import org.jboss.netty.handler.codec.http.QueryStringEncoder;
 import org.jboss.netty.util.CharsetUtil;
@@ -583,6 +584,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 				stb.append(", ");
 			}
 			stb.append('<');
+			stb.append('/');
 			stb.append(this.riakPath);
 			stb.append('/');
 			stb.append(link.getLocation().getBucket());
@@ -757,7 +759,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		return ro;
 	}
 
-	protected Location to(HttpResponse response) {
+	protected Location to(HttpMessage response) {
 		String loc = response.getHeader(HttpHeaders.Names.LOCATION);
 		if (loc != null && loc.isEmpty() == false) {
 			String[] slashed = loc.split("/");
@@ -941,16 +943,84 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	@Override
 	public RiakFuture putStream(RiakObject<OutputStreamHandler> content,
-			RiakResponseHandler<String> handler) {
+			final RiakResponseHandler<String> handler) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public RiakFuture walk(Location walkbegin, List<LinkCondition> conditions,
-			RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
-		// TODO Auto-generated method stub
-		return null;
+			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
+		notNull(walkbegin, "walkbegin");
+		notNull(conditions, "conditions");
+		notNull(handler, "handler");
+
+		HttpRequest request = buildWalkRequst(walkbegin, conditions);
+		final String procedure = "walk";
+		return handle(procedure, request, handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof HttpResponse) {
+							// do nothing
+							return false;
+						} else if (receive instanceof PartMessage) {
+							PartMessage part = (PartMessage) receive;
+							boolean done = part.isLast();
+							if (done == false) {
+								notifyStep(part, handler);
+							}
+							return done;
+						}
+						throw new IncomprehensibleProtocolException(procedure);
+					}
+				});
+	}
+
+	protected HttpRequest buildWalkRequst(Location walkbegin,
+			List<LinkCondition> conditions) {
+		StringBuilder stb = new StringBuilder(64);
+		stb.append('/');
+		stb.append(walkbegin.getBucket());
+		stb.append('/');
+		stb.append(walkbegin.getKey());
+		for (LinkCondition cond : conditions) {
+			stb.append('/');
+			stb.append(cond.getBucket());
+			stb.append(',');
+			stb.append(cond.getTag());
+			stb.append(',');
+			if (cond.getKeep()) {
+				stb.append('1');
+			} else {
+				stb.append('_');
+			}
+		}
+		return build(stb.toString(), HttpMethod.GET);
+	}
+
+	protected void notifyStep(PartMessage message,
+			RiakResponseHandler<List<RiakObject<byte[]>>> handler)
+			throws Exception {
+		MultipartResponseDecoder decoder = new MultipartResponseDecoder();
+		if (decoder.setUpBoundary(message)) {
+			List<RiakObject<byte[]>> list = new ArrayList<RiakObject<byte[]>>();
+			ChannelBuffer buffer = message.getContent();
+			while (buffer.readable()) {
+				PartMessage msg = decoder.parse(buffer);
+				if (msg.isLast()) {
+					break;
+				} else {
+					Location location = to(msg);
+					if (location != null) {
+						RiakObject<byte[]> ro = convert(msg, msg.getContent(),
+								location);
+						list.add(ro);
+					}
+				}
+			}
+			handler.handle(support.newResponse(list));
+		}
 	}
 
 	@Override

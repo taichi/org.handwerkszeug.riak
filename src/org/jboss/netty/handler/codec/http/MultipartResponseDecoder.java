@@ -31,9 +31,9 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 			HttpResponse response = (HttpResponse) o;
 			if (response.isChunked()) {
 				setUpBoundary(response);
-			} else if (response.getStatus().getCode() == 300
-					&& setUpBoundary(response)) {
-				ChannelBuffer buffer = response.getContent();
+			} else if (setUpBoundary(response)) {
+				ChannelBuffer buffer = response.getContent().copy();
+
 				response.setContent(ChannelBuffers.EMPTY_BUFFER);
 				Channels.fireMessageReceived(ctx, response,
 						e.getRemoteAddress());
@@ -44,8 +44,7 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 			HttpChunk chunk = (HttpChunk) o;
 			if (this.dashBoundary != null) {
 				if (chunk.isLast()) {
-					this.dashBoundary = null;
-					this.closeBoundary = null;
+					clearBoudndary();
 				} else {
 					ChannelBuffer buffer = chunk.getContent();
 					splitMultipart(ctx, e, buffer);
@@ -56,7 +55,7 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		ctx.sendUpstream(e);
 	}
 
-	protected boolean setUpBoundary(HttpResponse response) {
+	public boolean setUpBoundary(HttpMessage response) {
 		String b = getBoundary(response);
 		if (b != null) {
 			this.dashBoundary = "--" + b;
@@ -66,12 +65,17 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		return false;
 	}
 
+	public void clearBoudndary() {
+		this.dashBoundary = null;
+		this.closeBoundary = null;
+	}
+
 	static final Pattern MultiPart = Pattern
 			.compile(
 					"multipart/mixed;\\s*boundary=(([\\w'\\(\\),-./:=\\?]{1,70})|\"([\\w'\\(\\),-./:=\\?]{1,70})\")",
 					Pattern.CASE_INSENSITIVE);
 
-	protected String getBoundary(HttpResponse response) {
+	protected String getBoundary(HttpMessage response) {
 		String type = response.getHeader(HttpHeaders.Names.CONTENT_TYPE);
 		if (type != null && type.isEmpty() == false) {
 			Matcher m = MultiPart.matcher(type);
@@ -99,7 +103,7 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		SKIP_CONTROL_CHARS, READ_BOUNDARY, READ_HEADERS, READ_CONTENT, EPILOGUE;
 	}
 
-	protected PartMessage parse(ChannelBuffer buffer) {
+	public PartMessage parse(ChannelBuffer buffer) {
 		DefaultPartMessage multipart = new DefaultPartMessage();
 		State state = State.SKIP_CONTROL_CHARS;
 		for (;;) {
@@ -258,7 +262,7 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		String line = "";
 		while (buffer.readable()) {
 			line = readLine(buffer);
-			if (line.isEmpty()) {
+			if (line.isEmpty() && buffer.readable() == false) {
 				next[0] = State.EPILOGUE;
 				break;
 			} else if (this.dashBoundary.equals(line)) {
