@@ -954,9 +954,32 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	@Override
-	public RiakFuture getStats(RiakResponseHandler<ObjectNode> handler) {
-		// TODO Auto-generated method stub
-		return null;
+	public RiakFuture getStats(final RiakResponseHandler<ObjectNode> handler) {
+		notNull(handler, "handler");
+
+		HttpRequest request = buildGetStatsRequest();
+		final String procedure = "getStats";
+		return handle(procedure, request, handler,
+				new NettyUtil.MessageHandler() {
+
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof HttpResponse) {
+							HttpResponse response = (HttpResponse) receive;
+							if (NettyUtil.isSuccessful(response.getStatus())) {
+								ObjectNode node = to(response.getContent());
+								handler.handle(support.newResponse(node));
+								return true;
+							}
+						}
+						throw new IncomprehensibleProtocolException(procedure);
+					}
+				});
+	}
+
+	protected HttpRequest buildGetStatsRequest() {
+		HttpRequest request = build(this.host, "/stats", HttpMethod.GET);
+		return request;
 	}
 
 	protected <T> RiakFuture handle(final String name, Object send,

@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.model.DefaultPutOptions;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
@@ -168,5 +169,34 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 		wait(waiter, is);
 		return loc[0];
+	}
+
+	@Test
+	public void testGetStats() throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+		target.getStats(new RiakResponseHandler<ObjectNode>() {
+			@Override
+			public void onError(RiakResponse response) throws Exception {
+				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<ObjectNode> response)
+					throws Exception {
+				try {
+					assertNotNull(response.getContents());
+					ObjectNode node = response.getContents();
+					assertNotNull(node.get("riak_kv_version"));
+					System.out.println(node);
+
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+		wait(waiter, is);
 	}
 }
