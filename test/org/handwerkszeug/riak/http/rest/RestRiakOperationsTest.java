@@ -183,26 +183,22 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		// A -> C -> D
 		String bucket = "testWalk";
 		RiakObject<byte[]> D = createData(bucket, "D", new ArrayList<Link>());
-		testDelete(D.getLocation());
 		put(D);
 
 		List<Link> c2d = new ArrayList<Link>();
 		c2d.add(new Link(D.getLocation(), "2d"));
 		RiakObject<byte[]> C = createData(bucket, "C", c2d);
-		testDelete(C.getLocation());
 		put(C);
 
 		List<Link> b2d = new ArrayList<Link>();
 		b2d.add(new Link(D.getLocation(), "2d"));
 		RiakObject<byte[]> B = createData(bucket, "B", b2d);
-		testDelete(B.getLocation());
 		put(B);
 
 		List<Link> a = new ArrayList<Link>();
 		a.add(new Link(C.getLocation(), "a2c"));
 		a.add(new Link(B.getLocation(), "a2b"));
 		RiakObject<byte[]> A = createData(bucket, "A", a);
-		testDelete(A.getLocation());
 		put(A);
 
 		// walk
@@ -217,7 +213,12 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		list.add(phase2);
 
 		testWalk(A.getLocation(), list);
+
 		// delete
+		testDelete(D.getLocation());
+		testDelete(C.getLocation());
+		testDelete(B.getLocation());
+		testDelete(A.getLocation());
 	}
 
 	RiakObject<byte[]> createData(String bucket, String key, List<Link> links) {
