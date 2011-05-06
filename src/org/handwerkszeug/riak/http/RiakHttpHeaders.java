@@ -15,7 +15,11 @@ public class RiakHttpHeaders {
 
 	public static final String USERMETA_PREFIX = "x-riak-meta-";
 
+	public static final String BLOCK_SIZE = "X-Luwak-Block-Size";
+
 	public static final String CONTENT_JSON = "application/json";
+
+	public static final String CONTENT_STREAM = "application/octet-stream";
 
 	public static final String MULTI_PART = "multipart/mixed";
 

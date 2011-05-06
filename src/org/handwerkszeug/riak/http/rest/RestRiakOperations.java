@@ -3,6 +3,7 @@ package org.handwerkszeug.riak.http.rest;
 import static org.handwerkszeug.riak.util.Validation.notNull;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -24,7 +25,6 @@ import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.http.HttpRiakOperations;
 import org.handwerkszeug.riak.http.InputStreamHandler;
 import org.handwerkszeug.riak.http.LinkCondition;
-import org.handwerkszeug.riak.http.OutputStreamHandler;
 import org.handwerkszeug.riak.http.RiakHttpHeaders;
 import org.handwerkszeug.riak.mapreduce.DefaultMapReduceQuery;
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
@@ -61,7 +61,6 @@ import org.jboss.netty.handler.codec.http.HttpMessage;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.MultipartResponseDecoder;
 import org.jboss.netty.handler.codec.http.PartMessage;
@@ -511,8 +510,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof HttpResponse) {
 							HttpResponse response = (HttpResponse) receive;
-							HttpResponseStatus status = response.getStatus();
-							if (NettyUtil.isSuccessful(status)) {
+							if (NettyUtil.isSuccessful(response.getStatus())) {
 								handler.handle(support.newResponse());
 								return true;
 							}
@@ -935,20 +933,6 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	@Override
-	public RiakFuture getStream(String key, GetOptions options,
-			InputStreamHandler handler) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public RiakFuture putStream(RiakObject<OutputStreamHandler> content,
-			final RiakResponseHandler<String> handler) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public RiakFuture walk(Location walkbegin, List<LinkCondition> conditions,
 			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
 		notNull(walkbegin, "walkbegin");
@@ -1097,5 +1081,32 @@ public class RestRiakOperations implements HttpRiakOperations {
 		public void operationComplete() {
 			support.complete();
 		}
+	}
+
+	@Override
+	public RiakFuture getStream(String key, GetOptions options,
+			RiakResponseHandler<RiakObject<InputStream>> handler) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public RiakFuture postStream(RiakObject<InputStreamHandler> content,
+			RiakResponseHandler<String> handler) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public RiakFuture putStream(RiakObject<InputStreamHandler> content,
+			RiakResponseHandler<String> handler) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public RiakFuture delete(String key, RiakResponseHandler<_> handler) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
