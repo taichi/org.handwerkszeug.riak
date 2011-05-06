@@ -1,9 +1,7 @@
 package org.handwerkszeug.riak.http;
 
-import java.io.InputStream;
-
 import org.handwerkszeug.riak._;
-import org.handwerkszeug.riak.model.GetOptions;
+import org.handwerkszeug.riak.model.Range;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
@@ -19,8 +17,12 @@ public interface LuwakSupport {
 	/**
 	 * Reads a Luwak file
 	 */
-	RiakFuture getStream(String key, GetOptions options,
-			RiakResponseHandler<RiakObject<InputStream>> handler);
+	RiakFuture getStream(String key, StreamResponseHandler handler);
+
+	/**
+	 * Reads a Luwak file by defined Range.
+	 */
+	RiakFuture getStream(String key, Range range, StreamResponseHandler handler);
 
 	/**
 	 * Stores a new file with a random Luwak-assigned key.

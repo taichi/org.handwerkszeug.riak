@@ -5,7 +5,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketAddress;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -17,9 +24,13 @@ import net.iharder.Base64;
 import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.http.InputStreamHandler;
 import org.handwerkszeug.riak.http.LinkCondition;
+import org.handwerkszeug.riak.http.StreamResponseHandler;
+import org.handwerkszeug.riak.model.AbstractRiakObject;
 import org.handwerkszeug.riak.model.DefaultPutOptions;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
+import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.PutOptions;
@@ -29,6 +40,7 @@ import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakOperationsTest;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.junit.Test;
@@ -336,6 +348,181 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 				}
 			}
 		});
+		wait(waiter, is);
+	}
+
+	static final String LARGEFILE = "org/handwerkszeug/riak/http/rest/large_data.jpg";
+
+	// @Test
+	public void testDeleteAllFromLuwak() throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { true };
+
+		final List<String> list = new ArrayList<String>();
+		target.listKeys("luwak_tld", new RiakResponseHandler<KeyResponse>() {
+			@Override
+			public void onError(RiakResponse response) throws Exception {
+				System.err.println(response.getMessage());
+				waiter.compareAndSet(false, true);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<KeyResponse> response)
+					throws Exception {
+				KeyResponse keys = response.getContents();
+				for (String s : keys.getKeys()) {
+					list.add(s);
+				}
+				if (keys.getDone()) {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
+		wait(waiter, is);
+
+		for (String s : list) {
+			testDeleteFromLuwak(s);
+		}
+	}
+
+	@Test
+	public void testLuwak() throws Exception {
+		for (int i = 0; i < 10; i++) {
+			String key = testPostStream();
+			try {
+				System.out.println("luwak storaging wait.");
+				Thread.sleep(150);
+				testGetStream(key);
+			} finally {
+				testDeleteFromLuwak(key);
+				System.err.println(i);
+			}
+		}
+	}
+
+	public String testPostStream() throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		URL url = getClass().getClassLoader().getResource(LARGEFILE);
+		final File file = new File(url.getFile());
+		final String[] key = new String[1];
+		RiakObject<InputStreamHandler> ro = new AbstractRiakObject<InputStreamHandler>() {
+			@Override
+			public InputStreamHandler getContent() {
+				return new InputStreamHandler() {
+
+					@Override
+					public InputStream open() throws IOException {
+						return new BufferedInputStream(
+								new FileInputStream(file));
+					}
+
+					@Override
+					public long getContentLength() {
+						return file.length();
+					}
+				};
+			}
+		};
+		ro.setContentType("image/jpeg");
+		target.postStream(ro, new RiakResponseHandler<String>() {
+
+			@Override
+			public void onError(RiakResponse response) throws Exception {
+				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<String> response)
+					throws Exception {
+				try {
+					key[0] = response.getContents();
+					assertNotNull(key[0]);
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
+		wait(waiter, is);
+		return key[0];
+	}
+
+	public void testGetStream(String key) throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		final File download = new File("bin/download.jpg");
+		if (download.exists()) {
+			download.delete();
+		}
+
+		target.getStream(key, new StreamResponseHandler() {
+
+			FileOutputStream out;
+
+			@Override
+			public void onError(RiakResponse response) throws Exception {
+				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
+			}
+
+			@Override
+			public void begin() throws Exception {
+				out = new FileOutputStream(download);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<ChannelBuffer> response)
+					throws Exception {
+				System.out.println("receive chunk...");
+				ChannelBuffer buffer = response.getContents();
+				out.write(buffer.array());
+				out.flush();
+			}
+
+			@Override
+			public void end() throws Exception {
+				System.out.println("END***********");
+				out.close();
+				is[0] = true;
+				waiter.compareAndSet(false, true);
+			}
+
+		});
+		wait(waiter, is);
+
+		URL url = getClass().getClassLoader().getResource(LARGEFILE);
+		final File file = new File(url.getFile());
+		assertEquals("length", file.length(), download.length());
+	}
+
+	public void testDeleteFromLuwak(String key) throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		target.delete(key, new RiakResponseHandler<_>() {
+			@Override
+			public void onError(RiakResponse response) throws Exception {
+				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<_> response)
+					throws Exception {
+				try {
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
 		wait(waiter, is);
 	}
 }

@@ -10,12 +10,12 @@ public interface SiblingHandler extends RiakResponseHandler<RiakObject<byte[]>> 
 	/**
 	 * at the beginning of sibling.
 	 */
-	void begin();
+	void begin() throws Exception;
 
 	/**
 	 * at the end of the sibling.
 	 * 
 	 * @return conflict resolved object.
 	 */
-	void end();
+	void end() throws Exception;
 }

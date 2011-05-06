@@ -3,7 +3,6 @@ package org.handwerkszeug.riak.http.rest;
 import static org.handwerkszeug.riak.util.Validation.notNull;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -26,6 +25,7 @@ import org.handwerkszeug.riak.http.HttpRiakOperations;
 import org.handwerkszeug.riak.http.InputStreamHandler;
 import org.handwerkszeug.riak.http.LinkCondition;
 import org.handwerkszeug.riak.http.RiakHttpHeaders;
+import org.handwerkszeug.riak.http.StreamResponseHandler;
 import org.handwerkszeug.riak.mapreduce.DefaultMapReduceQuery;
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
@@ -37,6 +37,7 @@ import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.Quorum;
+import org.handwerkszeug.riak.model.Range;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
@@ -66,6 +67,7 @@ import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.MultipartResponseDecoder;
 import org.jboss.netty.handler.codec.http.PartMessage;
 import org.jboss.netty.handler.codec.http.QueryStringEncoder;
+import org.jboss.netty.handler.stream.ChunkedStream;
 import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,6 +81,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	String host;
 	String riakPath;
+	Channel channel;
 	CompletionSupport support;
 
 	String clientId;
@@ -89,6 +92,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(host, "host");
 		notNull(channel, "channel");
 		this.host = removeSlashIfNeed(host);
+		this.channel = channel;
 		this.support = new CompletionSupport(channel);
 		this.riakPath = riakPath;
 	}
@@ -383,6 +387,12 @@ public class RestRiakOperations implements HttpRiakOperations {
 		DefaultRiakObject ro = new DefaultRiakObject(location);
 		ro.setContent(buffer.array());
 
+		convertHeaders(headers, ro);
+
+		return ro;
+	}
+
+	protected <T> void convertHeaders(HttpMessage headers, RiakObject<T> ro) {
 		ro.setVectorClock(headers.getHeader(RiakHttpHeaders.VECTOR_CLOCK));
 
 		ro.setContentType(headers.getHeader(HttpHeaders.Names.CONTENT_TYPE));
@@ -414,8 +424,6 @@ public class RestRiakOperations implements HttpRiakOperations {
 			}
 		}
 		ro.setUserMetadata(map);
-
-		return ro;
 	}
 
 	static final Pattern LINK_PATTERN = Pattern
@@ -517,6 +525,10 @@ public class RestRiakOperations implements HttpRiakOperations {
 				buffer.readableBytes());
 		request.setContent(buffer);
 
+		mergeHeaders(request, content);
+	}
+
+	protected <T> void mergeHeaders(HttpRequest request, RiakObject<T> content) {
 		if (StringUtil.isEmpty(content.getContentType()) == false) {
 			request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
 					content.getContentType());
@@ -550,7 +562,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		}
 	}
 
-	protected void addLinkHeader(HttpRequest request, RiakObject<byte[]> content) {
+	protected <T> void addLinkHeader(HttpRequest request, RiakObject<T> content) {
 		StringBuilder stb = new StringBuilder();
 		for (Link link : content.getLinks()) {
 			if (0 < stb.length()) {
@@ -1069,17 +1081,94 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	@Override
-	public RiakFuture getStream(String key, GetOptions options,
-			RiakResponseHandler<RiakObject<InputStream>> handler) {
+	public RiakFuture getStream(String key, final StreamResponseHandler handler) {
+		notNull(key, "key");
+		notNull(handler, "handler");
+
+		HttpRequest request = build(this.host, "/luwak/" + key, HttpMethod.GET);
+		final String procedure = "getStream";
+		return handle(procedure, request, handler,
+				new NettyUtil.MessageHandler() {
+
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof HttpResponse) {
+							HttpResponse response = (HttpResponse) receive;
+							boolean done = response.isChunked() == false;
+							handler.begin();
+							if (done) {
+								try {
+									handler.handle(support.newResponse(response
+											.getContent()));
+								} finally {
+									handler.end();
+								}
+							}
+							return done;
+						} else if (receive instanceof HttpChunk) {
+							HttpChunk chunk = (HttpChunk) receive;
+							boolean done = chunk.isLast();
+							if (done) {
+								handler.end();
+							} else {
+								handler.handle(support.newResponse(chunk
+										.getContent()));
+							}
+							return done;
+						}
+
+						throw new IncomprehensibleProtocolException(procedure);
+					}
+				});
+	}
+
+	@Override
+	public RiakFuture getStream(String key, Range range,
+			StreamResponseHandler handler) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public RiakFuture postStream(RiakObject<InputStreamHandler> content,
-			RiakResponseHandler<String> handler) {
-		// TODO Auto-generated method stub
-		return null;
+	public RiakFuture postStream(final RiakObject<InputStreamHandler> content,
+			final RiakResponseHandler<String> handler) {
+		notNull(content, "content");
+		notNull(handler, "handler");
+
+		HttpRequest request = build(this.host, "/luwak", HttpMethod.POST);
+		mergeHeaders(request, content);
+		request.setHeader(HttpHeaders.Names.EXPECT, HttpHeaders.Values.CONTINUE);
+		request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, content
+				.getContent().getContentLength());
+
+		final String procedure = "postStream";
+		return handle(procedure, request, handler,
+				new NettyUtil.MessageHandler() {
+
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof HttpResponse) {
+							HttpResponse response = (HttpResponse) receive;
+							HttpResponseStatus status = response.getStatus();
+							if (HttpResponseStatus.CONTINUE.equals(status)) {
+								InputStreamHandler ish = content.getContent();
+								channel.write(new ChunkedStream(ish.open()));
+								return false;
+							} else if (HttpResponseStatus.CREATED
+									.equals(status)) {
+								String loc = response
+										.getHeader(HttpHeaders.Names.LOCATION);
+								if (StringUtil.isEmpty(loc) == false
+										&& loc.startsWith("/luwak/")) {
+									final String newKey = loc.substring(7);
+									handler.handle(support.newResponse(newKey));
+									return true;
+								}
+							}
+						}
+						throw new IncomprehensibleProtocolException(procedure);
+					}
+				});
 	}
 
 	@Override
@@ -1091,7 +1180,12 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	@Override
 	public RiakFuture delete(String key, RiakResponseHandler<_> handler) {
-		// TODO Auto-generated method stub
-		return null;
+		notNull(key, "key");
+		notNull(handler, "handler");
+
+		HttpRequest request = build(this.host, "/luwak/" + key,
+				HttpMethod.DELETE);
+		return handle("delete/luwak", request, handler);
 	}
+
 }

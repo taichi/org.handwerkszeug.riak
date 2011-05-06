@@ -8,7 +8,10 @@ import java.io.InputStream;
  */
 public interface InputStreamHandler {
 
-	InputStream open() throws IOException;
+	long getContentLength();
 
-	void close(InputStream out) throws IOException;
+	/**
+	 * close automatically.
+	 */
+	InputStream open() throws IOException;
 }

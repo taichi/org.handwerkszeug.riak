@@ -78,8 +78,12 @@ public class Range {
 		return stb.toString();
 	}
 
+	public String toRangeSpec() {
+		return BytesUnit + toByteRange();
+	}
+
 	@Override
 	public String toString() {
-		return BytesUnit + toByteRange();
+		return toRangeSpec();
 	}
 }
