@@ -61,6 +61,7 @@ import org.jboss.netty.handler.codec.http.HttpMessage;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.MultipartResponseDecoder;
 import org.jboss.netty.handler.codec.http.PartMessage;
@@ -283,20 +284,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		HttpRequest request = buildSetBucketRequest(bucket);
 		final String procedure = "setBucket";
-		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							if (NettyUtil.isSuccessful(response.getStatus())) {
-								handler.handle(support.newResponse());
-								return true;
-							}
-						}
-						throw new IncomprehensibleProtocolException(procedure);
-					}
-				});
+		return handle(procedure, request, handler);
 	}
 
 	protected HttpRequest buildSetBucketRequest(Bucket bucket) {
@@ -504,20 +492,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		HttpRequest request = buildPutRequest(content);
 
 		final String procedure = "put";
-		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							if (NettyUtil.isSuccessful(response.getStatus())) {
-								handler.handle(support.newResponse());
-								return true;
-							}
-						}
-						throw new IncomprehensibleProtocolException(procedure);
-					}
-				});
+		return handle(procedure, request, handler);
 	}
 
 	protected HttpRequest buildPutRequest(RiakObject<byte[]> content) {
@@ -835,20 +810,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 	protected RiakFuture _delete(String name,
 			final RiakResponseHandler<_> handler, HttpRequest request) {
 		final String procedure = name;
-		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							if (NettyUtil.isSuccessful(response.getStatus())) {
-								handler.handle(support.newResponse());
-								return true;
-							}
-						}
-						throw new IncomprehensibleProtocolException(procedure);
-					}
-				});
+		return handle(procedure, request, handler);
 	}
 
 	@Override
@@ -1034,6 +996,29 @@ public class RestRiakOperations implements HttpRiakOperations {
 	protected HttpRequest buildGetStatsRequest() {
 		HttpRequest request = build(this.host, "/stats", HttpMethod.GET);
 		return request;
+	}
+
+	protected RiakFuture handle(final String name, Object send,
+			final RiakResponseHandler<_> users) {
+		return this.support.handle(name, send, users,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof HttpResponse) {
+							HttpResponse response = (HttpResponse) receive;
+							HttpResponseStatus status = response.getStatus();
+							if (NettyUtil.isError(status)) {
+								users.onError(new RestErrorResponse(response));
+								return true;
+							}
+							if (NettyUtil.isSuccessful(status)) {
+								users.handle(support.newResponse());
+								return true;
+							}
+						}
+						throw new IncomprehensibleProtocolException(name);
+					}
+				});
 	}
 
 	protected <T> RiakFuture handle(final String name, Object send,
