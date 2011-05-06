@@ -15,7 +15,9 @@ import java.net.SocketAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -353,7 +355,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	static final String LARGEFILE = "org/handwerkszeug/riak/http/rest/large_data.jpg";
 
-	// @Test
+	@Test
 	public void testDeleteAllFromLuwak() throws Exception {
 		final AtomicBoolean waiter = new AtomicBoolean(false);
 		final boolean[] is = { true };
@@ -388,14 +390,14 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	@Test
 	public void testLuwak() throws Exception {
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 1; i++) {
 			String key = testPostStream();
 			try {
 				System.out.println("luwak storaging wait.");
 				Thread.sleep(150);
 				testGetStream(key);
 			} finally {
-				testDeleteFromLuwak(key);
+				// testDeleteFromLuwak(key);
 				System.err.println(i);
 			}
 		}
@@ -427,6 +429,15 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 			}
 		};
 		ro.setContentType("image/jpeg");
+		Map<String, String> map = new HashMap<String, String>();
+		map.put("Mmm", "ZZZZZ");
+		ro.setUserMetadata(map);
+
+		// link is erased by luwak.
+		List<Link> links = new ArrayList<Link>();
+		links.add(new Link(new Location("bbb", "kkk"), "ttt"));
+		ro.setLinks(links);
+
 		target.postStream(ro, new RiakResponseHandler<String>() {
 
 			@Override
@@ -472,7 +483,9 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 			}
 
 			@Override
-			public void begin() throws Exception {
+			public void begin(RiakObject<_> header) throws Exception {
+				Map<String, String> map = header.getUserMetadata();
+				assertEquals("ZZZZZ", map.get("Mmm"));
 				out = new FileOutputStream(download);
 			}
 

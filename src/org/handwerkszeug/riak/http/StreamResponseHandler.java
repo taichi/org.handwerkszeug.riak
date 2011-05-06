@@ -1,5 +1,7 @@
 package org.handwerkszeug.riak.http;
 
+import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.jboss.netty.buffer.ChannelBuffer;
 
@@ -12,7 +14,7 @@ public interface StreamResponseHandler extends
 	/**
 	 * at the beginning of streaming.
 	 */
-	void begin() throws Exception;
+	void begin(RiakObject<_> headers) throws Exception;
 
 	/**
 	 * at the end of streaming.

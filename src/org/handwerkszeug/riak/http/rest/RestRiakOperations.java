@@ -29,6 +29,7 @@ import org.handwerkszeug.riak.http.StreamResponseHandler;
 import org.handwerkszeug.riak.mapreduce.DefaultMapReduceQuery;
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
+import org.handwerkszeug.riak.model.AbstractRiakObject;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.GetOptions;
@@ -81,6 +82,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	String host;
 	String riakPath;
+	// for postStream.
 	Channel channel;
 	CompletionSupport support;
 
@@ -1085,8 +1087,13 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(key, "key");
 		notNull(handler, "handler");
 
-		HttpRequest request = build(this.host, "/luwak/" + key, HttpMethod.GET);
+		HttpRequest request = buildGetStreamRequest(key);
 		final String procedure = "getStream";
+		return _getStream(procedure, request, handler);
+	}
+
+	protected RiakFuture _getStream(final String procedure,
+			HttpRequest request, final StreamResponseHandler handler) {
 		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 
@@ -1095,7 +1102,14 @@ public class RestRiakOperations implements HttpRiakOperations {
 						if (receive instanceof HttpResponse) {
 							HttpResponse response = (HttpResponse) receive;
 							boolean done = response.isChunked() == false;
-							handler.begin();
+							RiakObject<_> ro = new AbstractRiakObject<_>() {
+								@Override
+								public _ getContent() {
+									return _._;
+								}
+							};
+							convertHeaders(response, ro);
+							handler.begin(ro);
 							if (done) {
 								try {
 									handler.handle(support.newResponse(response
@@ -1122,11 +1136,22 @@ public class RestRiakOperations implements HttpRiakOperations {
 				});
 	}
 
+	protected HttpRequest buildGetStreamRequest(String key) {
+		HttpRequest request = build(this.host, "/luwak/" + key, HttpMethod.GET);
+		return request;
+	}
+
 	@Override
 	public RiakFuture getStream(String key, Range range,
 			StreamResponseHandler handler) {
-		// TODO Auto-generated method stub
-		return null;
+		notNull(key, "key");
+		notNull(range, "range");
+		notNull(handler, "handler");
+
+		HttpRequest request = buildGetStreamRequest(key);
+		request.setHeader(HttpHeaders.Names.RANGE, range.toRangeSpec());
+		final String procedure = "getStream/range";
+		return _getStream(procedure, request, handler);
 	}
 
 	@Override

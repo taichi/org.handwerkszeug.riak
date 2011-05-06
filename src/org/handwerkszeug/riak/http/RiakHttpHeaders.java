@@ -13,7 +13,7 @@ public class RiakHttpHeaders {
 
 	public static final String LINK = "Link";
 
-	public static final String USERMETA_PREFIX = "x-riak-meta-";
+	public static final String USERMETA_PREFIX = "X-Riak-Meta-";
 
 	public static final String BLOCK_SIZE = "X-Luwak-Block-Size";
 
