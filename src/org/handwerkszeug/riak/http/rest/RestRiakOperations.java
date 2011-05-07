@@ -82,7 +82,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	String host;
 	String riakPath;
-	// for postStream.
+	// for luwak support.
 	Channel channel;
 	CompletionSupport support;
 
