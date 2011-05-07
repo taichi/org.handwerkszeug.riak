@@ -817,7 +817,7 @@ public abstract class RiakOperationsTest {
 		while (waiter.get() == false) {
 			Thread.sleep(10);
 			if (300 < counter++) {
-				// fail("test is incomplete.");
+				fail("test is incomplete.");
 			}
 		}
 		assertTrue(is[0]);

@@ -58,7 +58,7 @@ public class Range {
 		final String s = stb.toString();
 		return new Range(null, null) {
 			@Override
-			public String toString() {
+			public String toRangeSpec() {
 				return s;
 			}
 		};

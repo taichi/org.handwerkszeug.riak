@@ -36,6 +36,7 @@ import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.PutOptions;
+import org.handwerkszeug.riak.model.Range;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
@@ -195,6 +196,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 		// A -> B -> D
 		// A -> C -> D
+
 		String bucket = "testWalk";
 		RiakObject<byte[]> D = createData(bucket, "D", new ArrayList<Link>());
 		put(D);
@@ -225,14 +227,15 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		List<byte[]> phase2 = new ArrayList<byte[]>();
 		phase2.add(D.getContent());
 		list.add(phase2);
-
-		testWalk(A.getLocation(), list);
-
-		// delete
-		testDelete(D.getLocation());
-		testDelete(C.getLocation());
-		testDelete(B.getLocation());
-		testDelete(A.getLocation());
+		try {
+			testWalk(A.getLocation(), list);
+		} finally {
+			// delete
+			testDelete(D.getLocation());
+			testDelete(C.getLocation());
+			testDelete(B.getLocation());
+			testDelete(A.getLocation());
+		}
 	}
 
 	RiakObject<byte[]> createData(String bucket, String key, List<Link> links) {
@@ -396,8 +399,9 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 				System.out.println("luwak storaging wait.");
 				Thread.sleep(150);
 				testGetStream(key);
+				testGetRangeStream(key);
 			} finally {
-				// testDeleteFromLuwak(key);
+				testDeleteFromLuwak(key);
 				System.err.println(i);
 			}
 		}
@@ -512,6 +516,55 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		URL url = getClass().getClassLoader().getResource(LARGEFILE);
 		final File file = new File(url.getFile());
 		assertEquals("length", file.length(), download.length());
+	}
+
+	public void testGetRangeStream(String key) throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		final File download = new File("bin/download.jpg.part");
+		if (download.exists()) {
+			download.delete();
+		}
+
+		Range range = Range.ranges(Range.range(101, 10000),
+				Range.range(10101, 10200));
+		target.getStream(key, range, new StreamResponseHandler() {
+
+			FileOutputStream out;
+
+			@Override
+			public void onError(RiakResponse response) throws Exception {
+				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
+			}
+
+			@Override
+			public void begin(RiakObject<_> header) throws Exception {
+				Map<String, String> map = header.getUserMetadata();
+				assertEquals("ZZZZZ", map.get("Mmm"));
+				out = new FileOutputStream(download);
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<ChannelBuffer> response)
+					throws Exception {
+				ChannelBuffer buffer = response.getContents();
+				out.write(buffer.array());
+				out.flush();
+			}
+
+			@Override
+			public void end() throws Exception {
+				out.close();
+				is[0] = true;
+				waiter.compareAndSet(false, true);
+			}
+
+		});
+		wait(waiter, is);
+
+		assertEquals("length", 10000, download.length());
 	}
 
 	public void testDeleteFromLuwak(String key) throws Exception {

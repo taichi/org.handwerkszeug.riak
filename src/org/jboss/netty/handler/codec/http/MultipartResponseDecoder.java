@@ -3,20 +3,30 @@ package org.jboss.netty.handler.codec.http;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.handwerkszeug.riak.Markers;
+import org.handwerkszeug.riak.util.StringUtil;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author taichi
  */
 public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 
+	static final Logger LOG = LoggerFactory
+			.getLogger(MultipartResponseDecoder.class);
+
 	String dashBoundary;
 	String closeBoundary;
+
+	State state;
+	ContentRange contentRange;
 
 	public MultipartResponseDecoder() {
 	}
@@ -42,12 +52,24 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 			}
 		} else if (o instanceof HttpChunk) {
 			HttpChunk chunk = (HttpChunk) o;
+
+			if (this.contentRange != null
+					&& State.READ_CHUNKD_CONTENT.equals(state)) {
+				if (this.contentRange.pass(chunk.getContent())) {
+					ctx.sendUpstream(e);
+				} else {
+					this.contentRange = null;
+					this.state = State.SKIP_CONTROL_CHARS;
+				}
+			}
 			if (this.dashBoundary != null) {
 				if (chunk.isLast()) {
 					clearBoudndary();
 				} else {
 					ChannelBuffer buffer = chunk.getContent();
-					splitMultipart(ctx, e, buffer);
+					if (2 < buffer.readableBytes()) {
+						splitMultipart(ctx, e, buffer);
+					}
 				}
 				return;
 			}
@@ -60,6 +82,7 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		if (b != null) {
 			this.dashBoundary = "--" + b;
 			this.closeBoundary = this.dashBoundary + "--";
+			state = State.SKIP_CONTROL_CHARS;
 			return true;
 		}
 		return false;
@@ -72,7 +95,7 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 
 	static final Pattern MultiPart = Pattern
 			.compile(
-					"multipart/mixed;\\s*boundary=(([\\w'\\(\\),-./:=\\?]{1,70})|\"([\\w'\\(\\),-./:=\\?]{1,70})\")",
+					"multipart/[a-z]+;\\s*boundary=(([\\w'\\(\\),-./:=\\?]{1,70})|\"([\\w'\\(\\),-./:=\\?]{1,70})\")",
 					Pattern.CASE_INSENSITIVE);
 
 	protected String getBoundary(HttpMessage response) {
@@ -96,16 +119,18 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		while (buffer.readable()) {
 			PartMessage msg = parse(buffer);
 			Channels.fireMessageReceived(ctx, msg, e.getRemoteAddress());
+			if (State.READ_CHUNKD_CONTENT.equals(state)) {
+				break;
+			}
 		}
 	}
 
 	enum State {
-		SKIP_CONTROL_CHARS, READ_BOUNDARY, READ_HEADERS, READ_CONTENT, EPILOGUE;
+		SKIP_CONTROL_CHARS, READ_BOUNDARY, READ_HEADERS, READ_CONTENT, READ_CHUNKD_CONTENT, EPILOGUE;
 	}
 
 	public PartMessage parse(ChannelBuffer buffer) {
 		DefaultPartMessage multipart = new DefaultPartMessage();
-		State state = State.SKIP_CONTROL_CHARS;
 		for (;;) {
 			switch (state) {
 			case SKIP_CONTROL_CHARS: {
@@ -119,18 +144,19 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 			}
 			case READ_HEADERS: {
 				readHeaders(buffer, multipart);
-				state = State.READ_CONTENT;
 				break;
 			}
+			case READ_CHUNKD_CONTENT: {
+				return multipart;
+			}
 			case READ_CONTENT: {
-				State[] next = new State[1];
-				int length = seekNextBoundary(buffer, next);
+				int length = seekNextBoundary(buffer);
 				multipart.setContent(buffer.readBytes(length));
-				state = next[0];
 				return multipart;
 			}
 			case EPILOGUE: {
 				multipart.setLast(true);
+				state = State.SKIP_CONTROL_CHARS;
 				return multipart;
 			}
 			default: {
@@ -141,9 +167,10 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 	}
 
 	private void skipControlCharacters(ChannelBuffer buffer) {
-		for (;;) {
+		while (buffer.readable()) {
 			char c = (char) buffer.readUnsignedByte();
-			if (!Character.isISOControl(c) && !Character.isWhitespace(c)) {
+			if (Character.isISOControl(c) == false
+					&& Character.isWhitespace(c) == false) {
 				buffer.readerIndex(buffer.readerIndex() - 1);
 				break;
 			}
@@ -157,6 +184,8 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		} else if (line.equals(this.closeBoundary)) {
 			return State.EPILOGUE;
 		}
+		LOG.debug(Markers.DETAIL, line);
+		LOG.debug(Markers.DETAIL, this.dashBoundary);
 		throw new UnknownBoundaryException(line);
 	}
 
@@ -182,6 +211,46 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 
 		if (name != null) {
 			message.addHeader(name, value);
+		}
+		String rangeHeader = message.getHeader(HttpHeaders.Names.CONTENT_RANGE);
+		if (StringUtil.isEmpty(rangeHeader)) {
+			state = State.READ_CONTENT;
+		} else {
+			ContentRange cr = parseRange(rangeHeader);
+			if (cr == null) {
+				state = State.READ_CONTENT;
+			} else {
+				this.contentRange = cr;
+				state = State.READ_CHUNKD_CONTENT;
+			}
+		}
+	}
+
+	static final Pattern ContentRange = Pattern.compile(
+			"\\s*bytes\\s*([0-9]+)-([0-9]+)/[0-9]+", Pattern.CASE_INSENSITIVE);
+
+	protected ContentRange parseRange(String contentRange) {
+		Matcher m = ContentRange.matcher(contentRange);
+		if (m.find()) {
+			String begin = m.group(1);
+			String end = m.group(2);
+			if (StringUtil.isEmpty(begin) == false
+					&& StringUtil.isEmpty(end) == false) {
+				ContentRange cr = new ContentRange();
+				cr.length = Long.parseLong(end) - Long.parseLong(begin) + 1;
+				return cr;
+			}
+		}
+		return null;
+	}
+
+	class ContentRange {
+		long length = 0L;
+		long consumed = 0L;
+
+		boolean pass(ChannelBuffer buffer) {
+			consumed += buffer.readableBytes();
+			return consumed <= length;
 		}
 	}
 
@@ -256,29 +325,34 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		return result;
 	}
 
-	private int seekNextBoundary(ChannelBuffer buffer, State[] next) {
+	private int seekNextBoundary(ChannelBuffer buffer) {
 		int readerIndex = buffer.readerIndex();
 		int length = 0;
 		String line = "";
 		while (buffer.readable()) {
 			line = readLine(buffer);
 			if (line.isEmpty() && buffer.readable() == false) {
-				next[0] = State.EPILOGUE;
+				state = State.EPILOGUE;
 				break;
 			} else if (this.dashBoundary.equals(line)) {
 				length -= this.dashBoundary.length();
 				length -= 4; // CRLF x 2
-				next[0] = State.READ_BOUNDARY;
+				state = State.SKIP_CONTROL_CHARS;
 				break;
 			} else if (this.closeBoundary.equals(line)) {
 				length -= this.closeBoundary.length();
 				length -= 4;
-				next[0] = State.READ_BOUNDARY;
+				state = State.SKIP_CONTROL_CHARS;
 				break;
 			}
 		}
 
 		length += (buffer.readerIndex() - readerIndex);
+
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(Markers.DETAIL, "content length :" + length + " " + state);
+		}
+
 		buffer.readerIndex(readerIndex);
 		return length;
 	}

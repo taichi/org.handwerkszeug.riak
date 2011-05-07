@@ -26,7 +26,7 @@ public class MultipartResponseDecoderTest {
 
 	@Test
 	public void testGetQuotedBoundary() throws Exception {
-		String s = "multipart/mixed; boundary=\"YinLMzyUR9feB17okMytgKsylvh\"";
+		String s = "multipart/byteranges; boundary=\"YinLMzyUR9feB17okMytgKsylvh\"";
 		DefaultHttpResponse response = new DefaultHttpResponse(
 				HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
 		response.setHeader(HttpHeaders.Names.CONTENT_TYPE, s);

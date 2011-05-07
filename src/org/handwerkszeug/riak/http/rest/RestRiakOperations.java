@@ -1150,6 +1150,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		HttpRequest request = buildGetStreamRequest(key);
 		request.setHeader(HttpHeaders.Names.RANGE, range.toRangeSpec());
+		LOG.debug(Markers.BOUNDARY, request.toString());
 		final String procedure = "getStream/range";
 		return _getStream(procedure, request, handler);
 	}
