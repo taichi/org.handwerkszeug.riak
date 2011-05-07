@@ -1,4 +1,4 @@
-package org.handwerkszeug.riak.model;
+package org.handwerkszeug.riak.model.internal;
 
 import static org.handwerkszeug.riak.util.Validation.notNull;
 
@@ -6,6 +6,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import org.handwerkszeug.riak.model.Link;
+import org.handwerkszeug.riak.model.Location;
+import org.handwerkszeug.riak.model.RiakObject;
 
 /**
  * @author taichi

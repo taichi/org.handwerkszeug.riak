@@ -2,6 +2,8 @@ package org.handwerkszeug.riak.model;
 
 import java.util.Arrays;
 
+import org.handwerkszeug.riak.model.internal.AbstractRiakObject;
+
 /**
  * @author taichi
  */
