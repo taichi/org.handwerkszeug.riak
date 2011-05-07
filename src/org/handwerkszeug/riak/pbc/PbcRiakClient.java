@@ -31,6 +31,10 @@ public class PbcRiakClient implements RiakClient<PbcRiakOperations> {
 		notNull(action, "action");
 		// TODO stress test and implement connection pooling.
 		ClientBootstrap bootstrap = new ClientBootstrap(this.channelFactory);
+		Integer i = config.getTimeout();
+		if (i != null) {
+			bootstrap.setOption("connectTimeoutMillis", i);
+		}
 		ChannelPipelineFactory pf = new PbcPipelineFactory() {
 			@Override
 			public ChannelPipeline getPipeline() throws Exception {

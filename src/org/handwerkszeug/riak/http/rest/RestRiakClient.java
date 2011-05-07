@@ -44,6 +44,10 @@ public class RestRiakClient implements RiakClient<RestRiakOperations> {
 		notNull(action, "action");
 		// TODO stress test and implement connection pooling.
 		ClientBootstrap bootstrap = new ClientBootstrap(this.channelFactory);
+		Integer i = config.getTimeout();
+		if (i != null) {
+			bootstrap.setOption("connectTimeoutMillis", i);
+		}
 		ChannelPipelineFactory pf = new RestPipelineFactory() {
 			@Override
 			public ChannelPipeline getPipeline() throws Exception {
