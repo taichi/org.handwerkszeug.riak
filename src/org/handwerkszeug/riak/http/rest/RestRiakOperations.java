@@ -79,15 +79,19 @@ public class RestRiakOperations implements HttpRiakOperations {
 	CompletionSupport support;
 	RequestFactory factory;
 
-	ObjectMapper objectMapper = new ObjectMapper();
-
 	public RestRiakOperations(String host, Config config, Channel channel) {
+		this(host, config, channel, new RequestFactory(host, config));
+	}
+
+	public RestRiakOperations(String host, Config config, Channel channel,
+			RequestFactory factory) {
 		notNull(host, "host");
 		notNull(channel, "channel");
 		this.channel = channel;
 		this.support = new CompletionSupport(channel);
 		this.config = config;
-		this.factory = new RequestFactory(host, config);
+		this.factory = factory;
+
 	}
 
 	@Override
@@ -153,7 +157,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 	<T extends JsonNode> T to(ChannelBuffer buffer, T... t) {
 		try {
 			if (buffer != null && buffer.readable()) {
-				JsonNode node = this.objectMapper
+				ObjectMapper objectMapper = new ObjectMapper();
+				JsonNode node = objectMapper
 						.readTree(new ChannelBufferInputStream(buffer));
 				Class<?> clazz = t.getClass().getComponentType();
 				if (clazz.isAssignableFrom(node.getClass())) {
@@ -230,6 +235,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 						if (receive instanceof HttpResponse) {
 							HttpResponse response = (HttpResponse) receive;
 							if (NettyUtil.isSuccessful(response.getStatus())) {
+								ObjectMapper objectMapper = new ObjectMapper();
 								BucketHolder holder = objectMapper.readValue(
 										new ChannelBufferInputStream(response
 												.getContent()),
