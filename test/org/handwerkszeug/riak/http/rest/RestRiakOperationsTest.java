@@ -78,23 +78,6 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		return config.getRiakAddress();
 	}
 
-	@Test
-	public void testParseLink() throws Exception {
-		String link = "</riak/hb/second>; riaktag=\"foo\", </riak/hb/third>; riaktag=\"bar\", </riak/hb>; rel=\"up\"";
-		List<String> links = new ArrayList<String>();
-		links.add(link);
-		List<Link> actual = target.parse(links);
-
-		assertEquals(2, actual.size());
-		Link second = actual.get(0);
-		assertEquals(new Location("hb", "second"), second.getLocation());
-		assertEquals("foo", second.getTag());
-
-		Link third = actual.get(1);
-		assertEquals(new Location("hb", "third"), third.getLocation());
-		assertEquals("bar", third.getTag());
-	}
-
 	@Override
 	protected void testSetClientId(String id) throws Exception {
 		this.target.setClientId(id);

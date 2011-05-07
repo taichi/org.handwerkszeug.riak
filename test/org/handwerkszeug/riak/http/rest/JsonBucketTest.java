@@ -15,6 +15,7 @@ import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.JavaType;
+import org.handwerkszeug.riak.http.rest.internal.BucketHolder;
 import org.handwerkszeug.riak.util.JsonUtil;
 import org.junit.Before;
 import org.junit.Test;

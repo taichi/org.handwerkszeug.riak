@@ -3,17 +3,12 @@ package org.handwerkszeug.riak.http.rest;
 import static org.handwerkszeug.riak.util.Validation.notNull;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -27,6 +22,10 @@ import org.handwerkszeug.riak.http.InputStreamHandler;
 import org.handwerkszeug.riak.http.LinkCondition;
 import org.handwerkszeug.riak.http.RiakHttpHeaders;
 import org.handwerkszeug.riak.http.StreamResponseHandler;
+import org.handwerkszeug.riak.http.rest.internal.BucketHolder;
+import org.handwerkszeug.riak.http.rest.internal.ContinuousMessageHandler;
+import org.handwerkszeug.riak.http.rest.internal.RequestFactory;
+import org.handwerkszeug.riak.http.rest.internal.SimpleMessageHandler;
 import org.handwerkszeug.riak.mapreduce.DefaultMapReduceQuery;
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
@@ -42,13 +41,10 @@ import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.Range;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
-import org.handwerkszeug.riak.model.RiakResponse;
-import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.op.internal.CompletionSupport;
 import org.handwerkszeug.riak.op.internal.IncomprehensibleProtocolException;
-import org.handwerkszeug.riak.util.HttpUtil;
 import org.handwerkszeug.riak.util.JsonUtil;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
@@ -57,7 +53,6 @@ import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMessage;
@@ -65,12 +60,9 @@ import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.MultipartResponseDecoder;
 import org.jboss.netty.handler.codec.http.PartMessage;
-import org.jboss.netty.handler.codec.http.QueryStringEncoder;
 import org.jboss.netty.handler.stream.ChunkedStream;
-import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,33 +74,27 @@ public class RestRiakOperations implements HttpRiakOperations {
 	static final Logger LOG = LoggerFactory.getLogger(RestRiakOperations.class);
 
 	Config config;
-	String host;
 	// for luwak support.
 	Channel channel;
 	CompletionSupport support;
-
-	String clientId;
+	RequestFactory factory;
 
 	ObjectMapper objectMapper = new ObjectMapper();
 
 	public RestRiakOperations(String host, Config config, Channel channel) {
 		notNull(host, "host");
 		notNull(channel, "channel");
-		this.host = removeSlashIfNeed(host);
 		this.channel = channel;
 		this.support = new CompletionSupport(channel);
 		this.config = config;
-	}
-
-	protected String removeSlashIfNeed(String uri) {
-		return uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri;
+		this.factory = new RequestFactory(host, config);
 	}
 
 	@Override
 	public RiakFuture ping(final RiakResponseHandler<String> handler) {
 		notNull(handler, "handler");
 
-		HttpRequest request = build("/ping", HttpMethod.GET);
+		HttpRequest request = factory.newPingRequest();
 		final String procedure = "ping";
 		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
@@ -128,35 +114,12 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	@Override
 	public void setClientId(String clientId) {
-		this.clientId = clientId;
+		this.factory.setClientId(clientId);
 	}
 
 	@Override
 	public String getClientId() {
-		return this.clientId;
-	}
-
-	protected HttpRequest build(String path, HttpMethod method) {
-		return build(this.host + "/" + this.config.getRawName(), path, method);
-	}
-
-	protected HttpRequest build(String app, String path, HttpMethod method) {
-		try {
-			URI uri = new URI(app + path);
-
-			LOG.debug(Markers.BOUNDARY, uri.toASCIIString());
-			HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1,
-					method, uri.toASCIIString());
-			request.setHeader(HttpHeaders.Names.HOST, uri.getHost());
-			request.setHeader(HttpHeaders.Names.CONNECTION,
-					HttpHeaders.Values.KEEP_ALIVE);
-			if (StringUtil.isEmpty(this.clientId) == false) {
-				request.setHeader(RiakHttpHeaders.CLIENT_ID, this.clientId);
-			}
-			return request;
-		} catch (URISyntaxException e) {
-			throw new RiakException(e);
-		}
+		return this.factory.getClientId();
 	}
 
 	@Override
@@ -164,7 +127,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 			final RiakResponseHandler<List<String>> handler) {
 		notNull(handler, "handler");
 
-		HttpRequest request = build("?buckets=true", HttpMethod.GET);
+		HttpRequest request = factory.newListBucketsRequest();
 		final String procedure = "listBuckets";
 		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
@@ -210,8 +173,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(bucket, "bucket");
 		notNull(handler, "handler");
 
-		HttpRequest request = build("/" + bucket + "?props=false&keys=stream",
-				HttpMethod.GET);
+		HttpRequest request = factory.newListKeysRequest(bucket);
 		final String procedure = "listKeys";
 		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
@@ -258,8 +220,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(bucket, "bucket");
 		notNull(handler, "handler");
 
-		HttpRequest request = build("/" + bucket + "?props=true",
-				HttpMethod.GET);
+		HttpRequest request = factory.newGetBucketRequest(bucket);
 
 		final String procedure = "getBucket";
 		return handle(procedure, request, handler,
@@ -289,30 +250,9 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(bucket, "bucket");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildSetBucketRequest(bucket);
+		HttpRequest request = factory.newSetBucketRequest(bucket);
 		final String procedure = "setBucket";
 		return handle(procedure, request, handler);
-	}
-
-	protected HttpRequest buildSetBucketRequest(Bucket bucket) {
-		try {
-			BucketHolder holder = new BucketHolder();
-			holder.props = bucket;
-			ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
-			OutputStream out = new ChannelBufferOutputStream(buffer);
-			objectMapper.writeValue(out, holder);
-			HttpRequest request = build("/" + bucket.getName(), HttpMethod.PUT);
-			request.setHeader(HttpHeaders.Names.CONTENT_LENGTH,
-					buffer.readableBytes());
-			request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
-					RiakHttpHeaders.CONTENT_JSON);
-			request.setHeader(HttpHeaders.Names.ACCEPT,
-					RiakHttpHeaders.CONTENT_JSON);
-			request.setContent(buffer);
-			return request;
-		} catch (IOException e) {
-			throw new RiakException(e);
-		}
 	}
 
 	@Override
@@ -321,7 +261,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(location, "location");
 		notNull(handler, "handler");
 
-		return getSingle(buildGetRequst(location), location, handler);
+		return getSingle(factory.newGetRequst(location), location, handler);
 	}
 
 	@Override
@@ -331,40 +271,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(options, "options");
 		notNull(handler, "handler");
 
-		return getSingle(buildGetRequst(location, options), location, handler);
-	}
-
-	protected HttpRequest buildGetRequst(Location location) {
-		HttpRequest request = build(
-				"/" + location.getBucket() + "/" + location.getKey(),
-				HttpMethod.GET);
-		return request;
-	}
-
-	protected HttpRequest buildGetRequst(Location location, GetOptions options) {
-		HttpRequest request = buildGetRequst(location);
-		QueryStringEncoder params = new QueryStringEncoder(request.getUri());
-		if (options.getReadQuorum() != null) {
-			params.addParam("r", options.getReadQuorum().getString());
-		}
-		// TODO PR support.
-
-		if (StringUtil.isEmpty(options.getIfNoneMatch()) == false) {
-			request.setHeader(HttpHeaders.Names.IF_NONE_MATCH,
-					options.getIfNoneMatch());
-		}
-
-		if (StringUtil.isEmpty(options.getIfMatch()) == false) {
-			request.setHeader(HttpHeaders.Names.IF_MATCH, options.getIfMatch());
-		}
-
-		if (options.getIfModifiedSince() != null) {
-			request.setHeader(HttpHeaders.Names.IF_MODIFIED_SINCE,
-					HttpUtil.format(options.getIfModifiedSince()));
-		}
-
-		request.setUri(params.toString());
-		return request;
+		return getSingle(factory.newGetRequst(location, options), location,
+				handler);
 	}
 
 	protected RiakFuture getSingle(HttpRequest request,
@@ -378,78 +286,11 @@ public class RestRiakOperations implements HttpRiakOperations {
 							@Override
 							public void handle(HttpResponse response,
 									ChannelBuffer buffer) throws Exception {
-								RiakObject<byte[]> ro = convert(response,
-										buffer, location);
+								RiakObject<byte[]> ro = factory.convert(
+										response, buffer, location);
 								handler.handle(support.newResponse(ro));
 							}
 						}));
-	}
-
-	protected RiakObject<byte[]> convert(HttpMessage headers,
-			ChannelBuffer buffer, Location location) {
-		DefaultRiakObject ro = new DefaultRiakObject(location);
-		ro.setContent(buffer.array());
-
-		convertHeaders(headers, ro);
-
-		return ro;
-	}
-
-	protected <T> void convertHeaders(HttpMessage headers, RiakObject<T> ro) {
-		ro.setVectorClock(headers.getHeader(RiakHttpHeaders.VECTOR_CLOCK));
-
-		ro.setContentType(headers.getHeader(HttpHeaders.Names.CONTENT_TYPE));
-
-		// NOP ro.setCharset(charset);
-
-		ro.setContentEncoding(headers
-				.getHeader(HttpHeaders.Names.CONTENT_ENCODING));
-
-		// NOP ro.setVtag(vtag);
-
-		List<String> links = headers.getHeaders(RiakHttpHeaders.LINK);
-		ro.setLinks(parse(links));
-
-		String lastmod = headers.getHeader(HttpHeaders.Names.LAST_MODIFIED);
-		if (StringUtil.isEmpty(lastmod) == false) {
-			Date d = HttpUtil.parse(lastmod);
-			ro.setLastModified(d);
-			if (LOG.isDebugEnabled()) {
-				LOG.debug(Markers.DETAIL, Messages.LastModified, lastmod);
-			}
-		}
-
-		Map<String, String> map = new HashMap<String, String>();
-		for (String name : headers.getHeaderNames()) {
-			if (RiakHttpHeaders.isUsermeta(name)) {
-				String key = RiakHttpHeaders.fromUsermeta(name);
-				map.put(key, headers.getHeader(name));
-			}
-		}
-		ro.setUserMetadata(map);
-	}
-
-	static final Pattern LINK_PATTERN = Pattern
-			.compile("</\\w+/(\\w+)/(\\w+)>;\\s+riaktag=\"([^\"\\r\\n]+)\"");
-	static final int LINK_BUCKET = 1;
-	static final int LINK_KEY = 2;
-	static final int LINK_TAG = 3;
-
-	protected List<Link> parse(List<String> links) {
-		List<Link> result = new ArrayList<Link>();
-		for (String raw : links) {
-			Matcher m = LINK_PATTERN.matcher(raw);
-			while (m.find()) {
-				String b = m.group(LINK_BUCKET);
-				String k = m.group(LINK_KEY);
-				String t = m.group(LINK_TAG);
-				if (b != null && k != null && t != null) {
-					Link l = new Link(new Location(b, k), t);
-					result.add(l);
-				}
-			}
-		}
-		return result;
 	}
 
 	@Override
@@ -459,7 +300,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(options, "options");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildGetRequst(location, options);
+		HttpRequest request = factory.newGetRequst(location, options);
 		request.setHeader(HttpHeaders.Names.ACCEPT, RiakHttpHeaders.MULTI_PART);
 
 		final String procedure = "get/sibling";
@@ -483,7 +324,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							if (done) {
 								handler.end();
 							} else {
-								RiakObject<byte[]> ro = convert(part,
+								RiakObject<byte[]> ro = factory.convert(part,
 										part.getContent(), location);
 								handler.handle(support.newResponse(ro));
 							}
@@ -500,98 +341,10 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(content, "content");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildPutRequest(content);
+		HttpRequest request = factory.newPutRequest(content);
 
 		final String procedure = "put";
 		return handle(procedure, request, handler);
-	}
-
-	protected HttpRequest buildPutRequest(RiakObject<byte[]> content) {
-		Location location = content.getLocation();
-		HttpRequest request = build(
-				"/" + location.getBucket() + "/" + location.getKey(),
-				HttpMethod.PUT);
-		merge(request, content);
-
-		return request;
-	}
-
-	protected void merge(HttpRequest request, RiakObject<byte[]> content) {
-		if (StringUtil.isEmpty(content.getVectorClock()) == false) {
-			request.setHeader(RiakHttpHeaders.VECTOR_CLOCK,
-					content.getVectorClock());
-		}
-
-		ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(content
-				.getContent());
-		request.setHeader(HttpHeaders.Names.CONTENT_LENGTH,
-				buffer.readableBytes());
-		request.setContent(buffer);
-
-		mergeHeaders(request, content);
-	}
-
-	protected <T> void mergeHeaders(HttpRequest request, RiakObject<T> content) {
-		if (StringUtil.isEmpty(content.getContentType()) == false) {
-			request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
-					content.getContentType());
-		}
-
-		// NOP content.getCharset();
-
-		if (StringUtil.isEmpty(content.getContentEncoding()) == false) {
-			request.setHeader(HttpHeaders.Names.CONTENT_ENCODING,
-					content.getContentEncoding());
-		}
-
-		// NOP content.getVtag();
-
-		if ((content.getLinks() != null)
-				&& (content.getLinks().isEmpty() == false)) {
-			addLinkHeader(request, content);
-		}
-
-		if (content.getLastModified() != null) {
-			request.setHeader(HttpHeaders.Names.LAST_MODIFIED,
-					HttpUtil.format(content.getLastModified()));
-		}
-
-		if ((content.getUserMetadata() != null)
-				&& (content.getUserMetadata().isEmpty() == false)) {
-			Map<String, String> map = content.getUserMetadata();
-			for (String key : map.keySet()) {
-				request.setHeader(RiakHttpHeaders.toUsermeta(key), map.get(key));
-			}
-		}
-	}
-
-	protected <T> void addLinkHeader(HttpRequest request, RiakObject<T> content) {
-		StringBuilder stb = new StringBuilder();
-		for (Link link : content.getLinks()) {
-			if (0 < stb.length()) {
-				stb.append(", ");
-			}
-			stb.append('<');
-			stb.append('/');
-			stb.append(this.config.getRawName());
-			stb.append('/');
-			stb.append(link.getLocation().getBucket());
-			stb.append('/');
-			stb.append(link.getLocation().getKey());
-			stb.append(">; riaktag=\"");
-			stb.append(link.getTag());
-			stb.append('"');
-
-			// https://github.com/basho/riak-java-client/pull/7
-			// MochiWeb has problem of too long header ?
-			if (2000 < stb.length()) {
-				request.addHeader(RiakHttpHeaders.LINK, stb.toString());
-				stb = new StringBuilder();
-			}
-		}
-		if (0 < stb.length()) {
-			request.addHeader(RiakHttpHeaders.LINK, stb.toString());
-		}
 	}
 
 	/**
@@ -605,7 +358,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(options, "options");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildPutRequest(content, options);
+		HttpRequest request = factory.newPutRequest(content, options);
 
 		final String procedure = "put/sibling";
 		return handle(procedure, request, handler,
@@ -617,8 +370,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 							if (NettyUtil.isSuccessful(response.getStatus())) {
 								try {
 									handler.begin();
-									RiakObject<byte[]> ro = convert(response,
-											response.getContent(),
+									RiakObject<byte[]> ro = factory.convert(
+											response, response.getContent(),
 											content.getLocation());
 									handler.handle(support.newResponse(ro));
 								} finally {
@@ -633,35 +386,6 @@ public class RestRiakOperations implements HttpRiakOperations {
 						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
-	}
-
-	protected HttpRequest buildPutRequest(RiakObject<byte[]> content,
-			PutOptions options) {
-		HttpRequest request = buildPutRequest(content);
-
-		QueryStringEncoder params = to(options, request);
-		request.setUri(params.toString());
-		return request;
-	}
-
-	protected QueryStringEncoder to(PutOptions options, HttpRequest request) {
-		QueryStringEncoder params = new QueryStringEncoder(request.getUri());
-
-		if (options.getReadQuorum() != null) {
-			// PBC-API does't support this parameter. why not?
-			params.addParam("r", options.getReadQuorum().getString());
-		}
-		if (options.getWriteQuorum() != null) {
-			params.addParam("w", options.getWriteQuorum().getString());
-		}
-		if (options.getDurableWriteQuorum() != null) {
-			params.addParam("dw", options.getDurableWriteQuorum().getString());
-		}
-		if (options.getReturnBody()) {
-			params.addParam("returnbody",
-					String.valueOf(options.getReturnBody()));
-		}
-		return params;
 	}
 
 	protected void dispatchToGetSibling(Location location,
@@ -695,7 +419,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(content, "content");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildPostRequest(content);
+		HttpRequest request = factory.newPostRequest(content);
 		return _post(content, handler, request);
 	}
 
@@ -759,13 +483,6 @@ public class RestRiakOperations implements HttpRiakOperations {
 		return null;
 	}
 
-	protected HttpRequest buildPostRequest(RiakObject<byte[]> content) {
-		HttpRequest request = build("/" + content.getLocation().getBucket(),
-				HttpMethod.POST);
-		merge(request, content);
-		return request;
-	}
-
 	@Override
 	public RiakFuture post(RiakObject<byte[]> content, PutOptions options,
 			final RiakResponseHandler<RiakObject<byte[]>> handler) {
@@ -773,7 +490,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(options, "options");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildPostRequest(content, options);
+		HttpRequest request = factory.newPostRequest(content, options);
 		if (options.getReturnBody() == false) {
 			return _post(content, handler, request);
 		}
@@ -789,20 +506,12 @@ public class RestRiakOperations implements HttpRiakOperations {
 									throw new IncomprehensibleProtocolException(
 											procedure);
 								}
-								RiakObject<byte[]> ro = convert(response,
-										buffer, location);
+								RiakObject<byte[]> ro = factory.convert(
+										response, buffer, location);
 								handler.handle(support.newResponse(ro));
 
 							}
 						}));
-	}
-
-	protected HttpRequest buildPostRequest(RiakObject<byte[]> content,
-			PutOptions options) {
-		HttpRequest request = buildPostRequest(content);
-		QueryStringEncoder params = to(options, request);
-		request.setUri(params.toString());
-		return request;
 	}
 
 	@Override
@@ -811,15 +520,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(location, "location");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildDeleteRequest(location);
+		HttpRequest request = factory.newDeleteRequest(location);
 		return _delete("delete", handler, request);
-	}
-
-	protected HttpRequest buildDeleteRequest(Location location) {
-		HttpRequest request = build(
-				"/" + location.getBucket() + "/" + location.getKey(),
-				HttpMethod.DELETE);
-		return request;
 	}
 
 	protected RiakFuture _delete(String name,
@@ -835,16 +537,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(readWrite, "readWrite");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildDeleteRequest(location, readWrite);
+		HttpRequest request = factory.newDeleteRequest(location, readWrite);
 		return _delete("delete/quorum", handler, request);
-	}
-
-	protected HttpRequest buildDeleteRequest(Location location, Quorum readWrite) {
-		HttpRequest request = buildDeleteRequest(location);
-		QueryStringEncoder params = new QueryStringEncoder(request.getUri());
-		params.addParam("rw", readWrite.getString());
-		request.setUri(params.toString());
-		return request;
 	}
 
 	@Override
@@ -856,7 +550,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		DefaultMapReduceQuery query = new DefaultMapReduceQuery();
 		constructor.cunstruct(query);
 
-		HttpRequest request = buildMapReduceRequest();
+		HttpRequest request = factory.newMapReduceRequest();
 		ChannelBuffer buffer = ChannelBuffers.dynamicBuffer(1024);
 		query.prepare(new ChannelBufferOutputStream(buffer));
 		HttpHeaders.setContentLength(request, buffer.readableBytes());
@@ -888,21 +582,12 @@ public class RestRiakOperations implements HttpRiakOperations {
 				});
 	}
 
-	protected HttpRequest buildMapReduceRequest() {
-		HttpRequest request = build(this.host, "/" + config.getMapReduceName()
-				+ "?chunked=true", HttpMethod.POST);
-		request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
-				RiakHttpHeaders.CONTENT_JSON);
-
-		return request;
-	}
-
 	@Override
 	public RiakFuture mapReduce(String rawJson,
 			RiakResponseHandler<MapReduceResponse> handler) {
 		notNull(rawJson, "rawJson");
 		notNull(handler, "handler");
-		HttpRequest request = buildMapReduceRequest();
+		HttpRequest request = factory.newMapReduceRequest();
 		HttpHeaders.setContentLength(request, rawJson.length());
 		request.setContent(ChannelBuffers.wrappedBuffer(rawJson.getBytes()));
 
@@ -916,7 +601,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(conditions, "conditions");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildWalkRequst(walkbegin, conditions);
+		HttpRequest request = factory.newWalkRequst(walkbegin, conditions);
 		final String procedure = "walk";
 		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
@@ -938,28 +623,6 @@ public class RestRiakOperations implements HttpRiakOperations {
 				});
 	}
 
-	protected HttpRequest buildWalkRequst(Location walkbegin,
-			List<LinkCondition> conditions) {
-		StringBuilder stb = new StringBuilder(64);
-		stb.append('/');
-		stb.append(walkbegin.getBucket());
-		stb.append('/');
-		stb.append(walkbegin.getKey());
-		for (LinkCondition cond : conditions) {
-			stb.append('/');
-			stb.append(cond.getBucket());
-			stb.append(',');
-			stb.append(cond.getTag());
-			stb.append(',');
-			if (cond.getKeep()) {
-				stb.append('1');
-			} else {
-				stb.append('_');
-			}
-		}
-		return build(stb.toString(), HttpMethod.GET);
-	}
-
 	protected void notifyStep(PartMessage message,
 			RiakResponseHandler<List<RiakObject<byte[]>>> handler)
 			throws Exception {
@@ -974,8 +637,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 				} else {
 					Location location = to(msg);
 					if (location != null) {
-						RiakObject<byte[]> ro = convert(msg, msg.getContent(),
-								location);
+						RiakObject<byte[]> ro = factory.convert(msg,
+								msg.getContent(), location);
 						list.add(ro);
 					}
 				}
@@ -988,7 +651,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 	public RiakFuture getStats(final RiakResponseHandler<ObjectNode> handler) {
 		notNull(handler, "handler");
 
-		HttpRequest request = buildGetStatsRequest();
+		HttpRequest request = factory.newGetStatsRequest();
 		final String procedure = "getStats";
 		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
@@ -1008,79 +671,17 @@ public class RestRiakOperations implements HttpRiakOperations {
 				});
 	}
 
-	protected HttpRequest buildGetStatsRequest() {
-		HttpRequest request = build(this.host, "/stats", HttpMethod.GET);
-		return request;
-	}
-
 	protected RiakFuture handle(final String name, Object send,
 			final RiakResponseHandler<_> users) {
-		return this.support.handle(name, send, users,
-				new NettyUtil.MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							HttpResponseStatus status = response.getStatus();
-							if (NettyUtil.isError(status)) {
-								users.onError(new RestErrorResponse(response));
-								return true;
-							}
-							if (NettyUtil.isSuccessful(status)) {
-								users.handle(support.newResponse());
-								return true;
-							}
-						}
-						throw new IncomprehensibleProtocolException(name);
-					}
-				});
+		return this.support.handle(name, send, users, new SimpleMessageHandler(
+				name, users, this.support));
 	}
 
 	protected <T> RiakFuture handle(final String name, Object send,
 			final RiakResponseHandler<T> users,
 			final NettyUtil.MessageHandler internal) {
 		return this.support.handle(name, send, users,
-				new NettyUtil.MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							if (NettyUtil.isError(response.getStatus())) {
-								users.onError(new RestErrorResponse(response));
-								return true;
-							}
-						}
-						return internal.handle(receive);
-					}
-				});
-	}
-
-	class RestErrorResponse implements RiakResponse {
-
-		final HttpResponse master;
-
-		public RestErrorResponse(HttpResponse master) {
-			this.master = master;
-		}
-
-		@Override
-		public int getResponseCode() {
-			return this.master.getStatus().getCode();
-		}
-
-		@Override
-		public String getMessage() {
-			ChannelBuffer content = this.master.getContent();
-			if (content.readable()) {
-				return content.toString(CharsetUtil.UTF_8);
-			}
-			return "";
-		}
-
-		@Override
-		public void operationComplete() {
-			support.complete();
-		}
+				new ContinuousMessageHandler<T>(users, internal, this.support));
 	}
 
 	@Override
@@ -1088,7 +689,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(key, "key");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildGetStreamRequest(key);
+		HttpRequest request = factory.newGetStreamRequest(key);
 		final String procedure = "getStream";
 		return _getStream(procedure, request, handler);
 	}
@@ -1109,7 +710,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 									return _._;
 								}
 							};
-							convertHeaders(response, ro);
+							factory.convertHeaders(response, ro);
 							handler.begin(ro);
 							if (done) {
 								try {
@@ -1137,12 +738,6 @@ public class RestRiakOperations implements HttpRiakOperations {
 				});
 	}
 
-	protected HttpRequest buildGetStreamRequest(String key) {
-		HttpRequest request = build(this.host, "/" + config.getLuwakName()
-				+ "/" + key, HttpMethod.GET);
-		return request;
-	}
-
 	@Override
 	public RiakFuture getStream(String key, Range range,
 			StreamResponseHandler handler) {
@@ -1150,7 +745,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(range, "range");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildGetStreamRequest(key);
+		HttpRequest request = factory.newGetStreamRequest(key);
 		request.setHeader(HttpHeaders.Names.RANGE, range.toRangeSpec());
 		LOG.debug(Markers.BOUNDARY, request.toString());
 		final String procedure = "getStream/range";
@@ -1163,7 +758,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(content, "content");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildStreamRequest(content, "", HttpMethod.POST);
+		HttpRequest request = factory.newStreamRequest(content, "",
+				HttpMethod.POST);
 
 		final String procedure = "postStream";
 		return handle(procedure, request, handler,
@@ -1196,26 +792,14 @@ public class RestRiakOperations implements HttpRiakOperations {
 				});
 	}
 
-	protected HttpRequest buildStreamRequest(
-			final RiakObject<InputStreamHandler> content, String key,
-			HttpMethod method) {
-		HttpRequest request = build(this.host, "/" + config.getLuwakName()
-				+ "/" + key, method);
-		mergeHeaders(request, content);
-		request.setHeader(HttpHeaders.Names.EXPECT, HttpHeaders.Values.CONTINUE);
-		request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, content
-				.getContent().getContentLength());
-		return request;
-	}
-
 	@Override
 	public RiakFuture putStream(final RiakObject<InputStreamHandler> content,
 			final RiakResponseHandler<_> handler) {
 		notNull(content, "content");
 		notNull(handler, "handler");
 
-		HttpRequest request = buildStreamRequest(content, content.getLocation()
-				.getKey(), HttpMethod.PUT);
+		HttpRequest request = factory.newStreamRequest(content, content
+				.getLocation().getKey(), HttpMethod.PUT);
 		final String procedure = "putStream";
 		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
@@ -1243,8 +827,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(key, "key");
 		notNull(handler, "handler");
 
-		HttpRequest request = build(this.host, "/" + config.getLuwakName()
-				+ "/" + key, HttpMethod.DELETE);
+		HttpRequest request = factory.newDeleteRequest(key);
 		return handle("delete/luwak", request, handler);
 	}
 
