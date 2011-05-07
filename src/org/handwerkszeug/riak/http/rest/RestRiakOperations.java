@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
+import org.handwerkszeug.riak.Config;
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
@@ -80,8 +81,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	static final Logger LOG = LoggerFactory.getLogger(RestRiakOperations.class);
 
+	Config config;
 	String host;
-	String riakPath;
 	// for luwak support.
 	Channel channel;
 	CompletionSupport support;
@@ -90,13 +91,13 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	ObjectMapper objectMapper = new ObjectMapper();
 
-	public RestRiakOperations(String host, String riakPath, Channel channel) {
+	public RestRiakOperations(String host, Config config, Channel channel) {
 		notNull(host, "host");
 		notNull(channel, "channel");
 		this.host = removeSlashIfNeed(host);
 		this.channel = channel;
 		this.support = new CompletionSupport(channel);
-		this.riakPath = riakPath;
+		this.config = config;
 	}
 
 	protected String removeSlashIfNeed(String uri) {
@@ -136,7 +137,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	protected HttpRequest build(String path, HttpMethod method) {
-		return build(this.host + "/" + this.riakPath, path, method);
+		return build(this.host + "/" + this.config.getRawName(), path, method);
 	}
 
 	protected HttpRequest build(String app, String path, HttpMethod method) {
@@ -572,7 +573,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 			}
 			stb.append('<');
 			stb.append('/');
-			stb.append(this.riakPath);
+			stb.append(this.config.getRawName());
 			stb.append('/');
 			stb.append(link.getLocation().getBucket());
 			stb.append('/');
@@ -888,8 +889,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	protected HttpRequest buildMapReduceRequest() {
-		HttpRequest request = build(this.host, "/mapred?chunked=true",
-				HttpMethod.POST);
+		HttpRequest request = build(this.host, "/" + config.getMapReduceName()
+				+ "?chunked=true", HttpMethod.POST);
 		request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
 				RiakHttpHeaders.CONTENT_JSON);
 
@@ -1137,7 +1138,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	protected HttpRequest buildGetStreamRequest(String key) {
-		HttpRequest request = build(this.host, "/luwak/" + key, HttpMethod.GET);
+		HttpRequest request = build(this.host, "/" + config.getLuwakName()
+				+ "/" + key, HttpMethod.GET);
 		return request;
 	}
 
@@ -1181,7 +1183,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 								String loc = response
 										.getHeader(HttpHeaders.Names.LOCATION);
 								if (StringUtil.isEmpty(loc) == false
-										&& loc.startsWith("/luwak/")) {
+										&& loc.startsWith("/"
+												+ config.getLuwakName() + "/")) {
 									final String newKey = loc.substring(7);
 									handler.handle(support.newResponse(newKey));
 									return true;
@@ -1196,7 +1199,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 	protected HttpRequest buildStreamRequest(
 			final RiakObject<InputStreamHandler> content, String key,
 			HttpMethod method) {
-		HttpRequest request = build(this.host, "/luwak/" + key, method);
+		HttpRequest request = build(this.host, "/" + config.getLuwakName()
+				+ "/" + key, method);
 		mergeHeaders(request, content);
 		request.setHeader(HttpHeaders.Names.EXPECT, HttpHeaders.Values.CONTINUE);
 		request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, content
@@ -1239,8 +1243,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(key, "key");
 		notNull(handler, "handler");
 
-		HttpRequest request = build(this.host, "/luwak/" + key,
-				HttpMethod.DELETE);
+		HttpRequest request = build(this.host, "/" + config.getLuwakName()
+				+ "/" + key, HttpMethod.DELETE);
 		return handle("delete/luwak", request, handler);
 	}
 

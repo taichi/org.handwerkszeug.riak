@@ -2,15 +2,9 @@ package org.handwerkszeug.riak.http.rest;
 
 import static org.handwerkszeug.riak.util.Validation.notNull;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.concurrent.Executors;
-
+import org.handwerkszeug.riak.Config;
 import org.handwerkszeug.riak.RiakAction;
 import org.handwerkszeug.riak.RiakClient;
-import org.handwerkszeug.riak.RiakException;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -25,24 +19,24 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
  */
 public class RestRiakClient implements RiakClient<RestRiakOperations> {
 
+	final Config config;
 	final String riakUri;
-	final SocketAddress remoteHost;
 	final ClientSocketChannelFactory channelFactory;
 
-	public RestRiakClient(String riakUri) {
+	public RestRiakClient(Config config) {
+		this.config = config;
 		this.channelFactory = new NioClientSocketChannelFactory(
-				Executors.newCachedThreadPool(),
-				Executors.newCachedThreadPool());
-		this.riakUri = riakUri;
-		try {
-			URI uri = new URI(riakUri);
-			String host = uri.getHost();
-			int port = uri.getPort() < 0 ? 8080 : uri.getPort();
-			this.remoteHost = new InetSocketAddress(host, port);
-		} catch (URISyntaxException e) {
-			throw new RiakException(e);
-		}
+				config.getBossExecutor(), config.getWorkerExecutor());
+		this.riakUri = toRiakURI(config);
+	}
 
+	public static String toRiakURI(Config config) {
+		StringBuilder stb = new StringBuilder();
+		stb.append("http://");
+		stb.append(config.getRiakAddress().getHostName());
+		stb.append(':');
+		stb.append(config.getRiakAddress().getPort());
+		return stb.toString();
 	}
 
 	@Override
@@ -61,7 +55,7 @@ public class RestRiakClient implements RiakClient<RestRiakOperations> {
 									ChannelHandlerContext ctx,
 									ChannelStateEvent e) throws Exception {
 								RestRiakOperations op = new RestRiakOperations(
-										riakUri, "riak", e.getChannel());
+										riakUri, config, e.getChannel());
 								action.execute(op);
 							}
 						});
@@ -69,7 +63,7 @@ public class RestRiakClient implements RiakClient<RestRiakOperations> {
 			}
 		};
 		bootstrap.setPipelineFactory(pf);
-		bootstrap.connect(this.remoteHost);
+		bootstrap.connect(this.config.getRiakAddress());
 	}
 
 	@Override

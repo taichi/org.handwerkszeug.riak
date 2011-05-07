@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakAction;
 import org.handwerkszeug.riak.RiakException;
+import org.handwerkszeug.riak.config.DefaultConfig;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
@@ -24,7 +25,8 @@ public class RestRiakClientTest {
 
 	@Before
 	public void setUp() throws Exception {
-		target = new RestRiakClient(Hosts.RIAK_URL);
+		target = new RestRiakClient(DefaultConfig.newConfig(Hosts.RIAK_HOST,
+				Hosts.RIAK_HTTP_PORT));
 	}
 
 	@Test

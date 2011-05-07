@@ -24,8 +24,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.iharder.Base64;
 
 import org.codehaus.jackson.node.ObjectNode;
+import org.handwerkszeug.riak.Config;
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.config.DefaultConfig;
 import org.handwerkszeug.riak.http.InputStreamHandler;
 import org.handwerkszeug.riak.http.LinkCondition;
 import org.handwerkszeug.riak.http.StreamResponseHandler;
@@ -48,7 +50,13 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.junit.Test;
 
+/**
+ * @author taichi
+ */
 public class RestRiakOperationsTest extends RiakOperationsTest {
+
+	static final Config config = DefaultConfig.newConfig(Hosts.RIAK_HOST,
+			Hosts.RIAK_HTTP_PORT);
 
 	RestRiakOperations target;
 
@@ -59,13 +67,15 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	@Override
 	protected RiakOperations newTarget(Channel channel) {
-		this.target = new RestRiakOperations(Hosts.RIAK_URL, "riak", channel);
+
+		this.target = new RestRiakOperations(RestRiakClient.toRiakURI(config),
+				config, channel);
 		return this.target;
 	}
 
 	@Override
 	protected SocketAddress connectTo() {
-		return Hosts.RIAK_HTTP_ADDR;
+		return config.getRiakAddress();
 	}
 
 	@Test

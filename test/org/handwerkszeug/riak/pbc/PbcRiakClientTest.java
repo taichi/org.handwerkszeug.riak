@@ -5,9 +5,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.handwerkszeug.riak.Config;
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakAction;
 import org.handwerkszeug.riak.RiakException;
+import org.handwerkszeug.riak.config.DefaultConfig;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
@@ -24,7 +26,8 @@ public class PbcRiakClientTest {
 
 	@Before
 	public void setUp() throws Exception {
-		target = new PbcRiakClient(Hosts.RIAK_PB_ADDR);
+		Config config = DefaultConfig.newPbcConfig(Hosts.RIAK_HOST);
+		target = new PbcRiakClient(config);
 	}
 
 	@After

@@ -2,9 +2,7 @@ package org.handwerkszeug.riak.pbc;
 
 import static org.handwerkszeug.riak.util.Validation.notNull;
 
-import java.net.SocketAddress;
-import java.util.concurrent.Executors;
-
+import org.handwerkszeug.riak.Config;
 import org.handwerkszeug.riak.RiakAction;
 import org.handwerkszeug.riak.RiakClient;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -18,16 +16,14 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
 public class PbcRiakClient implements RiakClient<PbcRiakOperations> {
 
-	final SocketAddress remoteHost;
-
+	final Config config;
 	final ClientSocketChannelFactory channelFactory;
 
-	public PbcRiakClient(SocketAddress remoteHost) {
+	public PbcRiakClient(Config config) {
 		// TODO read from configuration.
 		this.channelFactory = new NioClientSocketChannelFactory(
-				Executors.newCachedThreadPool(),
-				Executors.newCachedThreadPool());
-		this.remoteHost = remoteHost;
+				config.getBossExecutor(), config.getWorkerExecutor());
+		this.config = config;
 	}
 
 	@Override
@@ -54,7 +50,7 @@ public class PbcRiakClient implements RiakClient<PbcRiakOperations> {
 			}
 		};
 		bootstrap.setPipelineFactory(pf);
-		bootstrap.connect(this.remoteHost);
+		bootstrap.connect(this.config.getRiakAddress());
 	}
 
 	@Override
