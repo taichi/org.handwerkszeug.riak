@@ -1161,11 +1161,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(content, "content");
 		notNull(handler, "handler");
 
-		HttpRequest request = build(this.host, "/luwak", HttpMethod.POST);
-		mergeHeaders(request, content);
-		request.setHeader(HttpHeaders.Names.EXPECT, HttpHeaders.Values.CONTINUE);
-		request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, content
-				.getContent().getContentLength());
+		HttpRequest request = buildStreamRequest(content, "", HttpMethod.POST);
 
 		final String procedure = "postStream";
 		return handle(procedure, request, handler,
@@ -1197,11 +1193,45 @@ public class RestRiakOperations implements HttpRiakOperations {
 				});
 	}
 
+	protected HttpRequest buildStreamRequest(
+			final RiakObject<InputStreamHandler> content, String key,
+			HttpMethod method) {
+		HttpRequest request = build(this.host, "/luwak/" + key, method);
+		mergeHeaders(request, content);
+		request.setHeader(HttpHeaders.Names.EXPECT, HttpHeaders.Values.CONTINUE);
+		request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, content
+				.getContent().getContentLength());
+		return request;
+	}
+
 	@Override
-	public RiakFuture putStream(RiakObject<InputStreamHandler> content,
-			RiakResponseHandler<String> handler) {
-		// TODO Auto-generated method stub
-		return null;
+	public RiakFuture putStream(final RiakObject<InputStreamHandler> content,
+			final RiakResponseHandler<_> handler) {
+		notNull(content, "content");
+		notNull(handler, "handler");
+
+		HttpRequest request = buildStreamRequest(content, content.getLocation()
+				.getKey(), HttpMethod.PUT);
+		final String procedure = "putStream";
+		return handle(procedure, request, handler,
+				new NettyUtil.MessageHandler() {
+
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof HttpResponse) {
+							HttpResponse response = (HttpResponse) receive;
+							HttpResponseStatus status = response.getStatus();
+							if (HttpResponseStatus.CONTINUE.equals(status)) {
+								InputStreamHandler ish = content.getContent();
+								channel.write(new ChunkedStream(ish.open()));
+								return false;
+							} else if (NettyUtil.isSuccessful(status)) {
+								handler.handle(support.newResponse());
+							}
+						}
+						throw new IncomprehensibleProtocolException(procedure);
+					}
+				});
 	}
 
 	@Override

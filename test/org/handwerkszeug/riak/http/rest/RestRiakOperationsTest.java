@@ -394,7 +394,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	@Test
 	public void testLuwak() throws Exception {
 		for (int i = 0; i < 1; i++) {
-			String key = testPostStream();
+			String key = testPostToLuwak();
 			try {
 				System.out.println("luwak storaging wait.");
 				Thread.sleep(150);
@@ -407,7 +407,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		}
 	}
 
-	public String testPostStream() throws Exception {
+	public String testPostToLuwak() throws Exception {
 		final AtomicBoolean waiter = new AtomicBoolean(false);
 		final boolean[] is = { false };
 
@@ -572,6 +572,67 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		final boolean[] is = { false };
 
 		target.delete(key, new RiakResponseHandler<_>() {
+			@Override
+			public void onError(RiakResponse response) throws Exception {
+				waiter.compareAndSet(false, true);
+				fail(response.getMessage());
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<_> response)
+					throws Exception {
+				try {
+					is[0] = true;
+				} finally {
+					waiter.compareAndSet(false, true);
+				}
+			}
+		});
+
+		wait(waiter, is);
+	}
+
+	@Test
+	public void testPutToLuwak() throws Exception {
+		String key = testPostToLuwak();
+		Thread.sleep(150);
+		testPutToLuwak(key);
+		testDeleteFromLuwak(key);
+	}
+
+	public void testPutToLuwak(String key) throws Exception {
+		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final boolean[] is = { false };
+
+		URL url = getClass().getClassLoader().getResource(LARGEFILE);
+		final File file = new File(url.getFile());
+		Location location = new Location("", key);
+		RiakObject<InputStreamHandler> ro = new AbstractRiakObject<InputStreamHandler>(
+				location) {
+			@Override
+			public InputStreamHandler getContent() {
+				return new InputStreamHandler() {
+
+					@Override
+					public InputStream open() throws IOException {
+						return new BufferedInputStream(
+								new FileInputStream(file));
+					}
+
+					@Override
+					public long getContentLength() {
+						return file.length();
+					}
+				};
+			}
+		};
+		ro.setContentType("image/jpeg");
+		Map<String, String> map = new HashMap<String, String>();
+		map.put("Mmm", "XXXXX");
+		ro.setUserMetadata(map);
+
+		target.putStream(ro, new RiakResponseHandler<_>() {
+
 			@Override
 			public void onError(RiakResponse response) throws Exception {
 				waiter.compareAndSet(false, true);

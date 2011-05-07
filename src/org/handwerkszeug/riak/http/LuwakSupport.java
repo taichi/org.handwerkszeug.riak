@@ -34,7 +34,7 @@ public interface LuwakSupport {
 	 * Stores a file with an existing or user-defined key.
 	 */
 	RiakFuture putStream(RiakObject<InputStreamHandler> content,
-			RiakResponseHandler<String> handler);
+			RiakResponseHandler<_> handler);
 
 	/**
 	 * Deletes a file.
