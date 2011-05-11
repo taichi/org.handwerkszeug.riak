@@ -113,6 +113,7 @@ public class PbcRiakOperationsTest extends RiakOperationsTest {
 					throws RiakException {
 				is[0] = true;
 				act[0] = response.getContents();
+				waiter.countDown();
 			}
 
 		});

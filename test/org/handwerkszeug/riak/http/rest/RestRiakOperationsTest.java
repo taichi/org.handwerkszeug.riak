@@ -400,7 +400,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	@Test
 	public void testLuwak() throws Exception {
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 5; i++) {
 			String key = testPostToLuwak();
 			try {
 				System.out.println("luwak storaging wait.");
