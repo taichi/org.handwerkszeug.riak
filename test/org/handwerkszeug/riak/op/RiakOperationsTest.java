@@ -819,7 +819,7 @@ public abstract class RiakOperationsTest {
 
 	protected void wait(final CountDownLatch waiter, final boolean[] is)
 			throws InterruptedException {
-		assertTrue(waiter.await(3, TimeUnit.SECONDS));
+		assertTrue("test is timeout.", waiter.await(3, TimeUnit.SECONDS));
 		assertTrue(is[0]);
 	}
 }
