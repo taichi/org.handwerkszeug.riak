@@ -104,7 +104,8 @@ public class PbcRiakOperations implements RiakOperations {
 							for (ByteString bs : resp.getBucketsList()) {
 								list.add(to(bs));
 							}
-							handler.handle(support.newResponse(list));
+							handler.handle(PbcRiakOperations.this.support
+									.newResponse(list));
 							return true;
 						}
 						throw new IncomprehensibleProtocolException(procedure);
@@ -135,7 +136,8 @@ public class PbcRiakOperations implements RiakOperations {
 								list.add(to(bs));
 							}
 							KeyResponse kr = new KeyResponse(list, done);
-							handler.handle(support.newResponse(kr));
+							handler.handle(PbcRiakOperations.this.support
+									.newResponse(kr));
 							return done;
 						}
 						throw new IncomprehensibleProtocolException(procedure);
@@ -162,7 +164,8 @@ public class PbcRiakOperations implements RiakOperations {
 							Bucket pb = new PbcBucket(bucket);
 							pb.setNumberOfReplicas(props.getNVal());
 							pb.setAllowMulti(props.getAllowMult());
-							handler.handle(support.newResponse(pb));
+							handler.handle(PbcRiakOperations.this.support
+									.newResponse(pb));
 							return true;
 						}
 						throw new IncomprehensibleProtocolException(procedure);
@@ -189,7 +192,8 @@ public class PbcRiakOperations implements RiakOperations {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbSetBucketResp.equals(receive)) {
-							handler.handle(support.newResponse());
+							handler.handle(PbcRiakOperations.this.support
+									.newResponse());
 							return true;
 						}
 						throw new IncomprehensibleProtocolException(procedure);
@@ -238,7 +242,7 @@ public class PbcRiakOperations implements RiakOperations {
 				}
 				RiakObject<byte[]> ro = convert(location, vclock,
 						resp.getContent(0));
-				handler.handle(support.newResponse(ro));
+				handler.handle(PbcRiakOperations.this.support.newResponse(ro));
 			}
 		});
 	}
@@ -261,7 +265,8 @@ public class PbcRiakOperations implements RiakOperations {
 							for (RpbContent c : resp.getContentList()) {
 								RiakObject<byte[]> ro = convert(location,
 										vclock, c);
-								handler.handle(support.newResponse(ro));
+								handler.handle(PbcRiakOperations.this.support
+										.newResponse(ro));
 							}
 						} finally {
 							handler.end();
@@ -291,11 +296,13 @@ public class PbcRiakOperations implements RiakOperations {
 					if (size < 1) {
 						// in this case, REST API returns 404. PBC do so.
 						handler.onError(new PbcErrorResponse(null) {
+							@Override
 							public String getMessage() {
 								return String.format(Messages.NoContents,
 										location);
 							}
 
+							@Override
 							public int getResponseCode() {
 								// a numeric code. Currently only
 								// RIAKC_ERR_GENERAL=1 is defined.
@@ -410,7 +417,8 @@ public class PbcRiakOperations implements RiakOperations {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbPutResp) {
-							handler.handle(support.newResponse());
+							handler.handle(PbcRiakOperations.this.support
+									.newResponse());
 							return true;
 						}
 						throw new IncomprehensibleProtocolException(procedure);
@@ -454,7 +462,8 @@ public class PbcRiakOperations implements RiakOperations {
 									for (RpbContent c : resp.getContentList()) {
 										RiakObject<byte[]> ro = convert(
 												location, vclock, c);
-										handler.handle(support.newResponse(ro));
+										handler.handle(PbcRiakOperations.this.support
+												.newResponse(ro));
 									}
 								}
 							} finally {
@@ -565,7 +574,8 @@ public class PbcRiakOperations implements RiakOperations {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbDelResp.equals(receive)) {
-							handler.handle(support.newResponse());
+							handler.handle(PbcRiakOperations.this.support
+									.newResponse());
 							return true;
 						}
 						throw new IncomprehensibleProtocolException(name);
@@ -635,7 +645,8 @@ public class PbcRiakOperations implements RiakOperations {
 							RpbMapRedResp resp = (RpbMapRedResp) receive;
 							MapReduceResponse response = new PbcMapReduceResponse(
 									resp);
-							handler.handle(support.newResponse(response));
+							handler.handle(PbcRiakOperations.this.support
+									.newResponse(response));
 							return resp.getDone();
 						}
 						throw new IncomprehensibleProtocolException(procedure);
@@ -651,7 +662,8 @@ public class PbcRiakOperations implements RiakOperations {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbPingResp.equals(receive)) {
-							handler.handle(support.newResponse("pong"));
+							handler.handle(PbcRiakOperations.this.support
+									.newResponse("pong"));
 							return true;
 						}
 						throw new IncomprehensibleProtocolException(procedure);
@@ -677,7 +689,9 @@ public class PbcRiakOperations implements RiakOperations {
 						if (receive instanceof RpbGetClientIdResp) {
 							RpbGetClientIdResp resp = (RpbGetClientIdResp) receive;
 							String cid = to(resp.getClientId());
-							handler.handle(support.newResponse(cid));
+							handler.handle(PbcRiakOperations.this.support
+									.newResponse(cid));
+							return true;
 						}
 						throw new IncomprehensibleProtocolException(procedure);
 					}
@@ -709,7 +723,9 @@ public class PbcRiakOperations implements RiakOperations {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbSetClientIdResp.equals(receive)) {
-							handler.handle(support.newResponse());
+							handler.handle(PbcRiakOperations.this.support
+									.newResponse());
+							return true;
 						}
 						throw new IncomprehensibleProtocolException(procedure);
 					}
@@ -734,7 +750,9 @@ public class PbcRiakOperations implements RiakOperations {
 							ServerInfo info = new ServerInfo(
 									to(resp.getNode()), to(resp
 											.getServerVersion()));
-							handler.handle(support.newResponse(info));
+							handler.handle(PbcRiakOperations.this.support
+									.newResponse(info));
+							return true;
 						}
 						throw new IncomprehensibleProtocolException(procedure);
 					}
@@ -779,7 +797,7 @@ public class PbcRiakOperations implements RiakOperations {
 
 		@Override
 		public void operationComplete() {
-			support.complete();
+			PbcRiakOperations.this.support.complete();
 		}
 	}
 

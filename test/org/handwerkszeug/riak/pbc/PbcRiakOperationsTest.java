@@ -1,10 +1,12 @@
 package org.handwerkszeug.riak.pbc;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.SocketAddress;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
 
 import junit.framework.Assert;
 
@@ -56,7 +58,7 @@ public class PbcRiakOperationsTest extends RiakOperationsTest {
 		testGetClientId(id);
 
 		try {
-			target.setClientId("12345", new RiakResponseHandler<_>() {
+			this.target.setClientId("12345", new RiakResponseHandler<_>() {
 				@Override
 				public void onError(RiakResponse response) throws RiakException {
 				}
@@ -72,21 +74,22 @@ public class PbcRiakOperationsTest extends RiakOperationsTest {
 		}
 	}
 
+	@Override
 	public void testSetClientId(String id) throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		this.target.setClientId(id, new RiakResponseHandler<_>() {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
 			}
 
 			@Override
 			public void handle(RiakContentsResponse<_> response)
 					throws RiakException {
 				is[0] = true;
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
 			}
 		});
 
@@ -94,36 +97,40 @@ public class PbcRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	public void testGetClientId(final String id) throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
+		final String[] act = new String[1];
 
 		this.target.getClientId(new RiakResponseHandler<String>() {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
+				fail(response.getMessage());
 			}
 
 			@Override
 			public void handle(RiakContentsResponse<String> response)
 					throws RiakException {
 				is[0] = true;
-				waiter.compareAndSet(false, true);
+				act[0] = response.getContents();
 			}
 
 		});
 
 		wait(waiter, is);
+		assertEquals(act[0], id);
 	}
 
 	@Test
 	public void testGetServerInfo() throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		this.target.getServerInfo(new RiakResponseHandler<ServerInfo>() {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
+				fail(response.getMessage());
 			}
 
 			@Override
@@ -135,7 +142,7 @@ public class PbcRiakOperationsTest extends RiakOperationsTest {
 					assertNotNull(info.getServerVersion());
 					is[0] = true;
 				} finally {
-					waiter.compareAndSet(false, true);
+					waiter.countDown();
 				}
 			}
 		});

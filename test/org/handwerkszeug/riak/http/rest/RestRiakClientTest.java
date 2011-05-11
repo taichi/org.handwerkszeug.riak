@@ -3,7 +3,8 @@ package org.handwerkszeug.riak.http.rest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakAction;
@@ -25,16 +26,16 @@ public class RestRiakClientTest {
 
 	@Before
 	public void setUp() throws Exception {
-		target = new RestRiakClient(DefaultConfig.newConfig(Hosts.RIAK_HOST,
-				Hosts.RIAK_HTTP_PORT));
+		this.target = new RestRiakClient(DefaultConfig.newConfig(
+				Hosts.RIAK_HOST, Hosts.RIAK_HTTP_PORT));
 	}
 
 	@Test
 	public void testExecute() throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
-		target.execute(new RiakAction<RestRiakOperations>() {
+		this.target.execute(new RiakAction<RestRiakOperations>() {
 			@Override
 			public void execute(RestRiakOperations operations) {
 				operations.ping(new RiakResponseHandler<String>() {
@@ -42,7 +43,7 @@ public class RestRiakClientTest {
 					public void onError(RiakResponse response)
 							throws RiakException {
 						response.operationComplete();
-						waiter.compareAndSet(false, true);
+						waiter.countDown();
 					}
 
 					@Override
@@ -53,7 +54,7 @@ public class RestRiakClientTest {
 							is[0] = true;
 						} finally {
 							response.operationComplete();
-							waiter.compareAndSet(false, true);
+							waiter.countDown();
 						}
 					}
 				});
@@ -63,16 +64,14 @@ public class RestRiakClientTest {
 		wait(waiter, is);
 	}
 
-	protected void wait(final AtomicBoolean waiter, final boolean[] is)
+	protected void wait(final CountDownLatch waiter, final boolean[] is)
 			throws InterruptedException {
-		while (waiter.get() == false) {
-			Thread.sleep(10);
-		}
+		waiter.await(3, TimeUnit.SECONDS);
 		assertTrue(is[0]);
 	}
 
 	@After
 	public void tearDown() {
-		target.dispose();
+		this.target.dispose();
 	}
 }

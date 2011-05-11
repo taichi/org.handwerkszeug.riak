@@ -3,6 +3,7 @@ package org.handwerkszeug.riak.http.rest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedInputStream;
@@ -19,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
 
 import net.iharder.Base64;
 
@@ -98,7 +99,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	public Location testPost(final Location location, final String testdata)
 			throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
@@ -108,10 +109,10 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 			}
 		};
 		final Location[] loc = new Location[1];
-		target.post(ro, new RiakResponseHandler<RiakObject<byte[]>>() {
+		this.target.post(ro, new RiakResponseHandler<RiakObject<byte[]>>() {
 			@Override
 			public void onError(RiakResponse response) throws Exception {
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
 				fail(response.getMessage());
 			}
 
@@ -127,7 +128,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 					loc[0] = l;
 					is[0] = true;
 				} finally {
-					waiter.compareAndSet(false, true);
+					waiter.countDown();
 				}
 			}
 		});
@@ -138,7 +139,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	public Location testPostWithReturn(final Location location,
 			final String testdata) throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
@@ -156,29 +157,32 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		};
 
 		final Location[] loc = new Location[1];
-		target.post(ro, options, new RiakResponseHandler<RiakObject<byte[]>>() {
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				waiter.compareAndSet(false, true);
-				fail(response.getMessage());
-			}
+		this.target.post(ro, options,
+				new RiakResponseHandler<RiakObject<byte[]>>() {
+					@Override
+					public void onError(RiakResponse response) throws Exception {
+						waiter.countDown();
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
-					throws Exception {
-				try {
-					RiakObject<byte[]> returned = response.getContents();
-					assertNotNull(returned.getLocation());
-					Location l = returned.getLocation();
-					assertEquals(location.getBucket(), l.getBucket());
-					assertFalse(l.getKey().isEmpty());
-					loc[0] = l;
-					is[0] = true;
-				} finally {
-					waiter.compareAndSet(false, true);
-				}
-			}
-		});
+					@Override
+					public void handle(
+							RiakContentsResponse<RiakObject<byte[]>> response)
+							throws Exception {
+						try {
+							RiakObject<byte[]> returned = response
+									.getContents();
+							assertNotNull(returned.getLocation());
+							Location l = returned.getLocation();
+							assertEquals(location.getBucket(), l.getBucket());
+							assertFalse(l.getKey().isEmpty());
+							loc[0] = l;
+							is[0] = true;
+						} finally {
+							waiter.countDown();
+						}
+					}
+				});
 
 		wait(waiter, is);
 		return loc[0];
@@ -244,13 +248,13 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	public void put(RiakObject<byte[]> ro) throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
-		target.put(ro, new RiakResponseHandler<_>() {
+		this.target.put(ro, new RiakResponseHandler<_>() {
 			@Override
 			public void onError(RiakResponse response) throws Exception {
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
 				fail(response.getMessage());
 			}
 
@@ -260,7 +264,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 				try {
 					is[0] = true;
 				} finally {
-					waiter.compareAndSet(false, true);
+					waiter.countDown();
 				}
 			}
 		});
@@ -270,7 +274,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	public void testWalk(Location init, List<List<byte[]>> expected)
 			throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		List<LinkCondition> conds = new ArrayList<LinkCondition>();
@@ -278,11 +282,11 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		conds.add(LinkCondition.bucket(null, false));
 
 		final List<List<byte[]>> actual = new ArrayList<List<byte[]>>();
-		target.walk(init, conds,
+		this.target.walk(init, conds,
 				new RiakResponseHandler<List<RiakObject<byte[]>>>() {
 					@Override
 					public void onError(RiakResponse response) throws Exception {
-						waiter.compareAndSet(false, true);
+						waiter.countDown();
 						fail(response.getMessage());
 					}
 
@@ -299,7 +303,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 						} finally {
 							if (1 < actual.size()) {
 								is[0] = true;
-								waiter.compareAndSet(false, true);
+								waiter.countDown();
 							}
 						}
 					}
@@ -308,11 +312,19 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		wait(waiter, is);
 		assertEquals(2, actual.size());
 
-		List<byte[]> e1 = expected.get(0);
-		List<byte[]> a1 = actual.get(0);
+		List<String> e1 = new ArrayList<String>();
+		for (byte[] b : expected.get(0)) {
+			e1.add(new String(b));
+		}
+		List<String> a1 = new ArrayList<String>();
+		for (byte[] b : actual.get(0)) {
+			a1.add(new String(b));
+		}
 
-		assertEquals(new String(e1.get(0)), new String(a1.get(0)));
-		assertEquals(new String(e1.get(1)), new String(a1.get(1)));
+		System.out.println(e1);
+		System.out.println(a1);
+		assertTrue(e1.contains(a1.get(0)));
+		assertTrue(e1.contains(a1.get(1)));
 
 		List<byte[]> e2 = expected.get(1);
 		List<byte[]> a2 = actual.get(1);
@@ -322,12 +334,12 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	@Test
 	public void testGetStats() throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
-		target.getStats(new RiakResponseHandler<ObjectNode>() {
+		this.target.getStats(new RiakResponseHandler<ObjectNode>() {
 			@Override
 			public void onError(RiakResponse response) throws Exception {
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
 				fail(response.getMessage());
 			}
 
@@ -342,7 +354,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 					is[0] = true;
 				} finally {
-					waiter.compareAndSet(false, true);
+					waiter.countDown();
 				}
 			}
 		});
@@ -353,29 +365,31 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	@Test
 	public void testDeleteAllFromLuwak() throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { true };
 
 		final List<String> list = new ArrayList<String>();
-		target.listKeys("luwak_tld", new RiakResponseHandler<KeyResponse>() {
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				System.err.println(response.getMessage());
-				waiter.compareAndSet(false, true);
-			}
+		this.target.listKeys("luwak_tld",
+				new RiakResponseHandler<KeyResponse>() {
+					@Override
+					public void onError(RiakResponse response) throws Exception {
+						System.err.println(response.getMessage());
+						waiter.countDown();
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<KeyResponse> response)
-					throws Exception {
-				KeyResponse keys = response.getContents();
-				for (String s : keys.getKeys()) {
-					list.add(s);
-				}
-				if (keys.getDone()) {
-					waiter.compareAndSet(false, true);
-				}
-			}
-		});
+					@Override
+					public void handle(
+							RiakContentsResponse<KeyResponse> response)
+							throws Exception {
+						KeyResponse keys = response.getContents();
+						for (String s : keys.getKeys()) {
+							list.add(s);
+						}
+						if (keys.getDone()) {
+							waiter.countDown();
+						}
+					}
+				});
 
 		wait(waiter, is);
 
@@ -386,11 +400,11 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	@Test
 	public void testLuwak() throws Exception {
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < 10; i++) {
 			String key = testPostToLuwak();
 			try {
 				System.out.println("luwak storaging wait.");
-				Thread.sleep(150);
+				Thread.sleep(300);
 				testGetStream(key);
 				testGetRangeStream(key);
 			} finally {
@@ -401,7 +415,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	public String testPostToLuwak() throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		URL url = getClass().getClassLoader().getResource(LARGEFILE);
@@ -435,11 +449,11 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		links.add(new Link(new Location("bbb", "kkk"), "ttt"));
 		ro.setLinks(links);
 
-		target.postStream(ro, new RiakResponseHandler<String>() {
+		this.target.postStream(ro, new RiakResponseHandler<String>() {
 
 			@Override
 			public void onError(RiakResponse response) throws Exception {
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
 				fail(response.getMessage());
 			}
 
@@ -451,7 +465,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 					assertNotNull(key[0]);
 					is[0] = true;
 				} finally {
-					waiter.compareAndSet(false, true);
+					waiter.countDown();
 				}
 			}
 		});
@@ -461,7 +475,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	public void testGetStream(String key) throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		final File download = new File("bin/download.jpg");
@@ -469,13 +483,13 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 			download.delete();
 		}
 
-		target.getStream(key, new StreamResponseHandler() {
+		this.target.getStream(key, new StreamResponseHandler() {
 
 			FileOutputStream out;
 
 			@Override
 			public void onError(RiakResponse response) throws Exception {
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
 				fail(response.getMessage());
 			}
 
@@ -483,7 +497,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 			public void begin(RiakObject<_> header) throws Exception {
 				Map<String, String> map = header.getUserMetadata();
 				assertEquals("ZZZZZ", map.get("Mmm"));
-				out = new FileOutputStream(download);
+				this.out = new FileOutputStream(download);
 			}
 
 			@Override
@@ -491,16 +505,16 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 					throws Exception {
 				System.out.println("receive chunk...");
 				ChannelBuffer buffer = response.getContents();
-				out.write(buffer.array());
-				out.flush();
+				this.out.write(buffer.array());
+				this.out.flush();
 			}
 
 			@Override
 			public void end() throws Exception {
 				System.out.println("END***********");
-				out.close();
+				this.out.close();
 				is[0] = true;
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
 			}
 
 		});
@@ -512,7 +526,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	public void testGetRangeStream(String key) throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		final File download = new File("bin/download.jpg.part");
@@ -522,13 +536,13 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 		Range range = Range.ranges(Range.range(101, 10000),
 				Range.range(10101, 10200));
-		target.getStream(key, range, new StreamResponseHandler() {
+		this.target.getStream(key, range, new StreamResponseHandler() {
 
 			FileOutputStream out;
 
 			@Override
 			public void onError(RiakResponse response) throws Exception {
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
 				fail(response.getMessage());
 			}
 
@@ -536,22 +550,22 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 			public void begin(RiakObject<_> header) throws Exception {
 				Map<String, String> map = header.getUserMetadata();
 				assertEquals("ZZZZZ", map.get("Mmm"));
-				out = new FileOutputStream(download);
+				this.out = new FileOutputStream(download);
 			}
 
 			@Override
 			public void handle(RiakContentsResponse<ChannelBuffer> response)
 					throws Exception {
 				ChannelBuffer buffer = response.getContents();
-				out.write(buffer.array());
-				out.flush();
+				this.out.write(buffer.array());
+				this.out.flush();
 			}
 
 			@Override
 			public void end() throws Exception {
-				out.close();
+				this.out.close();
 				is[0] = true;
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
 			}
 
 		});
@@ -561,24 +575,21 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	public void testDeleteFromLuwak(String key) throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
-		target.delete(key, new RiakResponseHandler<_>() {
+		this.target.delete(key, new RiakResponseHandler<_>() {
 			@Override
 			public void onError(RiakResponse response) throws Exception {
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
 				fail(response.getMessage());
 			}
 
 			@Override
 			public void handle(RiakContentsResponse<_> response)
 					throws Exception {
-				try {
-					is[0] = true;
-				} finally {
-					waiter.compareAndSet(false, true);
-				}
+				is[0] = true;
+				waiter.countDown();
 			}
 		});
 
@@ -590,11 +601,13 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		String key = testPostToLuwak();
 		Thread.sleep(150);
 		testPutToLuwak(key);
+		Thread.sleep(150);
 		testDeleteFromLuwak(key);
 	}
 
 	public void testPutToLuwak(String key) throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
+
 		final boolean[] is = { false };
 
 		URL url = getClass().getClassLoader().getResource(LARGEFILE);
@@ -624,22 +637,19 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		map.put("Mmm", "XXXXX");
 		ro.setUserMetadata(map);
 
-		target.putStream(ro, new RiakResponseHandler<_>() {
+		this.target.putStream(ro, new RiakResponseHandler<_>() {
 
 			@Override
 			public void onError(RiakResponse response) throws Exception {
-				waiter.compareAndSet(false, true);
+				waiter.countDown();
 				fail(response.getMessage());
 			}
 
 			@Override
 			public void handle(RiakContentsResponse<_> response)
 					throws Exception {
-				try {
-					is[0] = true;
-				} finally {
-					waiter.compareAndSet(false, true);
-				}
+				is[0] = true;
+				waiter.countDown();
 			}
 		});
 

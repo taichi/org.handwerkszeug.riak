@@ -3,7 +3,8 @@ package org.handwerkszeug.riak.pbc;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.handwerkszeug.riak.Config;
 import org.handwerkszeug.riak.Hosts;
@@ -27,20 +28,20 @@ public class PbcRiakClientTest {
 	@Before
 	public void setUp() throws Exception {
 		Config config = DefaultConfig.newPbcConfig(Hosts.RIAK_HOST);
-		target = new PbcRiakClient(config);
+		this.target = new PbcRiakClient(config);
 	}
 
 	@After
 	public void tearDown() throws Exception {
-		target.dispose();
+		this.target.dispose();
 	}
 
 	@Test
 	public void testExecute() throws Exception {
-		final AtomicBoolean waiter = new AtomicBoolean(false);
+		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
-		target.execute(new RiakAction<PbcRiakOperations>() {
+		this.target.execute(new RiakAction<PbcRiakOperations>() {
 			@Override
 			public void execute(PbcRiakOperations operations) {
 				operations.ping(new RiakResponseHandler<String>() {
@@ -48,7 +49,7 @@ public class PbcRiakClientTest {
 					public void onError(RiakResponse response)
 							throws RiakException {
 						response.operationComplete();
-						waiter.compareAndSet(false, true);
+						waiter.countDown();
 					}
 
 					@Override
@@ -59,7 +60,7 @@ public class PbcRiakClientTest {
 							is[0] = true;
 						} finally {
 							response.operationComplete();
-							waiter.compareAndSet(false, true);
+							waiter.countDown();
 						}
 					}
 				});
@@ -69,11 +70,9 @@ public class PbcRiakClientTest {
 		wait(waiter, is);
 	}
 
-	protected void wait(final AtomicBoolean waiter, final boolean[] is)
+	protected void wait(final CountDownLatch waiter, final boolean[] is)
 			throws InterruptedException {
-		while (waiter.get() == false) {
-			Thread.sleep(10);
-		}
+		waiter.await(3, TimeUnit.SECONDS);
 		assertTrue(is[0]);
 	}
 }
