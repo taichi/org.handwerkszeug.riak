@@ -13,7 +13,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -35,6 +37,7 @@ import org.handwerkszeug.riak.model.DefaultPutOptions;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.Erlang;
 import org.handwerkszeug.riak.model.KeyResponse;
+import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
@@ -319,6 +322,18 @@ public abstract class RiakOperationsTest {
 				return testdata.getBytes();
 			}
 		};
+		ro.setCharset("UTF-8");
+		List<Link> links = new ArrayList<Link>();
+		links.add(new Link(new Location(location.getBucket(), "tag"), "foo"));
+		links.add(new Link(new Location(location.getBucket(), "tag"), "bar"));
+		ro.setLinks(links);
+
+		Map<String, String> map = new HashMap<String, String>();
+		map.put("mmm", "ddd");
+		map.put("nn", "eee");
+		map.put("o", "fff");
+		ro.setUserMetadata(map);
+
 		final boolean[] is = { false };
 		this.target.put(ro, new RiakResponseHandler<_>() {
 			@Override
