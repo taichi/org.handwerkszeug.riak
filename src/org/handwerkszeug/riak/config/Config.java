@@ -1,4 +1,4 @@
-package org.handwerkszeug.riak;
+package org.handwerkszeug.riak.config;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
@@ -7,12 +7,6 @@ import java.util.concurrent.ExecutorService;
  * @author taichi
  */
 public interface Config {
-
-	String getRawName();
-
-	String getMapReduceName();
-
-	String getLuwakName();
 
 	Integer getTimeout();
 

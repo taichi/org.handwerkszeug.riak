@@ -2,7 +2,6 @@ package org.handwerkszeug.riak.http.rest;
 
 import static org.handwerkszeug.riak.util.Validation.notNull;
 
-import org.handwerkszeug.riak.Config;
 import org.handwerkszeug.riak.RiakAction;
 import org.handwerkszeug.riak.RiakClient;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -19,18 +18,18 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
  */
 public class RestRiakClient implements RiakClient<RestRiakOperations> {
 
-	final Config config;
+	final RestConfig config;
 	final String riakUri;
 	final ClientSocketChannelFactory channelFactory;
 
-	public RestRiakClient(Config config) {
+	public RestRiakClient(RestConfig config) {
 		this.config = config;
 		this.channelFactory = new NioClientSocketChannelFactory(
 				config.getBossExecutor(), config.getWorkerExecutor());
 		this.riakUri = toRiakURI(config);
 	}
 
-	public static String toRiakURI(Config config) {
+	public static String toRiakURI(RestConfig config) {
 		StringBuilder stb = new StringBuilder();
 		stb.append("http://");
 		stb.append(config.getRiakAddress().getHostName());
@@ -44,7 +43,7 @@ public class RestRiakClient implements RiakClient<RestRiakOperations> {
 		notNull(action, "action");
 		// TODO stress test and implement connection pooling.
 		ClientBootstrap bootstrap = new ClientBootstrap(this.channelFactory);
-		Integer i = config.getTimeout();
+		Integer i = this.config.getTimeout();
 		if (i != null) {
 			bootstrap.setOption("connectTimeoutMillis", i);
 		}
@@ -59,7 +58,9 @@ public class RestRiakClient implements RiakClient<RestRiakOperations> {
 									ChannelHandlerContext ctx,
 									ChannelStateEvent e) throws Exception {
 								RestRiakOperations op = new RestRiakOperations(
-										riakUri, config, e.getChannel());
+										RestRiakClient.this.riakUri,
+										RestRiakClient.this.config, e
+												.getChannel());
 								action.execute(op);
 							}
 						});

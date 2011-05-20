@@ -1,31 +1,24 @@
 package org.handwerkszeug.riak.config;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.handwerkszeug.riak.Config;
 
 /**
  * @author taichi
  */
 public abstract class AbstractConfig implements Config {
 
-	protected AbstractConfig() {
+	final InetSocketAddress address;
+
+	protected AbstractConfig(InetSocketAddress address) {
+		this.address = address;
 	}
 
 	@Override
-	public String getRawName() {
-		return "riak";
-	}
-
-	@Override
-	public String getMapReduceName() {
-		return "mapred";
-	}
-
-	@Override
-	public String getLuwakName() {
-		return "luwak";
+	public InetSocketAddress getRiakAddress() {
+		return this.address;
 	}
 
 	@Override

@@ -13,12 +13,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import org.handwerkszeug.riak.Config;
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak.http.InputStreamHandler;
 import org.handwerkszeug.riak.http.LinkCondition;
 import org.handwerkszeug.riak.http.RiakHttpHeaders;
+import org.handwerkszeug.riak.http.rest.RestConfig;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.GetOptions;
@@ -50,14 +50,14 @@ public class RequestFactory {
 
 	static final Logger LOG = LoggerFactory.getLogger(RequestFactory.class);
 
-	Config config;
+	RestConfig config;
 	String host;
 
 	String clientId;
 
 	ObjectMapper objectMapper = new ObjectMapper();
 
-	public RequestFactory(String host, Config config) {
+	public RequestFactory(String host, RestConfig config) {
 		super();
 		this.host = removeSlashIfNeed(host);
 		this.config = config;
@@ -212,7 +212,7 @@ public class RequestFactory {
 			holder.props = bucket;
 			ChannelBuffer buffer = ChannelBuffers.dynamicBuffer();
 			OutputStream out = new ChannelBufferOutputStream(buffer);
-			objectMapper.writeValue(out, holder);
+			this.objectMapper.writeValue(out, holder);
 			HttpRequest request = newRequest("/" + bucket.getName(),
 					HttpMethod.PUT);
 			request.setHeader(HttpHeaders.Names.CONTENT_LENGTH,
@@ -230,7 +230,7 @@ public class RequestFactory {
 
 	public HttpRequest newMapReduceRequest() {
 		HttpRequest request = newRequest(this.host,
-				"/" + config.getMapReduceName() + "?chunked=true",
+				"/" + this.config.getMapReduceName() + "?chunked=true",
 				HttpMethod.POST);
 		request.setHeader(HttpHeaders.Names.CONTENT_TYPE,
 				RiakHttpHeaders.CONTENT_JSON);
@@ -309,8 +309,7 @@ public class RequestFactory {
 
 		// NOP content.getVtag();
 
-		if ((content.getLinks() != null)
-				&& (content.getLinks().isEmpty() == false)) {
+		if (content.getLinks() != null && content.getLinks().isEmpty() == false) {
 			addLinkHeader(request, content);
 		}
 
@@ -319,8 +318,8 @@ public class RequestFactory {
 					HttpUtil.format(content.getLastModified()));
 		}
 
-		if ((content.getUserMetadata() != null)
-				&& (content.getUserMetadata().isEmpty() == false)) {
+		if (content.getUserMetadata() != null
+				&& content.getUserMetadata().isEmpty() == false) {
 			Map<String, String> map = content.getUserMetadata();
 			for (String key : map.keySet()) {
 				request.setHeader(RiakHttpHeaders.toUsermeta(key), map.get(key));
@@ -425,16 +424,16 @@ public class RequestFactory {
 	}
 
 	public HttpRequest newGetStreamRequest(String key) {
-		HttpRequest request = newRequest(this.host, "/" + config.getLuwakName()
-				+ "/" + key, HttpMethod.GET);
+		HttpRequest request = newRequest(this.host,
+				"/" + this.config.getLuwakName() + "/" + key, HttpMethod.GET);
 		return request;
 	}
 
 	public HttpRequest newStreamRequest(
 			final RiakObject<InputStreamHandler> content, String key,
 			HttpMethod method) {
-		HttpRequest request = newRequest(this.host, "/" + config.getLuwakName()
-				+ "/" + key, method);
+		HttpRequest request = newRequest(this.host,
+				"/" + this.config.getLuwakName() + "/" + key, method);
 
 		mergeHeaders(request, content);
 		request.setHeader(HttpHeaders.Names.EXPECT, HttpHeaders.Values.CONTINUE);
@@ -444,8 +443,8 @@ public class RequestFactory {
 	}
 
 	public HttpRequest newDeleteRequest(String key) {
-		HttpRequest request = newRequest(this.host, "/" + config.getLuwakName()
-				+ "/" + key, HttpMethod.DELETE);
+		HttpRequest request = newRequest(this.host,
+				"/" + this.config.getLuwakName() + "/" + key, HttpMethod.DELETE);
 		return request;
 	}
 }

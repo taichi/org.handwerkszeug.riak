@@ -526,7 +526,7 @@ public abstract class RiakOperationsTest {
 					}
 
 					@Override
-					public void end() {
+					public void end(RiakResponse response) {
 						beginEnd[1] = true;
 						waiter.countDown();
 					}
@@ -584,7 +584,7 @@ public abstract class RiakOperationsTest {
 			}
 
 			@Override
-			public void end() {
+			public void end(RiakResponse response) {
 				beginEnd[1] = true;
 				waiter.countDown();
 			}
@@ -652,7 +652,7 @@ public abstract class RiakOperationsTest {
 			}
 
 			@Override
-			public void end() {
+			public void end(RiakResponse response) {
 				beginEnd[1] = true;
 				waiter.countDown();
 			}

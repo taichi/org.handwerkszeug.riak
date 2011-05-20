@@ -10,11 +10,9 @@ import java.util.concurrent.CountDownLatch;
 
 import junit.framework.Assert;
 
-import org.handwerkszeug.riak.Config;
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
-import org.handwerkszeug.riak.config.DefaultConfig;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.model.ServerInfo;
@@ -30,7 +28,7 @@ import org.junit.Test;
  */
 public class PbcRiakOperationsTest extends RiakOperationsTest {
 
-	static final Config config = DefaultConfig.newConfig(Hosts.RIAK_HOST,
+	static final PbcConfig config = PbcConfig.newConfig(Hosts.RIAK_HOST,
 			Hosts.RIAK_PB_PORT);
 
 	PbcRiakOperations target;

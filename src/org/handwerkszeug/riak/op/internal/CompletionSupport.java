@@ -53,13 +53,15 @@ public class CompletionSupport implements ChannelFutureListener {
 		this.complete.compareAndSet(false, true);
 	}
 
-	public <T> RiakFuture handle(final String name, Object send,
+	public <T> RiakFuture handle(final String n, Object send,
 			final RiakResponseHandler<T> users,
 			final NettyUtil.MessageHandler handler) {
 		if (LOG.isDebugEnabled()) {
-			LOG.debug(name);
+			LOG.debug(n);
 		}
-		this.progress.incrementAndGet();
+
+		int prog = this.progress.incrementAndGet();
+		final String name = n + prog;
 		ChannelPipeline pipeline = this.channel.getPipeline();
 		pipeline.addLast(name, new UpstreamHandler<T>(users) {
 			@Override
@@ -69,12 +71,11 @@ public class CompletionSupport implements ChannelFutureListener {
 				try {
 					Object receive = e.getMessage();
 					if (LOG.isDebugEnabled()) {
-						LOG.debug(Markers.DETAIL, Messages.Receive, name,
-								receive);
+						LOG.debug(Markers.DETAIL, Messages.Receive, n, receive);
 					}
 					if (handler.handle(receive)) {
 						pipeline.remove(name);
-						progress.decrementAndGet();
+						CompletionSupport.this.progress.decrementAndGet();
 					}
 					e.getFuture().addListener(CompletionSupport.this);
 				} catch (Exception ex) {
@@ -105,7 +106,7 @@ public class CompletionSupport implements ChannelFutureListener {
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx,
 				final ExceptionEvent e) throws Exception {
-			users.onError(new AbstractRiakResponse() {
+			this.users.onError(new AbstractRiakResponse() {
 				@Override
 				public String getMessage() {
 					return e.getCause().getMessage();

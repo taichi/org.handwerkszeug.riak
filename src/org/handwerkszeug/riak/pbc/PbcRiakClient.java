@@ -2,7 +2,6 @@ package org.handwerkszeug.riak.pbc;
 
 import static org.handwerkszeug.riak.util.Validation.notNull;
 
-import org.handwerkszeug.riak.Config;
 import org.handwerkszeug.riak.RiakAction;
 import org.handwerkszeug.riak.RiakClient;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -16,10 +15,10 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
 public class PbcRiakClient implements RiakClient<PbcRiakOperations> {
 
-	final Config config;
+	final PbcConfig config;
 	final ClientSocketChannelFactory channelFactory;
 
-	public PbcRiakClient(Config config) {
+	public PbcRiakClient(PbcConfig config) {
 		// TODO read from configuration.
 		this.channelFactory = new NioClientSocketChannelFactory(
 				config.getBossExecutor(), config.getWorkerExecutor());
@@ -31,7 +30,7 @@ public class PbcRiakClient implements RiakClient<PbcRiakOperations> {
 		notNull(action, "action");
 		// TODO stress test and implement connection pooling.
 		ClientBootstrap bootstrap = new ClientBootstrap(this.channelFactory);
-		Integer i = config.getTimeout();
+		Integer i = this.config.getTimeout();
 		if (i != null) {
 			bootstrap.setOption("connectTimeoutMillis", i);
 		}

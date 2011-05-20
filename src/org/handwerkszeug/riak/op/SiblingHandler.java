@@ -1,6 +1,7 @@
 package org.handwerkszeug.riak.op;
 
 import org.handwerkszeug.riak.model.RiakObject;
+import org.handwerkszeug.riak.model.RiakResponse;
 
 /**
  * @author taichi
@@ -17,5 +18,5 @@ public interface SiblingHandler extends RiakResponseHandler<RiakObject<byte[]>> 
 	 * 
 	 * @return conflict resolved object.
 	 */
-	void end() throws Exception;
+	void end(RiakResponse response) throws Exception;
 }

@@ -25,10 +25,8 @@ import java.util.concurrent.CountDownLatch;
 import net.iharder.Base64;
 
 import org.codehaus.jackson.node.ObjectNode;
-import org.handwerkszeug.riak.Config;
 import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak._;
-import org.handwerkszeug.riak.config.DefaultConfig;
 import org.handwerkszeug.riak.http.InputStreamHandler;
 import org.handwerkszeug.riak.http.LinkCondition;
 import org.handwerkszeug.riak.http.StreamResponseHandler;
@@ -56,7 +54,7 @@ import org.junit.Test;
  */
 public class RestRiakOperationsTest extends RiakOperationsTest {
 
-	static final Config config = DefaultConfig.newConfig(Hosts.RIAK_HOST,
+	static final RestConfig config = RestConfig.newConfig(Hosts.RIAK_HOST,
 			Hosts.RIAK_HTTP_PORT);
 
 	RestRiakOperations target;

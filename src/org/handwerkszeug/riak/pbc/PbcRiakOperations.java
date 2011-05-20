@@ -269,7 +269,8 @@ public class PbcRiakOperations implements RiakOperations {
 										.newResponse(ro));
 							}
 						} finally {
-							handler.end();
+							handler.end(PbcRiakOperations.this.support
+									.newResponse());
 						}
 					}
 				});
@@ -385,7 +386,7 @@ public class PbcRiakOperations implements RiakOperations {
 		o.setUserMetadata(map);
 		for (RpbPair pb : content.getUsermetaList()) {
 			String key = to(pb.getKey());
-			if ((key.isEmpty() == false) && pb.hasValue()) {
+			if (key.isEmpty() == false && pb.hasValue()) {
 				map.put(key, to(pb.getValue()));
 			}
 		}
@@ -467,7 +468,8 @@ public class PbcRiakOperations implements RiakOperations {
 									}
 								}
 							} finally {
-								handler.end();
+								handler.end(PbcRiakOperations.this.support
+										.newResponse());
 							}
 							return true;
 						}
@@ -513,8 +515,7 @@ public class PbcRiakOperations implements RiakOperations {
 		if (StringUtil.isEmpty(content.getVtag()) == false) {
 			builder.setVtag(ByteString.copyFromUtf8(content.getVtag()));
 		}
-		if ((content.getLinks() != null)
-				&& (content.getLinks().isEmpty() == false)) {
+		if (content.getLinks() != null && content.getLinks().isEmpty() == false) {
 			for (Link link : content.getLinks()) {
 				RpbLink.Builder lb = RpbLink.newBuilder();
 				Location loc = link.getLocation();
@@ -540,8 +541,8 @@ public class PbcRiakOperations implements RiakOperations {
 			builder.setLastModUsecs(msec);
 		}
 
-		if ((content.getUserMetadata() != null)
-				&& (content.getUserMetadata().isEmpty() == false)) {
+		if (content.getUserMetadata() != null
+				&& content.getUserMetadata().isEmpty() == false) {
 			Map<String, String> map = content.getUserMetadata();
 			for (String key : map.keySet()) {
 				RpbPair.Builder b = RpbPair.newBuilder();
