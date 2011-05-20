@@ -7,7 +7,7 @@ import java.util.Date;
  */
 public class DefaultPutOptions implements PutOptions {
 
-	protected DefaultPutOptions() {
+	public DefaultPutOptions() {
 	}
 
 	@Override
