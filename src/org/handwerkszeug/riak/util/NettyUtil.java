@@ -80,15 +80,18 @@ public class NettyUtil {
 			this.delegate = delegate;
 		}
 
+		@Override
 		public boolean cancel() {
 			return this.delegate.cancel();
 		}
 
+		@Override
 		public boolean await(long timeout, TimeUnit unit)
 				throws InterruptedException {
 			return this.delegate.await(timeout, unit);
 		}
 
+		@Override
 		public void awaitUninterruptibly() {
 			this.delegate.awaitUninterruptibly();
 		}

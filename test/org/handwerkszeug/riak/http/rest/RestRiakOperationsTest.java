@@ -1,7 +1,6 @@
 package org.handwerkszeug.riak.http.rest;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -15,7 +14,6 @@ import java.io.InputStream;
 import java.net.SocketAddress;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +28,10 @@ import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.http.InputStreamHandler;
 import org.handwerkszeug.riak.http.LinkCondition;
 import org.handwerkszeug.riak.http.StreamResponseHandler;
-import org.handwerkszeug.riak.model.DefaultPutOptions;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
-import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.Range;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakObject;
@@ -57,7 +53,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	static final RestConfig config = RestConfig.newConfig(Hosts.RIAK_HOST,
 			Hosts.RIAK_HTTP_PORT);
 
-	RestRiakOperations target;
+	public RestRiakOperations target;
 
 	@Override
 	protected ChannelPipelineFactory newChannelPipelineFactory() {
@@ -81,109 +77,6 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	protected void testSetClientId(String id) throws Exception {
 		this.target.setClientId(id);
 		assertEquals(id, this.target.getClientId());
-	}
-
-	@Test
-	public void testPost() throws Exception {
-		Location location = new Location("testPost", "");
-		String testdata = new Date() + "\n";
-
-		Location returned = testPost(location, testdata);
-		testDelete(returned);
-
-		returned = testPostWithReturn(location, testdata);
-		testDelete(returned);
-	}
-
-	public Location testPost(final Location location, final String testdata)
-			throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
-		final boolean[] is = { false };
-
-		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
-			@Override
-			public byte[] getContent() {
-				return testdata.getBytes();
-			}
-		};
-		final Location[] loc = new Location[1];
-		this.target.post(ro, new RiakResponseHandler<RiakObject<byte[]>>() {
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
-
-			@Override
-			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
-					throws Exception {
-				try {
-					RiakObject<byte[]> returned = response.getContents();
-					assertNotNull(returned.getLocation());
-					Location l = returned.getLocation();
-					assertEquals(location.getBucket(), l.getBucket());
-					assertFalse(l.getKey().isEmpty());
-					loc[0] = l;
-					is[0] = true;
-				} finally {
-					waiter.countDown();
-				}
-			}
-		});
-
-		wait(waiter, is);
-		return loc[0];
-	}
-
-	public Location testPostWithReturn(final Location location,
-			final String testdata) throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
-		final boolean[] is = { false };
-
-		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
-			@Override
-			public byte[] getContent() {
-				return testdata.getBytes();
-			}
-		};
-
-		PutOptions options = new DefaultPutOptions() {
-			@Override
-			public boolean getReturnBody() {
-				return true;
-			}
-		};
-
-		final Location[] loc = new Location[1];
-		this.target.post(ro, options,
-				new RiakResponseHandler<RiakObject<byte[]>>() {
-					@Override
-					public void onError(RiakResponse response) throws Exception {
-						waiter.countDown();
-						fail(response.getMessage());
-					}
-
-					@Override
-					public void handle(
-							RiakContentsResponse<RiakObject<byte[]>> response)
-							throws Exception {
-						try {
-							RiakObject<byte[]> returned = response
-									.getContents();
-							assertNotNull(returned.getLocation());
-							Location l = returned.getLocation();
-							assertEquals(location.getBucket(), l.getBucket());
-							assertFalse(l.getKey().isEmpty());
-							loc[0] = l;
-							is[0] = true;
-						} finally {
-							waiter.countDown();
-						}
-					}
-				});
-
-		wait(waiter, is);
-		return loc[0];
 	}
 
 	@Test

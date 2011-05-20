@@ -405,13 +405,109 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	@Override
+	public RiakFuture post(RiakObject<byte[]> content,
+			RiakResponseHandler<RiakObject<byte[]>> handler) {
+		notNull(content, "content");
+		notNull(handler, "handler");
+
+		RpbPutReq.Builder builder = buildPostRequest(content);
+		final String procedure = "post";
+		return _post(procedure, content, handler, builder);
+	}
+
+	protected RiakFuture _post(final String procedure,
+			RiakObject<byte[]> content,
+			final RiakResponseHandler<RiakObject<byte[]>> handler,
+			RpbPutReq.Builder builder) {
+		final Location location = content.getLocation();
+		final RiakObject<byte[]> copied = new DefaultRiakObject(content);
+		return handle(procedure, builder.build(), handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof RpbPutResp) {
+							RpbPutResp resp = (RpbPutResp) receive;
+							Location newloc = location;
+							if (resp.hasKey()) {
+								newloc = new Location(location.getBucket(),
+										resp.getKey().toStringUtf8());
+							}
+							copied.setLocation(newloc);
+
+							if (resp.hasVclock()) {
+								copied.setVectorClock(toVclock(resp.getVclock()));
+							}
+							handler.handle(PbcRiakOperations.this.support
+									.newResponse(copied));
+							return true;
+						}
+						throw new IncomprehensibleProtocolException(procedure);
+					}
+				});
+	}
+
+	protected RpbPutReq.Builder buildPostRequest(RiakObject<byte[]> content) {
+		RpbPutReq.Builder builder = RpbPutReq.newBuilder().setBucket(
+				ByteString.copyFromUtf8(content.getLocation().getBucket()));
+		builder.setContent(convert(content));
+		return builder;
+	}
+
+	protected RpbPutReq.Builder buildPostRequest(RiakObject<byte[]> content,
+			PutOptions options) {
+		RpbPutReq.Builder builder = buildPostRequest(content);
+		merge(options, builder);
+		return builder;
+	}
+
+	@Override
+	public RiakFuture post(RiakObject<byte[]> content, PutOptions options,
+			final RiakResponseHandler<RiakObject<byte[]>> handler) {
+		notNull(content, "content");
+		notNull(options, "options");
+		notNull(handler, "handler");
+
+		RpbPutReq.Builder builder = buildPostRequest(content, options);
+		if (options.getReturnBody() == false) {
+			return _post("post/opt", content, handler, builder);
+		}
+
+		final Location location = content.getLocation();
+		final String procedure = "post/returnbody";
+		return handle(procedure, builder.build(), handler,
+				new NettyUtil.MessageHandler() {
+					@Override
+					public boolean handle(Object receive) throws Exception {
+						if (receive instanceof RpbPutResp) {
+							RpbPutResp resp = (RpbPutResp) receive;
+							Location newloc = location;
+							if (resp.hasKey()) {
+								newloc = new Location(location.getBucket(),
+										resp.getKey().toStringUtf8());
+							}
+
+							String vclock = toVclock(resp.getVclock());
+							if (0 < resp.getContentCount()) {
+								RpbContent c = resp.getContent(0);
+								RiakObject<byte[]> ro = convert(newloc, vclock,
+										c);
+								handler.handle(PbcRiakOperations.this.support
+										.newResponse(ro));
+							}
+							return true;
+						}
+						throw new IncomprehensibleProtocolException(procedure);
+					}
+				});
+	}
+
+	@Override
 	public RiakFuture put(RiakObject<byte[]> content,
 			final RiakResponseHandler<_> handler) {
 		notNull(content, "content");
 		notNull(handler, "handler");
 
-		Location loc = content.getLocation();
-		RpbPutReq.Builder builder = buildPutRequest(content, loc);
+		RpbPutReq.Builder builder = buildPutRequest(content);
 		final String procedure = "put";
 		return handle(procedure, builder.build(), handler,
 				new NettyUtil.MessageHandler() {
@@ -427,8 +523,8 @@ public class PbcRiakOperations implements RiakOperations {
 				});
 	}
 
-	protected RpbPutReq.Builder buildPutRequest(RiakObject<byte[]> content,
-			Location loc) {
+	protected RpbPutReq.Builder buildPutRequest(RiakObject<byte[]> content) {
+		Location loc = content.getLocation();
 		RpbPutReq.Builder builder = RpbPutReq.newBuilder()
 				.setBucket(ByteString.copyFromUtf8(loc.getBucket()))
 				.setKey(ByteString.copyFromUtf8(loc.getKey()));
@@ -448,7 +544,7 @@ public class PbcRiakOperations implements RiakOperations {
 		notNull(handler, "handler");
 
 		final Location location = content.getLocation();
-		RpbPutReq.Builder builder = buildPutRequest(content, location, options);
+		RpbPutReq.Builder builder = buildPutRequest(content, options);
 		final String procedure = "put/opt";
 		return handle(procedure, builder.build(), handler,
 				new NettyUtil.MessageHandler() {
@@ -457,12 +553,18 @@ public class PbcRiakOperations implements RiakOperations {
 						if (receive instanceof RpbPutResp) {
 							RpbPutResp resp = (RpbPutResp) receive;
 							try {
+								Location newloc = location;
+								if (resp.hasKey()) {
+									newloc = new Location(location.getBucket(),
+											resp.getKey().toStringUtf8());
+								}
+
 								handler.begin();
+								String vclock = toVclock(resp.getVclock());
 								if (0 < resp.getContentCount()) {
-									String vclock = toVclock(resp.getVclock());
 									for (RpbContent c : resp.getContentList()) {
-										RiakObject<byte[]> ro = convert(
-												location, vclock, c);
+										RiakObject<byte[]> ro = convert(newloc,
+												vclock, c);
 										handler.handle(PbcRiakOperations.this.support
 												.newResponse(ro));
 									}
@@ -480,8 +582,13 @@ public class PbcRiakOperations implements RiakOperations {
 	}
 
 	protected RpbPutReq.Builder buildPutRequest(RiakObject<byte[]> content,
-			Location loc, PutOptions options) {
-		RpbPutReq.Builder builder = buildPutRequest(content, loc);
+			PutOptions options) {
+		RpbPutReq.Builder builder = buildPutRequest(content);
+		merge(options, builder);
+		return builder;
+	}
+
+	protected void merge(PutOptions options, RpbPutReq.Builder builder) {
 		if (StringUtil.isEmpty(options.getVectorClock()) == false) {
 			ByteString clock = fromVclock(options.getVectorClock());
 			builder.setVclock(clock);
@@ -495,7 +602,6 @@ public class PbcRiakOperations implements RiakOperations {
 		if (options.getReturnBody()) {
 			builder.setReturnBody(options.getReturnBody());
 		}
-		return builder;
 	}
 
 	protected RpbContent convert(RiakObject<byte[]> content) {

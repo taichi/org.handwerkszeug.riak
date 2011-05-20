@@ -44,7 +44,7 @@ public class CompletionSupport implements ChannelFutureListener {
 	@Override
 	public void operationComplete(ChannelFuture future) throws Exception {
 		if (future.isDone() && this.progress.get() < 1 && this.complete.get()) {
-			LOG.debug(Markers.BOUNDARY, Messages.CLOSE_CHANNEL);
+			LOG.debug(Markers.BOUNDARY, Messages.CloseChannel);
 			future.getChannel().close();
 		}
 	}
@@ -57,7 +57,7 @@ public class CompletionSupport implements ChannelFutureListener {
 			final RiakResponseHandler<T> users,
 			final NettyUtil.MessageHandler handler) {
 		if (LOG.isDebugEnabled()) {
-			LOG.debug(n);
+			LOG.debug(Messages.WriteTo, n, this.channel.getRemoteAddress());
 		}
 
 		int prog = this.progress.incrementAndGet();

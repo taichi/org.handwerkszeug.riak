@@ -37,6 +37,7 @@ public class DefaultMapReduceQuery implements MapReduceQuery {
 	public DefaultMapReduceQuery() {
 	}
 
+	@Override
 	public void setInputs(MapReduceInputs inputs) {
 		this.inputs = inputs;
 	}

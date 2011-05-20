@@ -1875,10 +1875,12 @@ public final class Riakclient {
 		public static final int PR_FIELD_NUMBER = 4;
 		private int pr_;
 
+		@Override
 		public boolean hasPr() {
 			return ((this.bitField0_ & 0x00000008) == 0x00000008);
 		}
 
+		@Override
 		public int getPr() {
 			return this.pr_;
 		}
@@ -1887,10 +1889,12 @@ public final class Riakclient {
 		public static final int BASIC_QUORUM_FIELD_NUMBER = 5;
 		private boolean basicQuorum_;
 
+		@Override
 		public boolean hasBasicQuorum() {
 			return ((this.bitField0_ & 0x00000010) == 0x00000010);
 		}
 
+		@Override
 		public boolean getBasicQuorum() {
 			return this.basicQuorum_;
 		}
@@ -1899,10 +1903,12 @@ public final class Riakclient {
 		public static final int NOTFOUND_OK_FIELD_NUMBER = 6;
 		private boolean notfoundOk_;
 
+		@Override
 		public boolean hasNotfoundOk() {
 			return ((this.bitField0_ & 0x00000020) == 0x00000020);
 		}
 
+		@Override
 		public boolean getNotfoundOk() {
 			return this.notfoundOk_;
 		}
@@ -1918,6 +1924,7 @@ public final class Riakclient {
 
 		private byte memoizedIsInitialized = -1;
 
+		@Override
 		public final boolean isInitialized() {
 			byte isInitialized = this.memoizedIsInitialized;
 			if (isInitialized != -1) {
@@ -11859,6 +11866,7 @@ public final class Riakclient {
 						+ "\030\002 \001(\014\022\013\n\003tag\030\003 \001(\014\"3\n\016RpbBucketProps\022\r\n"
 						+ "\005n_val\030\001 \001(\r\022\022\n\nallow_mult\030\002 \001(\010" };
 		com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner = new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
+			@Override
 			public com.google.protobuf.ExtensionRegistry assignDescriptors(
 					com.google.protobuf.Descriptors.FileDescriptor root) {
 				descriptor = root;

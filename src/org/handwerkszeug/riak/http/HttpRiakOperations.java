@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.model.Location;
-import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakOperations;
@@ -36,20 +35,6 @@ public interface HttpRiakOperations extends RiakOperations, LuwakSupport {
 	void setClientId(String clientId);
 
 	String getClientId();
-
-	/**
-	 * Stores a new object in a bucket with a random Riak-assigned key.<br/>
-	 * set Location key as empty string.
-	 */
-	RiakFuture post(RiakObject<byte[]> content,
-			RiakResponseHandler<RiakObject<byte[]>> handler);
-
-	/**
-	 * Stores a new object in a bucket with a random Riak-assigned key.<br/>
-	 * set Location key as empty string.
-	 */
-	RiakFuture post(RiakObject<byte[]> content, PutOptions options,
-			RiakResponseHandler<RiakObject<byte[]>> handler);
 
 	/**
 	 * notify messages for every steps.

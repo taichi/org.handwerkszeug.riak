@@ -4,11 +4,8 @@ import static org.handwerkszeug.riak.util.Validation.notNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -32,7 +29,6 @@ import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.GetOptions;
 import org.handwerkszeug.riak.model.KeyResponse;
-import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.Quorum;
@@ -435,14 +431,16 @@ public class RestRiakOperations implements HttpRiakOperations {
 		notNull(handler, "handler");
 
 		HttpRequest request = this.factory.newPostRequest(content);
-		return _post(content, handler, request);
+		final String procedure = "post";
+		return _post(procedure, content, handler, request);
 	}
 
-	private RiakFuture _post(RiakObject<byte[]> content,
+	private RiakFuture _post(final String procedure,
+			RiakObject<byte[]> content,
 			final RiakResponseHandler<RiakObject<byte[]>> handler,
 			HttpRequest request) {
-		final RiakObject<byte[]> copied = copy(content);
-		final String procedure = "post";
+		final RiakObject<byte[]> copied = new DefaultRiakObject(content);
+
 		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
 					@Override
@@ -462,29 +460,6 @@ public class RestRiakOperations implements HttpRiakOperations {
 						throw new IncomprehensibleProtocolException(procedure);
 					}
 				});
-	}
-
-	protected RiakObject<byte[]> copy(RiakObject<byte[]> src) {
-		DefaultRiakObject ro = new DefaultRiakObject(src.getLocation());
-		ro.setContent(Arrays.copyOf(src.getContent(), src.getContent().length));
-		ro.setVectorClock(src.getVectorClock());
-		ro.setContentType(src.getContentType());
-		ro.setCharset(src.getCharset());
-		ro.setContentEncoding(src.getContentEncoding());
-		ro.setVtag(src.getVtag());
-		List<Link> links = src.getLinks();
-		if (links != null && links.isEmpty() == false) {
-			ro.setLinks(new ArrayList<Link>(links));
-		}
-		Date d = src.getLastModified();
-		if (d != null) {
-			ro.setLastModified(new Date(d.getTime()));
-		}
-		Map<String, String> metas = src.getUserMetadata();
-		if (metas != null && metas.isEmpty() == false) {
-			ro.setUserMetadata(new HashMap<String, String>(metas));
-		}
-		return ro;
 	}
 
 	protected Location to(HttpMessage response) {
@@ -508,7 +483,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		HttpRequest request = this.factory.newPostRequest(content, options);
 		if (options.getReturnBody() == false) {
-			return _post(content, handler, request);
+			return _post("post/opt", content, handler, request);
 		}
 		final String procedure = "post/returnbody";
 		return handle(procedure, request, handler,

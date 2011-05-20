@@ -45,6 +45,20 @@ public interface ObjectKeyOperations {
 
 	RiakFuture get(Location location, GetOptions options, SiblingHandler handler);
 
+	/**
+	 * Stores a new object in a bucket with a random Riak-assigned key.<br/>
+	 * set Location key as empty string.
+	 */
+	RiakFuture post(RiakObject<byte[]> content,
+			RiakResponseHandler<RiakObject<byte[]>> handler);
+
+	/**
+	 * Stores a new object in a bucket with a random Riak-assigned key.<br/>
+	 * set Location key as empty string.
+	 */
+	RiakFuture post(RiakObject<byte[]> content, PutOptions options,
+			RiakResponseHandler<RiakObject<byte[]>> handler);
+
 	RiakFuture put(RiakObject<byte[]> content, RiakResponseHandler<_> handler);
 
 	RiakFuture put(RiakObject<byte[]> content, PutOptions options,
