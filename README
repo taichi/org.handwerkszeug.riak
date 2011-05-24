@@ -5,6 +5,6 @@ interface driven and stateless design.
   transport switchable.
   resource safety.
 
-for developer
-  execute mvnhack-0.0.3.jar.
-  then download dependencies from maven repositories.
+For developer
+ execute download dependencies and setup project configuration
+  mvn eclipse:eclipse

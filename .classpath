@@ -1,17 +1,15 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="test"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
-	<classpathentry exported="true" kind="lib" path="lib/protobuf-java-2.4.0a.jar" rootpath="." sourcepath="lib/protobuf-java-2.4.0a-sources.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/commons-pool"/>
-	<classpathentry exported="true" kind="lib" path="lib/netty-3.2.4.Final.jar" rootpath="." sourcepath="lib/netty-3.2.4.Final-sources.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry exported="true" kind="lib" path="lib/logback-classic-0.9.28.jar" rootpath="." sourcepath="lib/logback-classic-0.9.28-sources.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/logback-core-0.9.28.jar" rootpath="." sourcepath="lib/logback-core-0.9.28-sources.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/slf4j-api-1.6.1.jar" rootpath="." sourcepath="lib/slf4j-api-1.6.1-sources.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/base64-2.3.8.jar" rootpath="." sourcepath="lib/base64-2.3.8-sources.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-core-asl-1.8.0.jar" rootpath="." sourcepath="lib/jackson-core-asl-1.8.0-sources.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-mapper-asl-1.8.0.jar" rootpath="." sourcepath="lib/jackson-mapper-asl-1.8.0-sources.jar"/>
-	<classpathentry kind="output" path="bin"/>
+  <classpathentry kind="src" path="test" output="target/test-classes"/>
+  <classpathentry kind="src" path="src"/>
+  <classpathentry kind="output" path="target/classes"/>
+  <classpathentry kind="var" path="M2_REPO/net/iharder/base64/2.3.8/base64-2.3.8.jar" sourcepath="M2_REPO/net/iharder/base64/2.3.8/base64-2.3.8-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/codehaus/jackson/jackson-core-asl/1.8.0/jackson-core-asl-1.8.0.jar" sourcepath="M2_REPO/org/codehaus/jackson/jackson-core-asl/1.8.0/jackson-core-asl-1.8.0-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/codehaus/jackson/jackson-mapper-asl/1.8.0/jackson-mapper-asl-1.8.0.jar" sourcepath="M2_REPO/org/codehaus/jackson/jackson-mapper-asl/1.8.0/jackson-mapper-asl-1.8.0-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/junit/junit/4.8.1/junit-4.8.1.jar" sourcepath="M2_REPO/junit/junit/4.8.1/junit-4.8.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/ch/qos/logback/logback-classic/0.9.28/logback-classic-0.9.28.jar" sourcepath="M2_REPO/ch/qos/logback/logback-classic/0.9.28/logback-classic-0.9.28-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/ch/qos/logback/logback-core/0.9.28/logback-core-0.9.28.jar" sourcepath="M2_REPO/ch/qos/logback/logback-core/0.9.28/logback-core-0.9.28-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/jboss/netty/netty/3.2.4.Final/netty-3.2.4.Final.jar" sourcepath="M2_REPO/org/jboss/netty/netty/3.2.4.Final/netty-3.2.4.Final-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/google/protobuf/protobuf-java/2.4.0a/protobuf-java-2.4.0a.jar" sourcepath="M2_REPO/com/google/protobuf/protobuf-java/2.4.0a/protobuf-java-2.4.0a-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-api/1.6.1/slf4j-api-1.6.1.jar" sourcepath="M2_REPO/org/slf4j/slf4j-api/1.6.1/slf4j-api-1.6.1-sources.jar"/>
+  <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 </classpath>

@@ -2,3 +2,5 @@
 /sandbox
 /bin
 /target
+/.project
+/.classpath
