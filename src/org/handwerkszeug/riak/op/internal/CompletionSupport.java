@@ -57,7 +57,7 @@ public class CompletionSupport implements ChannelFutureListener {
 			final RiakResponseHandler<T> users,
 			final NettyUtil.MessageHandler handler) {
 		if (LOG.isDebugEnabled()) {
-			LOG.debug(Messages.WriteTo, n, this.channel.getRemoteAddress());
+			LOG.debug(Messages.SendTo, n, this.channel.getRemoteAddress());
 		}
 
 		int prog = this.progress.incrementAndGet();

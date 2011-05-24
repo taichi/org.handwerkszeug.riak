@@ -29,6 +29,6 @@ public class Messages {
 
 	public static String CloseChannel = "close channel";
 
-	public static String WriteTo = "{} write to {}";
+	public static String SendTo = "{} send message to {}";
 
 }

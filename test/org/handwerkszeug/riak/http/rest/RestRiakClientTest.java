@@ -64,7 +64,7 @@ public class RestRiakClientTest {
 
 	protected void wait(final CountDownLatch waiter, final boolean[] is)
 			throws InterruptedException {
-		waiter.await(3, TimeUnit.SECONDS);
+		assertTrue("test is timeout.", waiter.await(3, TimeUnit.SECONDS));
 		assertTrue(is[0]);
 	}
 
