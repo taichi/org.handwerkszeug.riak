@@ -21,6 +21,7 @@ import org.handwerkszeug.riak.op.RiakOperationsTest;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -148,4 +149,10 @@ public class PbcRiakOperationsTest extends RiakOperationsTest {
 		wait(waiter, is);
 	}
 
+	@Override
+	@Test
+	@Ignore("Riak 0.14.1 has bug. 0.14.2 fix that bug.")
+	public void testPost() throws Exception {
+		super.testPost();
+	}
 }
