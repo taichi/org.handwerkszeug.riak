@@ -57,6 +57,7 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 					&& State.READ_CHUNKD_CONTENT.equals(state)) {
 				if (this.contentRange.pass(chunk.getContent())) {
 					ctx.sendUpstream(e);
+					return;
 				} else {
 					this.contentRange = null;
 					this.state = State.SKIP_CONTROL_CHARS;
