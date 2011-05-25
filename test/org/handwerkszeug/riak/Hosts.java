@@ -1,6 +1,7 @@
 package org.handwerkszeug.riak;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -32,18 +33,21 @@ public class Hosts {
 	public static int RIAK_HTTP_PORT = 8098;
 
 	static {
+		InputStream in = null;
 		try {
 			ClassLoader cl = Hosts.class.getClassLoader();
-			Properties prop = new Properties();
-			prop.load(cl.getResourceAsStream(Hosts.class.getName().replace('.',
-					'/')
-					+ ".properties"));
-			RIAK_HOST = prop.getProperty("host", RIAK_HOST);
-			RIAK_PB_PORT = Integer.valueOf(prop.getProperty("pb.port",
-					String.valueOf(RIAK_PB_PORT)));
+			in = cl.getResourceAsStream(Hosts.class.getName().replace('.', '/')
+					+ ".properties");
+			if (in != null) {
+				Properties prop = new Properties();
+				prop.load(in);
+				RIAK_HOST = prop.getProperty("host", RIAK_HOST);
+				RIAK_PB_PORT = Integer.valueOf(prop.getProperty("pb.port",
+						String.valueOf(RIAK_PB_PORT)));
 
-			RIAK_HTTP_PORT = Integer.valueOf(prop.getProperty("http.port",
-					String.valueOf(RIAK_HTTP_PORT)));
+				RIAK_HTTP_PORT = Integer.valueOf(prop.getProperty("http.port",
+						String.valueOf(RIAK_HTTP_PORT)));
+			}
 		} catch (IOException e) {
 			LOG.error(Markers.BOUNDARY, e.getMessage(), e);
 		}

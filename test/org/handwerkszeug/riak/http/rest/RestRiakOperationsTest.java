@@ -292,6 +292,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	@Test
 	public void testLuwak() throws Exception {
 		for (int i = 0; i < 5; i++) {
+
 			String key = testPostToLuwak();
 			try {
 				System.out.println("luwak storaging wait.");
@@ -369,7 +370,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
-		final File download = new File("bin/download.jpg");
+		final File download = new File("target/test-classes/download.jpg");
 		if (download.exists()) {
 			download.delete();
 		}
@@ -420,7 +421,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
-		final File download = new File("bin/download.jpg.part");
+		final File download = new File("target/test-classes/download.jpg.part");
 		if (download.exists()) {
 			download.delete();
 		}
@@ -454,6 +455,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 			@Override
 			public void end() throws Exception {
+				System.out.println("end");
 				this.out.close();
 				is[0] = true;
 				waiter.countDown();
