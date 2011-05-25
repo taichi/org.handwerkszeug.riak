@@ -1,5 +1,7 @@
 package org.handwerkszeug.riak.nls;
 
+import org.handwerkszeug.riak.util.SingleLocaleStrings;
+
 /**
  * @author taichi
  */
@@ -31,4 +33,7 @@ public class Messages {
 
 	public static String SendTo = "{} send message to {}";
 
+	static {
+		SingleLocaleStrings.load(Messages.class);
+	}
 }
