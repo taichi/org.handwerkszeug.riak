@@ -8,3 +8,6 @@ interface driven and stateless design.
 For developer
  execute download dependencies and setup project configuration
   mvn eclipse:eclipse
+ 
+ build artifact
+  mvn clean package
