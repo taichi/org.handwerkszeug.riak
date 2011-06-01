@@ -23,8 +23,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.mapreduce.JavaScriptPhase;
 import org.handwerkszeug.riak.mapreduce.MapReduceInputs;
 import org.handwerkszeug.riak.mapreduce.MapReduceKeyFilters;
 import org.handwerkszeug.riak.mapreduce.MapReduceQuery;
@@ -36,6 +38,7 @@ import org.handwerkszeug.riak.model.DefaultGetOptions;
 import org.handwerkszeug.riak.model.DefaultPutOptions;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.Erlang;
+import org.handwerkszeug.riak.model.JavaScript;
 import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
@@ -745,8 +748,7 @@ public abstract class RiakOperationsTest {
 					waiter.countDown();
 					is[0] = true;
 				} else {
-					ArrayNode an = (ArrayNode) response.getContents()
-							.getResponse();
+					ArrayNode an = response.getContents().getResponse();
 					JsonNode jn = an.get(0);
 					actual[0] = jn.getIntValue();
 				}
@@ -798,8 +800,7 @@ public abstract class RiakOperationsTest {
 							waiter.countDown();
 							is[0] = true;
 						} else {
-							ArrayNode an = (ArrayNode) response.getContents()
-									.getResponse();
+							ArrayNode an = response.getContents().getResponse();
 							JsonNode jn = an.get(0);
 							actual[0] = jn.getIntValue();
 						}
@@ -831,6 +832,56 @@ public abstract class RiakOperationsTest {
 
 		};
 		return json[0];
+	}
+
+	@Test
+	public void testMapReduceContainsJson() throws Exception {
+		final String bucket = "testMapReduceContainsJson";
+		String key = "left::right";
+		Location location = new Location(bucket, key);
+
+		String data = "{\"a\":\"xxxx\",\"b\":\"c\"}";
+		testPut(location, data);
+
+		final CountDownLatch waiter = new CountDownLatch(1);
+		final boolean[] is = { false };
+
+		this.target.mapReduce(new MapReduceQueryConstructor() {
+
+			@Override
+			public void cunstruct(MapReduceQuery query) {
+				query.setInputs(MapReduceInputs.keyFilter(bucket,
+						MapReduceKeyFilters.Transform.tokenize("::", 1),
+						MapReduceKeyFilters.Predicates.equal("left")));
+				query.setQueries(JavaScriptPhase.BuiltIns.map(
+						JavaScript.mapValuesJson, true));
+			}
+		}, new RiakResponseHandler<MapReduceResponse>() {
+			@Override
+			public void onError(RiakResponse response) throws Exception {
+				waiter.countDown();
+				fail(response.getMessage());
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<MapReduceResponse> response)
+					throws Exception {
+				MapReduceResponse mrr = response.getContents();
+				if (mrr.getDone()) {
+					waiter.countDown();
+				} else {
+					ArrayNode an = mrr.getResponse();
+					JsonNode jn = an.get(0);
+					assertNotNull(jn);
+					assertEquals(jn.getClass(), ObjectNode.class);
+					is[0] = true;
+				}
+			}
+		});
+
+		wait(waiter, is);
+
+		testDelete(location);
 	}
 
 	protected void wait(final CountDownLatch waiter, final boolean[] is)
