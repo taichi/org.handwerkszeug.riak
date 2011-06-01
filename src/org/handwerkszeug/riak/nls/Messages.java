@@ -33,6 +33,8 @@ public class Messages {
 
 	public static String SendTo = "{} send message to {}";
 
+	public static String MapReduceResponseMustBeArray = "map/reduce response must be array but %s";
+
 	static {
 		SingleLocaleStrings.load(Messages.class);
 	}
