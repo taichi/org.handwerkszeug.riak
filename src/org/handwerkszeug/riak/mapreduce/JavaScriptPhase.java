@@ -44,7 +44,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase map(String source) {
-			return map(source, true);
+			return map(source, false);
 		}
 
 		public static MapReducePhase map(String source, boolean keep) {
@@ -71,7 +71,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public MapReducePhase reduce(String source) {
-			return reduce(source, true);
+			return reduce(source, false);
 		}
 
 		public MapReducePhase reduce(String source, boolean keep) {
@@ -79,7 +79,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase reduce(String source, Object arg) {
-			return withArg(PhaseType.reduce, source, arg, true);
+			return withArg(PhaseType.reduce, source, arg, false);
 		}
 
 		public static MapReducePhase reduce(String source, Object arg,
@@ -107,7 +107,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase map(Location location) {
-			return map(location, true);
+			return map(location, false);
 		}
 
 		public static MapReducePhase map(Location location, boolean keep) {
@@ -115,7 +115,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase map(Location location, Object arg) {
-			return map(location, arg, true);
+			return map(location, arg, false);
 		}
 
 		public static MapReducePhase map(Location location, Object arg,
@@ -135,7 +135,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase reduce(Location location) {
-			return reduce(location, true);
+			return reduce(location, false);
 		}
 
 		public static MapReducePhase reduce(Location location, boolean keep) {
@@ -143,7 +143,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase reduce(Location location, Object arg) {
-			return withArg(PhaseType.map, location, arg, true);
+			return withArg(PhaseType.map, location, arg, false);
 		}
 
 		public static MapReducePhase reduce(Location location, Object arg,
@@ -175,7 +175,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase map(JavaScript builtIn) {
-			return map(builtIn, true);
+			return map(builtIn, false);
 		}
 
 		public static MapReducePhase map(JavaScript builtIn, boolean keep) {
@@ -183,7 +183,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase map(JavaScript builtIn, Object arg) {
-			return withArg(PhaseType.map, builtIn, arg, true);
+			return withArg(PhaseType.map, builtIn, arg, false);
 		}
 
 		public static MapReducePhase map(JavaScript builtIn, Object arg,
@@ -203,7 +203,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase reduce(JavaScript builtIn) {
-			return reduce(builtIn, true);
+			return reduce(builtIn, false);
 		}
 
 		public static MapReducePhase reduce(JavaScript builtIn, boolean keep) {
@@ -211,7 +211,7 @@ public abstract class JavaScriptPhase extends MapReducePhase {
 		}
 
 		public static MapReducePhase reduce(JavaScript builtIn, Object arg) {
-			return withArg(PhaseType.reduce, builtIn, arg, true);
+			return withArg(PhaseType.reduce, builtIn, arg, false);
 		}
 
 		public static MapReducePhase reduce(JavaScript builtIn, Object arg,
