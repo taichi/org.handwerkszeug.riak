@@ -26,6 +26,8 @@ public class Hosts {
 
 	static final Logger LOG = LoggerFactory.getLogger(Hosts.class);
 
+	public static final String PKG = "org.handwerkszeug.riak";
+
 	public static String RIAK_HOST = "127.0.0.1";
 
 	public static int RIAK_PB_PORT = 8087;
@@ -41,12 +43,13 @@ public class Hosts {
 			if (in != null) {
 				Properties prop = new Properties();
 				prop.load(in);
-				RIAK_HOST = prop.getProperty("host", RIAK_HOST);
-				RIAK_PB_PORT = Integer.valueOf(prop.getProperty("pb.port",
-						String.valueOf(RIAK_PB_PORT)));
+				prop.putAll(System.getProperties());
+				RIAK_HOST = prop.getProperty(PKG + ".host", RIAK_HOST);
+				RIAK_PB_PORT = Integer.valueOf(prop.getProperty(PKG
+						+ ".pb.port", String.valueOf(RIAK_PB_PORT)));
 
-				RIAK_HTTP_PORT = Integer.valueOf(prop.getProperty("http.port",
-						String.valueOf(RIAK_HTTP_PORT)));
+				RIAK_HTTP_PORT = Integer.valueOf(prop.getProperty(PKG
+						+ ".http.port", String.valueOf(RIAK_HTTP_PORT)));
 			}
 		} catch (IOException e) {
 			LOG.error(Markers.BOUNDARY, e.getMessage(), e);
@@ -55,7 +58,6 @@ public class Hosts {
 			LOG.debug(Markers.BOUNDARY, "RIAK_HOST      {}", RIAK_HOST);
 			LOG.debug(Markers.BOUNDARY, "RIAK_PORT PB   {}", RIAK_PB_PORT);
 			LOG.debug(Markers.BOUNDARY, "          HTTP {}", RIAK_HTTP_PORT);
-
 		}
 	}
 
