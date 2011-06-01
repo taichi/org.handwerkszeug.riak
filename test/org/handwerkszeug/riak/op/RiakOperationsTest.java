@@ -20,6 +20,7 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
@@ -697,6 +698,90 @@ public abstract class RiakOperationsTest {
 				});
 
 		wait(waiter, is);
+	}
+
+	@Test
+	public void testMove() throws Exception {
+		final CountDownLatch waiter = new CountDownLatch(1);
+		final boolean[] is = { false };
+
+		final String from = "testMoveFrom";
+		final String to = "testMoveTo";
+
+		for (int i = 0; i < 10; i++) {
+			testPut(new Location(from, String.valueOf(i)), "data" + i);
+		}
+
+		this.target.listKeys(from, new RiakResponseHandler<KeyResponse>() {
+			@Override
+			public void onError(RiakResponse response) throws Exception {
+				response.operationComplete();
+				fail(response.getMessage());
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<KeyResponse> response)
+					throws Exception {
+				KeyResponse kr = response.getContents();
+				if (kr.getDone()) {
+					return;
+				}
+				final AtomicInteger counter = new AtomicInteger(kr.getKeys()
+						.size());
+				for (final String k : kr.getKeys()) {
+					target.delete(new Location(from, k),
+							new RiakResponseHandler<_>() {
+								@Override
+								public void onError(RiakResponse response)
+										throws Exception {
+									response.operationComplete();
+									fail(response.getMessage());
+								}
+
+								@Override
+								public void handle(
+										RiakContentsResponse<_> response)
+										throws Exception {
+									DefaultRiakObject ro = new DefaultRiakObject(
+											new Location(to, k));
+									ro.setContent("data".getBytes());
+									target.put(ro,
+											new RiakResponseHandler<_>() {
+												@Override
+												public void onError(
+														RiakResponse response)
+														throws Exception {
+													response.operationComplete();
+													fail(response.getMessage());
+												}
+
+												@Override
+												public void handle(
+														RiakContentsResponse<_> response)
+														throws Exception {
+													int i = counter
+															.decrementAndGet();
+													if (i < 1) {
+														response.operationComplete();
+														waiter.countDown();
+														is[0] = true;
+													}
+												}
+											});
+								}
+							});
+				}
+			}
+		});
+		try {
+			wait(waiter, is);
+		} finally {
+			for (int i = 0; i < 10; i++) {
+				testDelete(new Location(from, String.valueOf(i)));
+				testDelete(new Location(to, String.valueOf(i)));
+			}
+		}
+
 	}
 
 	@Test
