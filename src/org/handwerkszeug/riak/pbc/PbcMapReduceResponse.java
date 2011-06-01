@@ -39,7 +39,7 @@ public class PbcMapReduceResponse implements MapReduceResponse {
 			ByteString bs = this.resp.getResponse();
 			JsonFactory factory = new JsonFactory(new ObjectMapper());
 			try {
-				JsonParser parser = factory.createJsonParser(bs.toStringUtf8());
+				JsonParser parser = factory.createJsonParser(bs.newInput());
 				JsonNode jn = parser.readValueAsTree();
 				if (jn instanceof ArrayNode) {
 					ArrayNode an = (ArrayNode) jn;
