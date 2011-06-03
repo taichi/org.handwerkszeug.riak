@@ -98,25 +98,18 @@ public abstract class RiakOperationsTest {
 
 	@Test
 	public void testPing() throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
-
 		final boolean[] is = { false };
-		this.target.ping(new RiakResponseHandler<String>() {
+		RiakFuture waiter = this.target.ping(new RiakResponseHandler<String>() {
 			@Override
 			public void onError(RiakResponse response) throws RiakException {
-				waiter.countDown();
 				fail(response.getMessage());
 			}
 
 			@Override
 			public void handle(RiakContentsResponse<String> response)
 					throws RiakException {
-				try {
-					assertEquals("pong", response.getContents());
-					is[0] = true;
-				} finally {
-					waiter.countDown();
-				}
+				assertEquals("pong", response.getContents());
+				is[0] = true;
 			}
 		});
 
@@ -125,31 +118,27 @@ public abstract class RiakOperationsTest {
 
 	@Test
 	public void testListBuckets() throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
-		this.target.listBuckets(new RiakResponseHandler<List<String>>() {
-			@Override
-			public void onError(RiakResponse response) throws RiakException {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
+		RiakFuture waiter = this.target
+				.listBuckets(new RiakResponseHandler<List<String>>() {
+					@Override
+					public void onError(RiakResponse response)
+							throws RiakException {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<List<String>> response)
-					throws RiakException {
-				try {
-					List<String> keys = response.getContents();
-					assertNotNull(keys);
-					assertTrue(0 < keys.size());
+					@Override
+					public void handle(
+							RiakContentsResponse<List<String>> response)
+							throws RiakException {
+						List<String> keys = response.getContents();
+						assertNotNull(keys);
+						assertTrue(0 < keys.size());
 
-					is[0] = true;
-				} finally {
-					waiter.countDown();
-				}
-
-			}
-		});
+						is[0] = true;
+					}
+				});
 
 		wait(waiter, is);
 	}
@@ -971,6 +960,12 @@ public abstract class RiakOperationsTest {
 		wait(waiter, is);
 
 		testDelete(location);
+	}
+
+	protected void wait(final RiakFuture waiter, final boolean[] is)
+			throws InterruptedException {
+		assertTrue("test is timeout.", waiter.await(3, TimeUnit.SECONDS));
+		assertTrue(is[0]);
 	}
 
 	protected void wait(final CountDownLatch waiter, final boolean[] is)
