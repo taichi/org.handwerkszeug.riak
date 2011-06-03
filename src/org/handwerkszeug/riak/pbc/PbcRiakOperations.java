@@ -38,7 +38,6 @@ import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.op.internal.CompletionSupport;
-import org.handwerkszeug.riak.op.internal.IncomprehensibleProtocolException;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbBucketProps;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbContent;
 import org.handwerkszeug.riak.pbc.Riakclient.RpbDelReq;
@@ -108,7 +107,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.newResponse(list));
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -140,7 +139,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.newResponse(kr));
 							return done;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -168,7 +167,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.newResponse(pb));
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -196,7 +195,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.newResponse());
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -316,7 +315,7 @@ public class PbcRiakOperations implements RiakOperations {
 					}
 					return true;
 				}
-				throw new IncomprehensibleProtocolException(name);
+				return false;
 			}
 		});
 	}
@@ -441,7 +440,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.newResponse(copied));
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -496,7 +495,7 @@ public class PbcRiakOperations implements RiakOperations {
 							}
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -518,7 +517,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.newResponse());
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -575,7 +574,7 @@ public class PbcRiakOperations implements RiakOperations {
 							}
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 
@@ -685,7 +684,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.newResponse());
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(name);
+						return false;
 					}
 				});
 	}
@@ -756,7 +755,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.newResponse(response));
 							return resp.getDone();
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -773,7 +772,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.newResponse("pong"));
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -800,7 +799,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.newResponse(cid));
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -834,7 +833,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.newResponse());
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -861,7 +860,7 @@ public class PbcRiakOperations implements RiakOperations {
 									.newResponse(info));
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}

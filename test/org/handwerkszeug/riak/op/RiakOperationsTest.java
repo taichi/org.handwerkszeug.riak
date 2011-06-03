@@ -46,6 +46,7 @@ import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
+import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.pbc.PbcRiakOperationsTest;
@@ -58,6 +59,7 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -700,9 +702,9 @@ public abstract class RiakOperationsTest {
 		wait(waiter, is);
 	}
 
+	@Ignore
 	@Test
 	public void testMove() throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		final String from = "testMoveFrom";
@@ -712,25 +714,27 @@ public abstract class RiakOperationsTest {
 			testPut(new Location(from, String.valueOf(i)), "data" + i);
 		}
 
-		this.target.listKeys(from, new RiakResponseHandler<KeyResponse>() {
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				response.operationComplete();
-				fail(response.getMessage());
-			}
+		RiakFuture rf = this.target.listKeys(from,
+				new RiakResponseHandler<KeyResponse>() {
+					@Override
+					public void onError(RiakResponse response) throws Exception {
+						response.operationComplete();
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<KeyResponse> response)
-					throws Exception {
-				KeyResponse kr = response.getContents();
-				if (kr.getDone()) {
-					return;
-				}
-				final AtomicInteger counter = new AtomicInteger(kr.getKeys()
-						.size());
-				for (final String k : kr.getKeys()) {
-					target.delete(new Location(from, k),
-							new RiakResponseHandler<_>() {
+					@Override
+					public void handle(
+							RiakContentsResponse<KeyResponse> response)
+							throws Exception {
+						KeyResponse kr = response.getContents();
+						if (kr.getDone()) {
+							return;
+						}
+						final AtomicInteger counter = new AtomicInteger(kr
+								.getKeys().size());
+						for (final String k : kr.getKeys()) {
+							RiakOperationsTest.this.target.delete(new Location(
+									from, k), new RiakResponseHandler<_>() {
 								@Override
 								public void onError(RiakResponse response)
 										throws Exception {
@@ -745,7 +749,7 @@ public abstract class RiakOperationsTest {
 									DefaultRiakObject ro = new DefaultRiakObject(
 											new Location(to, k));
 									ro.setContent("data".getBytes());
-									target.put(ro,
+									RiakOperationsTest.this.target.put(ro,
 											new RiakResponseHandler<_>() {
 												@Override
 												public void onError(
@@ -763,18 +767,18 @@ public abstract class RiakOperationsTest {
 															.decrementAndGet();
 													if (i < 1) {
 														response.operationComplete();
-														waiter.countDown();
 														is[0] = true;
 													}
 												}
 											});
 								}
 							});
-				}
-			}
-		});
+						}
+					}
+				});
 		try {
-			wait(waiter, is);
+			rf.await(5, TimeUnit.SECONDS);
+			assertTrue(is[0]);
 		} finally {
 			for (int i = 0; i < 10; i++) {
 				testDelete(new Location(from, String.valueOf(i)));

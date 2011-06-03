@@ -39,7 +39,6 @@ import org.handwerkszeug.riak.model.internal.AbstractRiakObject;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.op.internal.CompletionSupport;
-import org.handwerkszeug.riak.op.internal.IncomprehensibleProtocolException;
 import org.handwerkszeug.riak.util.JsonUtil;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
@@ -107,7 +106,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 								return true;
 							}
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -145,7 +144,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 								return true;
 							}
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -198,7 +197,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							}
 							return done;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -242,7 +241,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 								return true;
 							}
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -338,7 +337,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							}
 							return done;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -394,7 +393,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							}
 							return true;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -457,7 +456,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 								}
 							}
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -494,8 +493,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 									ChannelBuffer buffer) throws Exception {
 								Location location = to(response);
 								if (location == null) {
-									throw new IncomprehensibleProtocolException(
-											procedure);
+									// TODO ...
+									throw new IllegalStateException();
 								}
 								RiakObject<byte[]> ro = RestRiakOperations.this.factory
 										.convert(response, buffer, location);
@@ -571,7 +570,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 									.newResponse(response));
 							return done;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -612,7 +611,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							}
 							return done;
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -661,7 +660,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 								return true;
 							}
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -729,7 +728,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 							return done;
 						}
 
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -786,7 +785,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 								}
 							}
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}
@@ -802,7 +801,6 @@ public class RestRiakOperations implements HttpRiakOperations {
 		final String procedure = "putStream";
 		return handle(procedure, request, handler,
 				new NettyUtil.MessageHandler() {
-
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof HttpResponse) {
@@ -816,9 +814,10 @@ public class RestRiakOperations implements HttpRiakOperations {
 							} else if (NettyUtil.isSuccessful(status)) {
 								handler.handle(RestRiakOperations.this.support
 										.newResponse());
+								return true;
 							}
 						}
-						throw new IncomprehensibleProtocolException(procedure);
+						return false;
 					}
 				});
 	}

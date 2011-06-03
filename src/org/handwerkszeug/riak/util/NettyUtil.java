@@ -1,12 +1,7 @@
 package org.handwerkszeug.riak.util;
 
-import java.util.concurrent.TimeUnit;
-
-import org.handwerkszeug.riak.model.RiakFuture;
-import org.handwerkszeug.riak.op.internal.IncomprehensibleProtocolException;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -69,31 +64,7 @@ public class NettyUtil {
 				}
 				return done;
 			}
-			throw new IncomprehensibleProtocolException(this.procedure);
-		}
-	}
-
-	public static class FutureAdapter implements RiakFuture {
-		ChannelFuture delegate;
-
-		public FutureAdapter(ChannelFuture delegate) {
-			this.delegate = delegate;
-		}
-
-		@Override
-		public boolean cancel() {
-			return this.delegate.cancel();
-		}
-
-		@Override
-		public boolean await(long timeout, TimeUnit unit)
-				throws InterruptedException {
-			return this.delegate.await(timeout, unit);
-		}
-
-		@Override
-		public void awaitUninterruptibly() {
-			this.delegate.awaitUninterruptibly();
+			return false;
 		}
 	}
 

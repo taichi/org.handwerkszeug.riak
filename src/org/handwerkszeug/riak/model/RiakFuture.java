@@ -7,9 +7,17 @@ import java.util.concurrent.TimeUnit;
  */
 public interface RiakFuture {
 
-	boolean cancel();
+	void cancel();
 
 	boolean await(long timeout, TimeUnit unit) throws InterruptedException;
 
-	void awaitUninterruptibly();
+	void await() throws InterruptedException;
+
+	boolean isDone();
+
+	boolean isSuccess();
+
+	boolean isCanceled();
+
+	Throwable getCause();
 }
