@@ -30,7 +30,7 @@ public class CountDownRiakFuture implements RiakFuture {
 		this.pipeline = pipeline;
 	}
 
-	protected void finished() {
+	public void finished() {
 		LOG.debug(Markers.DETAIL, "finished {}", this.name); // TODO message
 		this.pipeline.remove(this.name);
 		this.latch.countDown();
@@ -82,5 +82,9 @@ public class CountDownRiakFuture implements RiakFuture {
 	public void setFailure(Throwable cause) {
 		this.cause = cause;
 		finished();
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 }

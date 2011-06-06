@@ -22,11 +22,7 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandler;
-import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,10 +57,21 @@ public class CompletionSupport implements ChannelFutureListener {
 		this.complete.compareAndSet(false, true);
 	}
 
+	public void remove(String name) {
+		this.inProgress.remove(name);
+	}
+
 	public CountDownRiakFuture newRiakFuture(String name) {
 		ChannelPipeline pipeline = this.channel.getPipeline();
-		CountDownRiakFuture future = new CountDownRiakFuture(name, pipeline);
-		return future;
+		return new CountDownRiakFuture(name, pipeline);
+	}
+
+	public <T> RiakFuture handle(String name, Object send,
+			RiakResponseHandler<T> users, NettyUtil.MessageHandler handler) {
+		CountDownRiakFuture future = newRiakFuture(name);
+		ChannelHandler ch = new DefaultCompletionChannelHandler<T>(this, name,
+				users, handler, future);
+		return handle(name, send, users, ch, future);
 	}
 
 	public <T> RiakFuture handle(String name, Object send,
@@ -92,13 +99,6 @@ public class CompletionSupport implements ChannelFutureListener {
 		}
 	}
 
-	public <T> RiakFuture handle(String name, Object send,
-			RiakResponseHandler<T> users, NettyUtil.MessageHandler handler) {
-		CountDownRiakFuture future = newRiakFuture(name);
-		ChannelHandler ch = new UpstreamHandler<T>(name, users, handler, future);
-		return handle(name, send, users, ch, future);
-	}
-
 	protected void complete(String name, ChannelPipeline pipeline) {
 		pipeline.remove(name);
 		complete();
@@ -114,74 +114,6 @@ public class CompletionSupport implements ChannelFutureListener {
 				LOG.debug(Markers.DETAIL, "invoke Next {}", cmd.name);
 				cmd.execute();
 			}
-		}
-	}
-
-	class UpstreamHandler<T> extends SimpleChannelUpstreamHandler {
-		final String name;
-		final RiakResponseHandler<T> users;
-		final NettyUtil.MessageHandler handler;
-		final CountDownRiakFuture future;
-
-		public UpstreamHandler(String name, RiakResponseHandler<T> users,
-				NettyUtil.MessageHandler handler, CountDownRiakFuture future) {
-			this.name = name;
-			this.users = users;
-			this.handler = handler;
-			this.future = future;
-		}
-
-		@Override
-		public void exceptionCaught(ChannelHandlerContext ctx,
-				final ExceptionEvent e) throws Exception {
-			CompletionSupport.this.inProgress.remove(this.name);
-			this.future.setFailure(e.getCause());
-			LOG.error(e.getCause().getMessage(), e.getCause());
-			this.users.onError(new AbstractRiakResponse() {
-				@Override
-				public String getMessage() {
-					return e.getCause().getMessage();
-				}
-
-				@Override
-				public void operationComplete() {
-					complete();
-				}
-			});
-
-			invokeNext();
-		}
-
-		@Override
-		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
-				throws Exception {
-			try {
-				Object receive = e.getMessage();
-				if (LOG.isDebugEnabled()) {
-					LOG.debug(Markers.DETAIL, Messages.Receive, this.name,
-							receive);
-				}
-				if (this.handler.handle(receive)) {
-					this.future.setSuccess();
-					CompletionSupport.this.inProgress.remove(this.name);
-					invokeNext();
-				}
-				e.getFuture().addListener(CompletionSupport.this);
-			} catch (Exception ex) {
-				LOG.error(ex.getMessage(), ex);
-				this.future.setFailure(ex);
-				invokeNext();
-				throw ex;
-			} catch (Error ex) {
-				setFailure(ex);
-				throw ex;
-			}
-		}
-
-		protected void setFailure(Error ex) {
-			LOG.error(ex.getMessage(), ex);
-			this.future.setFailure(ex);
-			invokeNext();
 		}
 	}
 

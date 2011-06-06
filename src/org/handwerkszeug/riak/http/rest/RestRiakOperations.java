@@ -21,6 +21,7 @@ import org.handwerkszeug.riak.http.StreamResponseHandler;
 import org.handwerkszeug.riak.http.rest.internal.BucketHolder;
 import org.handwerkszeug.riak.http.rest.internal.ContinuousMessageHandler;
 import org.handwerkszeug.riak.http.rest.internal.RequestFactory;
+import org.handwerkszeug.riak.http.rest.internal.RestErrorResponse;
 import org.handwerkszeug.riak.http.rest.internal.SimpleMessageHandler;
 import org.handwerkszeug.riak.mapreduce.DefaultMapReduceQuery;
 import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
@@ -38,7 +39,9 @@ import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.internal.AbstractRiakObject;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
+import org.handwerkszeug.riak.op.internal.AbstractCompletionChannelHandler;
 import org.handwerkszeug.riak.op.internal.CompletionSupport;
+import org.handwerkszeug.riak.op.internal.CountDownRiakFuture;
 import org.handwerkszeug.riak.util.JsonUtil;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
@@ -47,6 +50,10 @@ import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandler;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMessage;
@@ -368,39 +375,57 @@ public class RestRiakOperations implements HttpRiakOperations {
 		HttpRequest request = this.factory.newPutRequest(content, options);
 
 		final String procedure = "put/sibling";
-		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							if (NettyUtil.isSuccessful(response.getStatus())) {
-								try {
-									handler.begin();
-									RiakObject<byte[]> ro = RestRiakOperations.this.factory
-											.convert(response,
-													response.getContent(),
-													content.getLocation());
-									handler.handle(RestRiakOperations.this.support
-											.newResponse(ro));
-								} finally {
-									handler.end(RestRiakOperations.this.support
-											.newResponse());
-								}
-							} else if (response.getStatus().getCode() == 300) {
-								dispatchToGetSibling(content.getLocation(),
-										options, handler);
+		final CountDownRiakFuture future = this.support
+				.newRiakFuture(procedure);
+		ChannelHandler internal = new AbstractCompletionChannelHandler<RiakObject<byte[]>>(
+				this.support, procedure, handler, future) {
+			@Override
+			public void messageReceived(ChannelHandlerContext ctx,
+					MessageEvent e) throws Exception {
+				Object receive = e.getMessage();
+				if (receive instanceof HttpResponse) {
+					HttpResponse response = (HttpResponse) receive;
+					if (NettyUtil.isError(response.getStatus())) {
+						handler.onError(new RestErrorResponse(response,
+								RestRiakOperations.this.support));
+						future.finished();
+					} else if (NettyUtil.isSuccessful(response.getStatus())) {
+						try {
+							handler.begin();
+							RiakObject<byte[]> ro = content;
+							if (options.getReturnBody()) {
+								ro = RestRiakOperations.this.factory.convert(
+										response, response.getContent(),
+										content.getLocation());
 							}
-							return true;
+							handler.handle(RestRiakOperations.this.support
+									.newResponse(ro));
+						} finally {
+							handler.end(RestRiakOperations.this.support
+									.newResponse());
+							RestRiakOperations.this.support.remove(procedure);
 						}
-						return false;
+						future.setSuccess();
+					} else if (response.getStatus().getCode() == 300) {
+						RestRiakOperations.this.support.remove(procedure);
+						ChannelPipeline pipeline = ctx.getPipeline();
+						pipeline.remove(procedure);
+						dispatchToGetSibling(content.getLocation(), options,
+								handler, future);
 					}
-				});
+				}
+			}
+		};
+
+		return this.support.handle(procedure, request, handler, internal,
+				future);
 	}
 
-	protected void dispatchToGetSibling(Location location,
-			final PutOptions options, SiblingHandler handler) {
-		get(location, new GetOptions() {
+	protected void dispatchToGetSibling(final Location location,
+			final PutOptions options, final SiblingHandler handler,
+			final CountDownRiakFuture future) {
+		LOG.debug(Markers.DETAIL, "dispatchToGetSibling");
+		GetOptions go = new GetOptions() {
 			@Override
 			public Quorum getReadQuorum() {
 				return options.getReadQuorum();
@@ -420,7 +445,52 @@ public class RestRiakOperations implements HttpRiakOperations {
 			public Date getIfModifiedSince() {
 				return options.getIfModifiedSince();
 			}
-		}, handler);
+		};
+
+		HttpRequest request = this.factory.newGetRequst(location, go);
+		request.setHeader(HttpHeaders.Names.ACCEPT, RiakHttpHeaders.MULTI_PART);
+
+		final String procedure = "put/sibling>get";
+		future.setName(procedure);
+		ChannelHandler internal = new AbstractCompletionChannelHandler<RiakObject<byte[]>>(
+				this.support, procedure, handler, future) {
+			String vclock;
+
+			@Override
+			public void messageReceived(ChannelHandlerContext ctx,
+					MessageEvent e) throws Exception {
+				Object receive = e.getMessage();
+				if (receive instanceof HttpResponse) {
+					HttpResponse response = (HttpResponse) receive;
+					if (NettyUtil.isError(response.getStatus())) {
+						handler.onError(new RestErrorResponse(response,
+								RestRiakOperations.this.support));
+						future.finished();
+					} else {
+						this.vclock = response
+								.getHeader(RiakHttpHeaders.VECTOR_CLOCK);
+						handler.begin();
+					}
+				} else if (receive instanceof PartMessage) {
+					PartMessage part = (PartMessage) receive;
+					boolean done = part.isLast();
+					part.setHeader(RiakHttpHeaders.VECTOR_CLOCK, this.vclock);
+
+					if (done) {
+						handler.end(RestRiakOperations.this.support
+								.newResponse());
+						future.setSuccess();
+					} else {
+						RiakObject<byte[]> ro = RestRiakOperations.this.factory
+								.convert(part, part.getContent(), location);
+						handler.handle(RestRiakOperations.this.support
+								.newResponse(ro));
+					}
+				}
+			}
+		};
+
+		this.support.handle(procedure, request, handler, internal, future);
 	}
 
 	@Override

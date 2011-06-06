@@ -687,7 +687,6 @@ public abstract class RiakOperationsTest {
 												public void onError(
 														RiakResponse response)
 														throws Exception {
-													response.operationComplete();
 													fail(response.getMessage());
 												}
 
@@ -706,7 +705,6 @@ public abstract class RiakOperationsTest {
 																		public void onError(
 																				RiakResponse response)
 																				throws Exception {
-																			response.operationComplete();
 																			fail(response
 																					.getMessage());
 																		}
@@ -718,7 +716,6 @@ public abstract class RiakOperationsTest {
 																			int i = counter
 																					.decrementAndGet();
 																			if (i < 1) {
-																				response.operationComplete();
 																				is[0] = true;
 																			}
 																		}
