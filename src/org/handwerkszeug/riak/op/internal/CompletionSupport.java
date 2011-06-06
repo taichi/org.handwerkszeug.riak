@@ -80,11 +80,18 @@ public class CompletionSupport implements ChannelFutureListener {
 			}
 			return future;
 		} catch (Exception e) {
-			pipeline.remove(name);
-			complete();
-			this.channel.close();
+			complete(name, pipeline);
 			throw new RiakException(e);
+		} catch (Error e) {
+			complete(name, pipeline);
+			throw e;
 		}
+	}
+
+	protected void complete(String name, ChannelPipeline pipeline) {
+		pipeline.remove(name);
+		complete();
+		this.channel.close();
 	}
 
 	protected void invokeNext() {
@@ -154,7 +161,16 @@ public class CompletionSupport implements ChannelFutureListener {
 				this.future.setFailure(ex);
 				invokeNext();
 				throw ex;
+			} catch (Error ex) {
+				setFailure(ex);
+				throw ex;
 			}
+		}
+
+		protected void setFailure(Error ex) {
+			LOG.error(ex.getMessage(), ex);
+			this.future.setFailure(ex);
+			invokeNext();
 		}
 	}
 
