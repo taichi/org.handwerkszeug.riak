@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.SocketAddress;
-import java.util.concurrent.CountDownLatch;
 
 import junit.framework.Assert;
 
@@ -14,6 +13,7 @@ import org.handwerkszeug.riak.Hosts;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
+import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.model.ServerInfo;
 import org.handwerkszeug.riak.op.RiakOperations;
@@ -75,47 +75,46 @@ public class PbcRiakOperationsTest extends RiakOperationsTest {
 
 	@Override
 	public void testSetClientId(String id) throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
-		this.target.setClientId(id, new RiakResponseHandler<_>() {
-			@Override
-			public void onError(RiakResponse response) throws RiakException {
-				waiter.countDown();
-			}
+		RiakFuture waiter = this.target.setClientId(id,
+				new RiakResponseHandler<_>() {
+					@Override
+					public void onError(RiakResponse response)
+							throws RiakException {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<_> response)
-					throws RiakException {
-				is[0] = true;
-				waiter.countDown();
-			}
-		});
+					@Override
+					public void handle(RiakContentsResponse<_> response)
+							throws RiakException {
+						is[0] = true;
+					}
+				});
 
 		wait(waiter, is);
 	}
 
 	public void testGetClientId(final String id) throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 		final String[] act = new String[1];
 
-		this.target.getClientId(new RiakResponseHandler<String>() {
-			@Override
-			public void onError(RiakResponse response) throws RiakException {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
+		RiakFuture waiter = this.target
+				.getClientId(new RiakResponseHandler<String>() {
+					@Override
+					public void onError(RiakResponse response)
+							throws RiakException {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<String> response)
-					throws RiakException {
-				is[0] = true;
-				act[0] = response.getContents();
-				waiter.countDown();
-			}
+					@Override
+					public void handle(RiakContentsResponse<String> response)
+							throws RiakException {
+						is[0] = true;
+						act[0] = response.getContents();
+					}
 
-		});
+				});
 
 		wait(waiter, is);
 		assertEquals(act[0], id);
@@ -123,29 +122,25 @@ public class PbcRiakOperationsTest extends RiakOperationsTest {
 
 	@Test
 	public void testGetServerInfo() throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
-		this.target.getServerInfo(new RiakResponseHandler<ServerInfo>() {
-			@Override
-			public void onError(RiakResponse response) throws RiakException {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
+		RiakFuture waiter = this.target
+				.getServerInfo(new RiakResponseHandler<ServerInfo>() {
+					@Override
+					public void onError(RiakResponse response)
+							throws RiakException {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<ServerInfo> response)
-					throws RiakException {
-				try {
-					ServerInfo info = response.getContents();
-					assertNotNull(info.getNode());
-					assertNotNull(info.getServerVersion());
-					is[0] = true;
-				} finally {
-					waiter.countDown();
-				}
-			}
-		});
+					@Override
+					public void handle(RiakContentsResponse<ServerInfo> response)
+							throws RiakException {
+						ServerInfo info = response.getContents();
+						assertNotNull(info.getNode());
+						assertNotNull(info.getServerVersion());
+						is[0] = true;
+					}
+				});
 		wait(waiter, is);
 	}
 

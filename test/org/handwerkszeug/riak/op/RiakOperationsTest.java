@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -765,41 +764,44 @@ public abstract class RiakOperationsTest {
 	}
 
 	public void testMapReduce(final String bucket) throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		final int[] actual = new int[1];
-		this.target.mapReduce(new MapReduceQueryConstructor() {
-			@Override
-			public void cunstruct(MapReduceQuery query) {
-				query.setInputs(MapReduceInputs.keyFilter(bucket,
-						MapReduceKeyFilters.Transform.stringToInt(),
-						MapReduceKeyFilters.Predicates.lessThanEq(10)));
-				query.setQueries(NamedFunctionPhase.map(
-						Erlang.map_object_value, false), NamedFunctionPhase
-						.reduce(Erlang.reduce_string_to_integer, false),
-						NamedFunctionPhase.reduce(Erlang.reduce_sum, true));
-			}
-		}, new RiakResponseHandler<MapReduceResponse>() {
-			@Override
-			public void onError(RiakResponse response) throws RiakException {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
+		RiakFuture waiter = this.target.mapReduce(
+				new MapReduceQueryConstructor() {
+					@Override
+					public void cunstruct(MapReduceQuery query) {
+						query.setInputs(MapReduceInputs.keyFilter(bucket,
+								MapReduceKeyFilters.Transform.stringToInt(),
+								MapReduceKeyFilters.Predicates.lessThanEq(10)));
+						query.setQueries(
+								NamedFunctionPhase.map(Erlang.map_object_value,
+										false),
+								NamedFunctionPhase.reduce(
+										Erlang.reduce_string_to_integer, false),
+								NamedFunctionPhase.reduce(Erlang.reduce_sum,
+										true));
+					}
+				}, new RiakResponseHandler<MapReduceResponse>() {
+					@Override
+					public void onError(RiakResponse response)
+							throws RiakException {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<MapReduceResponse> response)
-					throws RiakException {
-				if (response.getContents().getDone()) {
-					waiter.countDown();
-					is[0] = true;
-				} else {
-					ArrayNode an = response.getContents().getResponse();
-					JsonNode jn = an.get(0);
-					actual[0] = jn.getIntValue();
-				}
-			}
-		});
+					@Override
+					public void handle(
+							RiakContentsResponse<MapReduceResponse> response)
+							throws RiakException {
+						if (response.getContents().getDone()) {
+							is[0] = true;
+						} else {
+							ArrayNode an = response.getContents().getResponse();
+							JsonNode jn = an.get(0);
+							actual[0] = jn.getIntValue();
+						}
+					}
+				});
 
 		wait(waiter, is);
 		assertEquals(165, actual[0]);
@@ -825,16 +827,14 @@ public abstract class RiakOperationsTest {
 	}
 
 	public void testMapReduceByRawJson(final String path) throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		final int[] actual = new int[1];
-		this.target.mapReduce(loadJson(path),
+		RiakFuture waiter = this.target.mapReduce(loadJson(path),
 				new RiakResponseHandler<MapReduceResponse>() {
 					@Override
 					public void onError(RiakResponse response)
 							throws RiakException {
-						waiter.countDown();
 						fail(response.getMessage());
 					}
 
@@ -843,7 +843,6 @@ public abstract class RiakOperationsTest {
 							RiakContentsResponse<MapReduceResponse> response)
 							throws RiakException {
 						if (response.getContents().getDone()) {
-							waiter.countDown();
 							is[0] = true;
 						} else {
 							ArrayNode an = response.getContents().getResponse();
@@ -889,41 +888,43 @@ public abstract class RiakOperationsTest {
 		String data = "{\"a\":\"xxxx\",\"b\":\"c\"}";
 		testPut(location, data);
 
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
-		this.target.mapReduce(new MapReduceQueryConstructor() {
+		RiakFuture waiter = this.target.mapReduce(
+				new MapReduceQueryConstructor() {
 
-			@Override
-			public void cunstruct(MapReduceQuery query) {
-				query.setInputs(MapReduceInputs.keyFilter(bucket,
-						MapReduceKeyFilters.Transform.tokenize("::", 1),
-						MapReduceKeyFilters.Predicates.equal("left")));
-				query.setQueries(JavaScriptPhase.BuiltIns.map(
-						JavaScript.mapValuesJson, true));
-			}
-		}, new RiakResponseHandler<MapReduceResponse>() {
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
+					@Override
+					public void cunstruct(MapReduceQuery query) {
+						query.setInputs(MapReduceInputs
+								.keyFilter(bucket,
+										MapReduceKeyFilters.Transform.tokenize(
+												"::", 1),
+										MapReduceKeyFilters.Predicates
+												.equal("left")));
+						query.setQueries(JavaScriptPhase.BuiltIns.map(
+								JavaScript.mapValuesJson, true));
+					}
+				}, new RiakResponseHandler<MapReduceResponse>() {
+					@Override
+					public void onError(RiakResponse response) throws Exception {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<MapReduceResponse> response)
-					throws Exception {
-				MapReduceResponse mrr = response.getContents();
-				if (mrr.getDone()) {
-					waiter.countDown();
-				} else {
-					ArrayNode an = mrr.getResponse();
-					JsonNode jn = an.get(0);
-					assertNotNull(jn);
-					assertEquals(jn.getClass(), ObjectNode.class);
-					is[0] = true;
-				}
-			}
-		});
+					@Override
+					public void handle(
+							RiakContentsResponse<MapReduceResponse> response)
+							throws Exception {
+						MapReduceResponse mrr = response.getContents();
+						if (mrr.getDone()) {
+						} else {
+							ArrayNode an = mrr.getResponse();
+							JsonNode jn = an.get(0);
+							assertNotNull(jn);
+							assertEquals(jn.getClass(), ObjectNode.class);
+							is[0] = true;
+						}
+					}
+				});
 
 		wait(waiter, is);
 
@@ -931,12 +932,6 @@ public abstract class RiakOperationsTest {
 	}
 
 	protected void wait(final RiakFuture waiter, final boolean[] is)
-			throws InterruptedException {
-		assertTrue("test is timeout.", waiter.await(3, TimeUnit.SECONDS));
-		assertTrue(is[0]);
-	}
-
-	protected void wait(final CountDownLatch waiter, final boolean[] is)
 			throws InterruptedException {
 		assertTrue("test is timeout.", waiter.await(3, TimeUnit.SECONDS));
 		assertTrue(is[0]);
@@ -956,7 +951,6 @@ public abstract class RiakOperationsTest {
 
 	public Location testPost(final Location location, final String testdata)
 			throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
@@ -966,29 +960,26 @@ public abstract class RiakOperationsTest {
 			}
 		};
 		final Location[] loc = new Location[1];
-		this.target.post(ro, new RiakResponseHandler<RiakObject<byte[]>>() {
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
+		RiakFuture waiter = this.target.post(ro,
+				new RiakResponseHandler<RiakObject<byte[]>>() {
+					@Override
+					public void onError(RiakResponse response) throws Exception {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
-					throws Exception {
-				try {
-					RiakObject<byte[]> returned = response.getContents();
-					assertNotNull(returned.getLocation());
-					Location l = returned.getLocation();
-					assertEquals(location.getBucket(), l.getBucket());
-					assertFalse(l.getKey().isEmpty());
-					loc[0] = l;
-					is[0] = true;
-				} finally {
-					waiter.countDown();
-				}
-			}
-		});
+					@Override
+					public void handle(
+							RiakContentsResponse<RiakObject<byte[]>> response)
+							throws Exception {
+						RiakObject<byte[]> returned = response.getContents();
+						assertNotNull(returned.getLocation());
+						Location l = returned.getLocation();
+						assertEquals(location.getBucket(), l.getBucket());
+						assertFalse(l.getKey().isEmpty());
+						loc[0] = l;
+						is[0] = true;
+					}
+				});
 
 		wait(waiter, is);
 		return loc[0];
@@ -996,7 +987,6 @@ public abstract class RiakOperationsTest {
 
 	public Location testPostWithReturn(final Location location,
 			final String testdata) throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
@@ -1014,11 +1004,10 @@ public abstract class RiakOperationsTest {
 		};
 
 		final Location[] loc = new Location[1];
-		this.target.post(ro, options,
+		RiakFuture waiter = this.target.post(ro, options,
 				new RiakResponseHandler<RiakObject<byte[]>>() {
 					@Override
 					public void onError(RiakResponse response) throws Exception {
-						waiter.countDown();
 						fail(response.getMessage());
 					}
 
@@ -1026,18 +1015,13 @@ public abstract class RiakOperationsTest {
 					public void handle(
 							RiakContentsResponse<RiakObject<byte[]>> response)
 							throws Exception {
-						try {
-							RiakObject<byte[]> returned = response
-									.getContents();
-							assertNotNull(returned.getLocation());
-							Location l = returned.getLocation();
-							assertEquals(location.getBucket(), l.getBucket());
-							assertFalse(l.getKey().isEmpty());
-							loc[0] = l;
-							is[0] = true;
-						} finally {
-							waiter.countDown();
-						}
+						RiakObject<byte[]> returned = response.getContents();
+						assertNotNull(returned.getLocation());
+						Location l = returned.getLocation();
+						assertEquals(location.getBucket(), l.getBucket());
+						assertFalse(l.getKey().isEmpty());
+						loc[0] = l;
+						is[0] = true;
 					}
 				});
 

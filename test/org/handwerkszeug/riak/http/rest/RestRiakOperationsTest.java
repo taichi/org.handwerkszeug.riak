@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 
 import net.iharder.Base64;
 
@@ -34,6 +33,7 @@ import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.Range;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
+import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.model.internal.AbstractRiakObject;
@@ -139,24 +139,18 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	public void put(RiakObject<byte[]> ro) throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
-		this.target.put(ro, new RiakResponseHandler<_>() {
+		RiakFuture waiter = this.target.put(ro, new RiakResponseHandler<_>() {
 			@Override
 			public void onError(RiakResponse response) throws Exception {
-				waiter.countDown();
 				fail(response.getMessage());
 			}
 
 			@Override
 			public void handle(RiakContentsResponse<_> response)
 					throws Exception {
-				try {
-					is[0] = true;
-				} finally {
-					waiter.countDown();
-				}
+				is[0] = true;
 			}
 		});
 
@@ -165,7 +159,6 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	public void testWalk(Location init, List<List<byte[]>> expected)
 			throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		List<LinkCondition> conds = new ArrayList<LinkCondition>();
@@ -173,11 +166,10 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		conds.add(LinkCondition.bucket(null, false));
 
 		final List<List<byte[]>> actual = new ArrayList<List<byte[]>>();
-		this.target.walk(init, conds,
+		RiakFuture waiter = this.target.walk(init, conds,
 				new RiakResponseHandler<List<RiakObject<byte[]>>>() {
 					@Override
 					public void onError(RiakResponse response) throws Exception {
-						waiter.countDown();
 						fail(response.getMessage());
 					}
 
@@ -194,7 +186,6 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 						} finally {
 							if (1 < actual.size()) {
 								is[0] = true;
-								waiter.countDown();
 							}
 						}
 					}
@@ -225,30 +216,25 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	@Test
 	public void testGetStats() throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
-		this.target.getStats(new RiakResponseHandler<ObjectNode>() {
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
+		RiakFuture waiter = this.target
+				.getStats(new RiakResponseHandler<ObjectNode>() {
+					@Override
+					public void onError(RiakResponse response) throws Exception {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<ObjectNode> response)
-					throws Exception {
-				try {
-					assertNotNull(response.getContents());
-					ObjectNode node = response.getContents();
-					assertNotNull(node.get("riak_kv_version"));
-					System.out.println(node);
+					@Override
+					public void handle(RiakContentsResponse<ObjectNode> response)
+							throws Exception {
+						assertNotNull(response.getContents());
+						ObjectNode node = response.getContents();
+						assertNotNull(node.get("riak_kv_version"));
+						System.out.println(node);
 
-					is[0] = true;
-				} finally {
-					waiter.countDown();
-				}
-			}
-		});
+						is[0] = true;
+					}
+				});
 		wait(waiter, is);
 	}
 
@@ -256,16 +242,14 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	@Test
 	public void testDeleteAllFromLuwak() throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { true };
 
 		final List<String> list = new ArrayList<String>();
-		this.target.listKeys("luwak_tld",
+		RiakFuture waiter = this.target.listKeys("luwak_tld",
 				new RiakResponseHandler<KeyResponse>() {
 					@Override
 					public void onError(RiakResponse response) throws Exception {
-						System.err.println(response.getMessage());
-						waiter.countDown();
+						fail(response.getMessage());
 					}
 
 					@Override
@@ -275,9 +259,6 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 						KeyResponse keys = response.getContents();
 						for (String s : keys.getKeys()) {
 							list.add(s);
-						}
-						if (keys.getDone()) {
-							waiter.countDown();
 						}
 					}
 				});
@@ -307,7 +288,6 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	public String testPostToLuwak() throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		URL url = getClass().getClassLoader().getResource(LARGEFILE);
@@ -341,33 +321,28 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		links.add(new Link(new Location("bbb", "kkk"), "ttt"));
 		ro.setLinks(links);
 
-		this.target.postStream(ro, new RiakResponseHandler<String>() {
+		RiakFuture waiter = this.target.postStream(ro,
+				new RiakResponseHandler<String>() {
 
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
+					@Override
+					public void onError(RiakResponse response) throws Exception {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<String> response)
-					throws Exception {
-				try {
-					key[0] = response.getContents();
-					assertNotNull(key[0]);
-					is[0] = true;
-				} finally {
-					waiter.countDown();
-				}
-			}
-		});
+					@Override
+					public void handle(RiakContentsResponse<String> response)
+							throws Exception {
+						key[0] = response.getContents();
+						assertNotNull(key[0]);
+						is[0] = true;
+					}
+				});
 
 		wait(waiter, is);
 		return key[0];
 	}
 
 	public void testGetStream(String key) throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		final File download = new File("target/test-classes/download.jpg");
@@ -375,41 +350,41 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 			download.delete();
 		}
 
-		this.target.getStream(key, new StreamResponseHandler() {
+		RiakFuture waiter = this.target.getStream(key,
+				new StreamResponseHandler() {
 
-			FileOutputStream out;
+					FileOutputStream out;
 
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
+					@Override
+					public void onError(RiakResponse response) throws Exception {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void begin(RiakObject<_> header) throws Exception {
-				Map<String, String> map = header.getUserMetadata();
-				assertEquals("ZZZZZ", map.get("Mmm"));
-				this.out = new FileOutputStream(download);
-			}
+					@Override
+					public void begin(RiakObject<_> header) throws Exception {
+						Map<String, String> map = header.getUserMetadata();
+						assertEquals("ZZZZZ", map.get("Mmm"));
+						this.out = new FileOutputStream(download);
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<ChannelBuffer> response)
-					throws Exception {
-				System.out.println("receive chunk...");
-				ChannelBuffer buffer = response.getContents();
-				this.out.write(buffer.array());
-				this.out.flush();
-			}
+					@Override
+					public void handle(
+							RiakContentsResponse<ChannelBuffer> response)
+							throws Exception {
+						System.out.println("receive chunk...");
+						ChannelBuffer buffer = response.getContents();
+						this.out.write(buffer.array());
+						this.out.flush();
+					}
 
-			@Override
-			public void end() throws Exception {
-				System.out.println("END***********");
-				this.out.close();
-				is[0] = true;
-				waiter.countDown();
-			}
+					@Override
+					public void end() throws Exception {
+						System.out.println("END***********");
+						this.out.close();
+						is[0] = true;
+					}
 
-		});
+				});
 		wait(waiter, is);
 
 		URL url = getClass().getClassLoader().getResource(LARGEFILE);
@@ -418,7 +393,6 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	public void testGetRangeStream(String key) throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
 		final File download = new File("target/test-classes/download.jpg.part");
@@ -428,63 +402,61 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 		Range range = Range.ranges(Range.range(101, 10000),
 				Range.range(10101, 10200));
-		this.target.getStream(key, range, new StreamResponseHandler() {
+		RiakFuture waiter = this.target.getStream(key, range,
+				new StreamResponseHandler() {
 
-			FileOutputStream out;
+					FileOutputStream out;
 
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
+					@Override
+					public void onError(RiakResponse response) throws Exception {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void begin(RiakObject<_> header) throws Exception {
-				Map<String, String> map = header.getUserMetadata();
-				assertEquals("ZZZZZ", map.get("Mmm"));
-				this.out = new FileOutputStream(download);
-			}
+					@Override
+					public void begin(RiakObject<_> header) throws Exception {
+						Map<String, String> map = header.getUserMetadata();
+						assertEquals("ZZZZZ", map.get("Mmm"));
+						this.out = new FileOutputStream(download);
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<ChannelBuffer> response)
-					throws Exception {
-				ChannelBuffer buffer = response.getContents();
-				this.out.write(buffer.array());
-				this.out.flush();
-			}
+					@Override
+					public void handle(
+							RiakContentsResponse<ChannelBuffer> response)
+							throws Exception {
+						ChannelBuffer buffer = response.getContents();
+						this.out.write(buffer.array());
+						this.out.flush();
+					}
 
-			@Override
-			public void end() throws Exception {
-				System.out.println("end");
-				this.out.close();
-				is[0] = true;
-				waiter.countDown();
-			}
+					@Override
+					public void end() throws Exception {
+						System.out.println("end");
+						this.out.close();
+						is[0] = true;
+					}
 
-		});
+				});
 		wait(waiter, is);
 
 		assertEquals("length", 10000, download.length());
 	}
 
 	public void testDeleteFromLuwak(String key) throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
 		final boolean[] is = { false };
 
-		this.target.delete(key, new RiakResponseHandler<_>() {
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
+		RiakFuture waiter = this.target.delete(key,
+				new RiakResponseHandler<_>() {
+					@Override
+					public void onError(RiakResponse response) throws Exception {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<_> response)
-					throws Exception {
-				is[0] = true;
-				waiter.countDown();
-			}
-		});
+					@Override
+					public void handle(RiakContentsResponse<_> response)
+							throws Exception {
+						is[0] = true;
+					}
+				});
 
 		wait(waiter, is);
 	}
@@ -499,8 +471,6 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	public void testPutToLuwak(String key) throws Exception {
-		final CountDownLatch waiter = new CountDownLatch(1);
-
 		final boolean[] is = { false };
 
 		URL url = getClass().getClassLoader().getResource(LARGEFILE);
@@ -530,21 +500,20 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		map.put("Mmm", "XXXXX");
 		ro.setUserMetadata(map);
 
-		this.target.putStream(ro, new RiakResponseHandler<_>() {
+		RiakFuture waiter = this.target.putStream(ro,
+				new RiakResponseHandler<_>() {
 
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				waiter.countDown();
-				fail(response.getMessage());
-			}
+					@Override
+					public void onError(RiakResponse response) throws Exception {
+						fail(response.getMessage());
+					}
 
-			@Override
-			public void handle(RiakContentsResponse<_> response)
-					throws Exception {
-				is[0] = true;
-				waiter.countDown();
-			}
-		});
+					@Override
+					public void handle(RiakContentsResponse<_> response)
+							throws Exception {
+						is[0] = true;
+					}
+				});
 
 		wait(waiter, is);
 	}
