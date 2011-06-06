@@ -21,6 +21,7 @@ import org.handwerkszeug.riak.util.NettyUtil;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ExceptionEvent;
@@ -60,18 +61,21 @@ public class CompletionSupport implements ChannelFutureListener {
 		this.complete.compareAndSet(false, true);
 	}
 
+	public CountDownRiakFuture newRiakFuture(String name) {
+		ChannelPipeline pipeline = this.channel.getPipeline();
+		CountDownRiakFuture future = new CountDownRiakFuture(name, pipeline);
+		return future;
+	}
+
 	public <T> RiakFuture handle(String name, Object send,
-			final RiakResponseHandler<T> users,
-			final NettyUtil.MessageHandler handler) {
+			RiakResponseHandler<T> users, ChannelHandler handler,
+			RiakFuture future) {
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(Messages.SendTo, name, this.channel.getRemoteAddress());
 		}
-
 		ChannelPipeline pipeline = this.channel.getPipeline();
-		CountDownRiakFuture future = new CountDownRiakFuture(name, pipeline);
 
-		Command cmd = new Command(this.channel, send, name,
-				new UpstreamHandler<T>(name, users, handler, future));
+		Command cmd = new Command(this.channel, send, name, handler);
 		try {
 			if (this.inProgress.add(cmd.name)) {
 				cmd.execute();
@@ -86,6 +90,13 @@ public class CompletionSupport implements ChannelFutureListener {
 			complete(name, pipeline);
 			throw e;
 		}
+	}
+
+	public <T> RiakFuture handle(String name, Object send,
+			RiakResponseHandler<T> users, NettyUtil.MessageHandler handler) {
+		CountDownRiakFuture future = newRiakFuture(name);
+		ChannelHandler ch = new UpstreamHandler<T>(name, users, handler, future);
+		return handle(name, send, users, ch, future);
 	}
 
 	protected void complete(String name, ChannelPipeline pipeline) {

@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author taichi
  */
-class CountDownRiakFuture implements RiakFuture {
+public class CountDownRiakFuture implements RiakFuture {
 
 	static final Logger LOG = LoggerFactory
 			.getLogger(CountDownRiakFuture.class);
