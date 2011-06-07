@@ -44,7 +44,6 @@ class DefaultCompletionChannelHandler<T> extends
 			}
 			e.getFuture().addListener(this.support);
 		} catch (Exception ex) {
-			setFailure(ex);
 			throw ex;
 		} catch (Error ex) {
 			setFailure(ex);
