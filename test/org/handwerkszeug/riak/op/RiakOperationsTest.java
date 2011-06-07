@@ -453,7 +453,6 @@ public abstract class RiakOperationsTest {
 			testPut(location, testdatas.get(1));
 
 			testSetClientId("CCCC");
-			Thread.sleep(1000 * 10);
 			testPutWithSibling(location, testdatas.get(2), testdatas);
 
 			testGetWithSibling(location, testdatas);
