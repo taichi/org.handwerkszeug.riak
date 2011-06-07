@@ -28,6 +28,8 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 	State state;
 	ContentRange contentRange;
 
+	PartMessage readContinue;
+
 	public MultipartResponseDecoder() {
 	}
 
@@ -119,8 +121,11 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 			ChannelBuffer buffer) {
 		while (buffer.readable()) {
 			PartMessage msg = parse(buffer);
+			if (State.READ_CONTENT.equals(this.state)) {
+				break;
+			}
 			Channels.fireMessageReceived(ctx, msg, e.getRemoteAddress());
-			if (State.READ_CHUNKD_CONTENT.equals(state)) {
+			if (State.READ_CHUNKD_CONTENT.equals(this.state)) {
 				break;
 			}
 		}
@@ -152,7 +157,18 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 			}
 			case READ_CONTENT: {
 				int length = seekNextBoundary(buffer);
-				multipart.setContent(buffer.readBytes(length));
+				ChannelBuffer newone = buffer.readBytes(length);
+				if (this.readContinue != null) {
+					ChannelBuffer cb = readContinue.getContent();
+					newone = ChannelBuffers.copiedBuffer(cb.array(),
+							newone.array());
+				}
+				multipart.setContent(newone);
+				if (State.READ_CONTENT.equals(this.state)) {
+					this.readContinue = multipart;
+				} else {
+					this.readContinue = null;
+				}
 				return multipart;
 			}
 			case EPILOGUE: {
@@ -333,7 +349,7 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		while (buffer.readable()) {
 			line = readLine(buffer);
 			if (line.isEmpty() && buffer.readable() == false) {
-				state = State.EPILOGUE;
+				state = State.READ_CONTENT;
 				break;
 			} else if (this.dashBoundary.equals(line)) {
 				length -= this.dashBoundary.length();
