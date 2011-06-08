@@ -48,7 +48,7 @@ import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
-import org.handwerkszeug.riak.pbc.PbcRiakOperationsTest;
+import org.handwerkszeug.riak.transport.protobuf.ProtoBufRiakOperationsTest;
 import org.handwerkszeug.riak.util.JsonUtil;
 import org.handwerkszeug.riak.util.Streams;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -861,7 +861,8 @@ public abstract class RiakOperationsTest {
 		new Streams.using<InputStream, IOException>() {
 			@Override
 			public InputStream open() throws IOException {
-				ClassLoader cl = PbcRiakOperationsTest.class.getClassLoader();
+				ClassLoader cl = ProtoBufRiakOperationsTest.class
+						.getClassLoader();
 				return cl.getResourceAsStream(path);
 			}
 
