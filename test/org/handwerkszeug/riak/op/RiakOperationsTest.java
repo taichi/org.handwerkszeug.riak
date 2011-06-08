@@ -438,7 +438,7 @@ public abstract class RiakOperationsTest {
 
 			List<String> testdatas = new ArrayList<String>();
 			Random r = new Random();
-			byte[] bytes = new byte[20];
+			byte[] bytes = new byte[1024 * 128];
 			r.nextBytes(bytes);
 			testdatas.add(Arrays.toString(bytes));
 			r.nextBytes(bytes);
@@ -496,7 +496,9 @@ public abstract class RiakOperationsTest {
 						beginEnd[1] = true;
 					}
 				});
-		wait(waiter, is);
+
+		assertTrue("test is timeout.", waiter.await(10, TimeUnit.SECONDS));
+		assertTrue(is[0]);
 		assertEquals(3, actuals.size());
 		for (String s : testdatas) {
 			assertTrue(s, actuals.contains(s));
@@ -552,7 +554,8 @@ public abstract class RiakOperationsTest {
 			}
 
 		});
-		wait(waiter, is);
+		assertTrue("test is timeout.", waiter.await(10, TimeUnit.SECONDS));
+		assertTrue(is[0]);
 		assertEquals(3, actuals.size());
 		for (String s : testdatas) {
 			assertTrue(s, actuals.contains(s));
