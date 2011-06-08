@@ -358,8 +358,11 @@ public abstract class RiakOperationsTest {
 	@Test
 	public void testGetWithOpt() throws Exception {
 		final Location location = new Location("testGetWithOpt", "testKey");
-		final String testdata = new SimpleDateFormat().format(new Date())
-				+ "\n";
+
+		byte[] data = new byte[1024 * 2];
+		Random r = new Random();
+		r.nextBytes(data);
+		final String testdata = Arrays.toString(data);
 		testPut(location, testdata);
 		try {
 			testGetWithOpt(location, testdata);
@@ -372,6 +375,7 @@ public abstract class RiakOperationsTest {
 			throws InterruptedException {
 		final boolean[] is = { false };
 
+		final String[] result = new String[1];
 		RiakFuture waiter = this.target.get(location, new DefaultGetOptions() {
 			@Override
 			public Quorum getReadQuorum() {
@@ -379,21 +383,26 @@ public abstract class RiakOperationsTest {
 			}
 		}, new RiakResponseHandler<RiakObject<byte[]>>() {
 			@Override
-			public void onError(RiakResponse response) throws RiakException {
+			public void onError(RiakResponse response) throws Exception {
 				fail(response.getMessage());
 			}
 
 			@Override
 			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
-					throws RiakException {
+					throws Exception {
 				RiakObject<byte[]> ro = response.getContents();
 				assertEquals(location, ro.getLocation());
-				assertEquals(testdata, new String(ro.getContent()));
+				result[0] = new String(ro.getContent());
 				is[0] = true;
 			}
 		});
 
 		wait(waiter, is);
+		System.out.println("*****" + testdata.length());
+		System.out.println("*****" + result[0].length());
+		System.out.println(testdata);
+		System.out.println(result[0]);
+		assertEquals(testdata, result[0]);
 	}
 
 	@Test

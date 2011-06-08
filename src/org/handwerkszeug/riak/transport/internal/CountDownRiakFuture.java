@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.model.RiakFuture;
+import org.handwerkszeug.riak.nls.Messages;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,7 @@ public class CountDownRiakFuture implements RiakFuture {
 	}
 
 	public void finished() {
-		LOG.debug(Markers.DETAIL, "finished {}", this.name); // TODO message
+		LOG.debug(Markers.LIFECYCLE, Messages.Finished, this.name);
 		this.pipeline.remove(this.name);
 		this.latch.countDown();
 	}

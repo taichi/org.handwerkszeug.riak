@@ -1,5 +1,6 @@
 package org.handwerkszeug.riak.transport.internal;
 
+import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.model.AbstractRiakResponse;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -37,7 +38,7 @@ public abstract class AbstractCompletionChannelHandler<T> extends
 			final ExceptionEvent e) throws Exception {
 		this.support.remove(this.name);
 		this.future.setFailure(e.getCause());
-		LOG.error(e.getCause().getMessage(), e.getCause());
+		LOG.error(Markers.BOUNDARY, e.getCause().getMessage(), e.getCause());
 		this.users.onError(new AbstractRiakResponse() {
 			@Override
 			public String getMessage() {
@@ -53,7 +54,7 @@ public abstract class AbstractCompletionChannelHandler<T> extends
 	}
 
 	protected void setFailure(Throwable ex) {
-		LOG.error(ex.getMessage(), ex);
+		LOG.error(Markers.DETAIL, ex.getMessage(), ex);
 		this.future.setFailure(ex);
 		this.support.invokeNext();
 	}

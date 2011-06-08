@@ -77,9 +77,6 @@ public class CompletionSupport implements ChannelFutureListener {
 	public <T> RiakFuture handle(String name, Object send,
 			RiakResponseHandler<T> users, ChannelHandler handler,
 			RiakFuture future) {
-		if (LOG.isDebugEnabled()) {
-			LOG.debug(Messages.SendTo, name, this.channel.getRemoteAddress());
-		}
 		ChannelPipeline pipeline = this.channel.getPipeline();
 
 		Command cmd = new Command(this.channel, send, name, handler);
@@ -87,6 +84,9 @@ public class CompletionSupport implements ChannelFutureListener {
 			if (this.inProgress.add(cmd.name)) {
 				cmd.execute();
 			} else {
+				if (LOG.isDebugEnabled()) {
+					LOG.debug(Markers.LIFECYCLE, Messages.Queue, name);
+				}
 				this.waitQueue.add(cmd);
 			}
 			return future;
@@ -110,8 +110,6 @@ public class CompletionSupport implements ChannelFutureListener {
 			Command cmd = i.next();
 			if (this.inProgress.add(cmd.name)) {
 				i.remove();
-				// TODO message
-				LOG.debug(Markers.DETAIL, "invoke Next {}", cmd.name);
 				cmd.execute();
 			}
 		}

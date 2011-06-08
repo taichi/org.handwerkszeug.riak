@@ -56,7 +56,7 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 			HttpChunk chunk = (HttpChunk) o;
 
 			if (this.contentRange != null
-					&& State.READ_CHUNKD_CONTENT.equals(state)) {
+					&& State.READ_CHUNKD_CONTENT.equals(this.state)) {
 				if (this.contentRange.pass(chunk.getContent())) {
 					ctx.sendUpstream(e);
 					return;
@@ -85,7 +85,7 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		if (b != null) {
 			this.dashBoundary = "--" + b;
 			this.closeBoundary = this.dashBoundary + "--";
-			state = State.SKIP_CONTROL_CHARS;
+			this.state = State.SKIP_CONTROL_CHARS;
 			return true;
 		}
 		return false;
@@ -138,14 +138,14 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 	public PartMessage parse(ChannelBuffer buffer) {
 		DefaultPartMessage multipart = new DefaultPartMessage();
 		for (;;) {
-			switch (state) {
+			switch (this.state) {
 			case SKIP_CONTROL_CHARS: {
 				skipControlCharacters(buffer);
-				state = State.READ_BOUNDARY;
+				this.state = State.READ_BOUNDARY;
 				break;
 			}
 			case READ_BOUNDARY: {
-				state = readBoundary(buffer);
+				this.state = readBoundary(buffer);
 				break;
 			}
 			case READ_HEADERS: {
@@ -159,9 +159,8 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 				int length = seekNextBoundary(buffer);
 				ChannelBuffer newone = buffer.readBytes(length);
 				if (this.readContinue != null) {
-					ChannelBuffer cb = readContinue.getContent();
-					newone = ChannelBuffers.copiedBuffer(cb.array(),
-							newone.array());
+					ChannelBuffer cb = this.readContinue.getContent();
+					newone = ChannelBuffers.wrappedBuffer(cb, newone);
 				}
 				multipart.setContent(newone);
 				if (State.READ_CONTENT.equals(this.state)) {
@@ -173,11 +172,11 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 			}
 			case EPILOGUE: {
 				multipart.setLast(true);
-				state = State.SKIP_CONTROL_CHARS;
+				this.state = State.SKIP_CONTROL_CHARS;
 				return multipart;
 			}
 			default: {
-				throw new IllegalStateException("Unknown state " + state);
+				throw new IllegalStateException("Unknown state " + this.state);
 			}
 			}
 		}
@@ -231,14 +230,14 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		}
 		String rangeHeader = message.getHeader(HttpHeaders.Names.CONTENT_RANGE);
 		if (StringUtil.isEmpty(rangeHeader)) {
-			state = State.READ_CONTENT;
+			this.state = State.READ_CONTENT;
 		} else {
 			ContentRange cr = parseRange(rangeHeader);
 			if (cr == null) {
-				state = State.READ_CONTENT;
+				this.state = State.READ_CONTENT;
 			} else {
 				this.contentRange = cr;
-				state = State.READ_CHUNKD_CONTENT;
+				this.state = State.READ_CHUNKD_CONTENT;
 			}
 		}
 	}
@@ -266,8 +265,8 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		long consumed = 0L;
 
 		boolean pass(ChannelBuffer buffer) {
-			consumed += buffer.readableBytes();
-			return consumed <= length;
+			this.consumed += buffer.readableBytes();
+			return this.consumed <= this.length;
 		}
 	}
 
@@ -349,25 +348,26 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 		while (buffer.readable()) {
 			line = readLine(buffer);
 			if (line.isEmpty() && buffer.readable() == false) {
-				state = State.READ_CONTENT;
+				this.state = State.READ_CONTENT;
 				break;
 			} else if (this.dashBoundary.equals(line)) {
 				length -= this.dashBoundary.length();
 				length -= 4; // CRLF x 2
-				state = State.SKIP_CONTROL_CHARS;
+				this.state = State.SKIP_CONTROL_CHARS;
 				break;
 			} else if (this.closeBoundary.equals(line)) {
 				length -= this.closeBoundary.length();
 				length -= 4;
-				state = State.SKIP_CONTROL_CHARS;
+				this.state = State.SKIP_CONTROL_CHARS;
 				break;
 			}
 		}
 
-		length += (buffer.readerIndex() - readerIndex);
+		length += buffer.readerIndex() - readerIndex;
 
 		if (LOG.isDebugEnabled()) {
-			LOG.debug(Markers.DETAIL, "content length :" + length + " " + state);
+			LOG.debug(Markers.DETAIL, "content length :" + length + " "
+					+ this.state);
 		}
 
 		buffer.readerIndex(readerIndex);

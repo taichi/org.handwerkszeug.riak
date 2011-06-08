@@ -359,7 +359,9 @@ public class RequestFactory {
 	public RiakObject<byte[]> convert(HttpMessage headers,
 			ChannelBuffer buffer, Location location) {
 		DefaultRiakObject ro = new DefaultRiakObject(location);
-		ro.setContent(buffer.array());
+		byte[] bytes = new byte[buffer.readableBytes()];
+		buffer.readBytes(bytes);
+		ro.setContent(bytes);
 
 		convertHeaders(headers, ro);
 
