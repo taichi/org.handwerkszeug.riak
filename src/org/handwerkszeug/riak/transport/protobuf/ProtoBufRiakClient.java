@@ -23,7 +23,6 @@ public class ProtoBufRiakClient implements RiakClient<ProtoBufRiakOperations> {
 	final ClientSocketChannelFactory channelFactory;
 
 	public ProtoBufRiakClient(ProtoBufRiakConfig config) {
-		// TODO read from configuration.
 		this.channelFactory = new NioClientSocketChannelFactory(
 				config.getBossExecutor(), config.getWorkerExecutor());
 		this.config = config;
@@ -48,8 +47,8 @@ public class ProtoBufRiakClient implements RiakClient<ProtoBufRiakOperations> {
 							public void channelConnected(
 									ChannelHandlerContext ctx,
 									ChannelStateEvent e) throws Exception {
-								ProtoBufRiakOperations op = new ProtoBufRiakOperations(e
-										.getChannel());
+								ProtoBufRiakOperations op = new ProtoBufRiakOperations(
+										e.getChannel());
 								action.execute(op);
 							}
 						});

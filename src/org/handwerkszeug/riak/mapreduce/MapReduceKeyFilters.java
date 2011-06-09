@@ -530,9 +530,8 @@ public class MapReduceKeyFilters {
 		 *      Expressions</a?
 		 */
 		public static MapReduceKeyFilter matches(final String regex) {
-			// TODO validate expression.
-			// does Riak support java compatible regular expressions ?
-			Pattern.compile(regex);
+			// TODO does Riak support java compatible regular expressions ?
+			Pattern.compile(regex);// validate expression.
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
