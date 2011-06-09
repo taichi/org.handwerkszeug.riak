@@ -38,7 +38,9 @@ import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakOperationsTest;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
+import org.handwerkszeug.riak.transport.internal.DefaultCompletionChannelHandler;
 import org.handwerkszeug.riak.transport.rest.internal.RestPipelineFactory;
+import org.handwerkszeug.riak.util.LogbackUtil;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -271,19 +273,26 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	@Test
 	public void testLuwak() throws Exception {
-		for (int i = 0; i < 5; i++) {
+		// for slow test problem.
+		// sibling message body is huge.
+		LogbackUtil.suppressLogging(new LogbackUtil.Action() {
+			@Override
+			public void execute() throws Exception {
+				for (int i = 0; i < 5; i++) {
 
-			String key = testPostToLuwak();
-			try {
-				System.out.println("luwak storaging wait.");
-				Thread.sleep(300);
-				testGetStream(key);
-				testGetRangeStream(key);
-			} finally {
-				testDeleteFromLuwak(key);
-				System.err.println(i);
+					String key = testPostToLuwak();
+					try {
+						System.out.println("luwak storaging wait.");
+						Thread.sleep(300);
+						testGetStream(key);
+						testGetRangeStream(key);
+					} finally {
+						testDeleteFromLuwak(key);
+						System.err.println(i);
+					}
+				}
 			}
-		}
+		}, DefaultCompletionChannelHandler.class);
 	}
 
 	public String testPostToLuwak() throws Exception {

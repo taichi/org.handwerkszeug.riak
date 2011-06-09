@@ -31,7 +31,6 @@ import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.transport.internal.AbstractCompletionChannelHandler;
 import org.handwerkszeug.riak.transport.internal.ChunkedMessageAggregator;
-import org.handwerkszeug.riak.transport.internal.ChunkedMessageHandler;
 import org.handwerkszeug.riak.transport.internal.CompletionSupport;
 import org.handwerkszeug.riak.transport.internal.CountDownRiakFuture;
 import org.handwerkszeug.riak.transport.internal.MessageHandler;
@@ -79,12 +78,13 @@ public class RestRiakOperations implements HttpRiakOperations {
 	CompletionSupport support;
 	RequestFactory factory;
 
-	public RestRiakOperations(String host, RestRiakConfig config, Channel channel) {
+	public RestRiakOperations(String host, RestRiakConfig config,
+			Channel channel) {
 		this(host, config, channel, new RequestFactory(host, config));
 	}
 
-	public RestRiakOperations(String host, RestRiakConfig config, Channel channel,
-			RequestFactory factory) {
+	public RestRiakOperations(String host, RestRiakConfig config,
+			Channel channel, RequestFactory factory) {
 		notNull(host, "host");
 		notNull(channel, "channel");
 		this.channel = channel;
@@ -100,21 +100,22 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		HttpRequest request = this.factory.newPingRequest();
 		final String procedure = "ping";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							if (NettyUtil.isSuccessful(response.getStatus())) {
-								handler.handle(RestRiakOperations.this.support
-										.newResponse("pong"));
-								return true;
-							}
-						}
-						return false;
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof HttpResponse) {
+					HttpResponse response = (HttpResponse) receive;
+					if (NettyUtil.isSuccessful(response.getStatus())) {
+						handler.handle(RestRiakOperations.this.support
+								.newResponse("pong"));
+						future.setSuccess();
+						return true;
 					}
-				});
+				}
+				return false;
+			}
+		});
 	}
 
 	@Override
@@ -134,25 +135,25 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		HttpRequest request = this.factory.newListBucketsRequest();
 		final String procedure = "listBuckets";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							ChannelBuffer buffer = response.getContent();
-							ObjectNode node = to(buffer);
-							if (node != null) {
-								List<String> list = JsonUtil.to(node
-										.get("buckets"));
-								handler.handle(RestRiakOperations.this.support
-										.newResponse(list));
-								return true;
-							}
-						}
-						return false;
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof HttpResponse) {
+					HttpResponse response = (HttpResponse) receive;
+					ChannelBuffer buffer = response.getContent();
+					ObjectNode node = to(buffer);
+					if (node != null) {
+						List<String> list = JsonUtil.to(node.get("buckets"));
+						handler.handle(RestRiakOperations.this.support
+								.newResponse(list));
+						future.setSuccess();
+						return true;
 					}
-				});
+				}
+				return false;
+			}
+		});
 	}
 
 	@SuppressWarnings("unchecked")
@@ -182,30 +183,33 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		HttpRequest request = this.factory.newListKeysRequest(bucket);
 		final String procedure = "listKeys";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							if (NettyUtil.isSuccessful(response.getStatus())) {
-								boolean done = response.isChunked() == false;
-								if (done) {
-									_listKeys(response.getContent(), handler);
-								}
-								return done;
-							}
-						} else if (receive instanceof HttpChunk) {
-							HttpChunk chunk = (HttpChunk) receive;
-							boolean done = chunk.isLast();
-							if (done == false) {
-								_listKeys(chunk.getContent(), handler);
-							}
-							return done;
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof HttpResponse) {
+					HttpResponse response = (HttpResponse) receive;
+					if (NettyUtil.isSuccessful(response.getStatus())) {
+						boolean done = response.isChunked() == false;
+						if (done) {
+							_listKeys(response.getContent(), handler);
+							future.setSuccess();
 						}
-						return false;
+						return done;
 					}
-				});
+				} else if (receive instanceof HttpChunk) {
+					HttpChunk chunk = (HttpChunk) receive;
+					boolean done = chunk.isLast();
+					if (done) {
+						future.setSuccess();
+					} else {
+						_listKeys(chunk.getContent(), handler);
+					}
+					return done;
+				}
+				return false;
+			}
+		});
 	}
 
 	protected void _listKeys(ChannelBuffer buffer,
@@ -230,26 +234,26 @@ public class RestRiakOperations implements HttpRiakOperations {
 		HttpRequest request = this.factory.newGetBucketRequest(bucket);
 
 		final String procedure = "getBucket";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							if (NettyUtil.isSuccessful(response.getStatus())) {
-								ObjectMapper objectMapper = new ObjectMapper();
-								BucketHolder holder = objectMapper.readValue(
-										new ChannelBufferInputStream(response
-												.getContent()),
-										BucketHolder.class);
-								handler.handle(RestRiakOperations.this.support
-										.newResponse(holder.props));
-								return true;
-							}
-						}
-						return false;
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof HttpResponse) {
+					HttpResponse response = (HttpResponse) receive;
+					if (NettyUtil.isSuccessful(response.getStatus())) {
+						ObjectMapper objectMapper = new ObjectMapper();
+						BucketHolder holder = objectMapper.readValue(
+								new ChannelBufferInputStream(response
+										.getContent()), BucketHolder.class);
+						handler.handle(RestRiakOperations.this.support
+								.newResponse(holder.props));
+						future.setSuccess();
+						return true;
 					}
-				});
+				}
+				return false;
+			}
+		});
 	}
 
 	@Override
@@ -289,17 +293,20 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		String procedure = "get/single";
 		return handle(procedure, request, handler,
-				new ChunkedMessageAggregator(procedure,
-						new ChunkedMessageHandler() {
-							@Override
-							public void handle(HttpResponse response,
-									ChannelBuffer buffer) throws Exception {
-								RiakObject<byte[]> ro = RestRiakOperations.this.factory
-										.convert(response, buffer, location);
-								handler.handle(RestRiakOperations.this.support
-										.newResponse(ro));
-							}
-						}));
+				new ChunkedMessageAggregator(procedure, new MessageHandler() {
+					@Override
+					public boolean handle(Object receive,
+							CountDownRiakFuture future) throws Exception {
+						HttpResponse response = (HttpResponse) receive;
+						RiakObject<byte[]> ro = RestRiakOperations.this.factory
+								.convert(response, response.getContent(),
+										location);
+						handler.handle(RestRiakOperations.this.support
+								.newResponse(ro));
+						future.setSuccess();
+						return true;
+					}
+				}));
 	}
 
 	@Override
@@ -313,39 +320,38 @@ public class RestRiakOperations implements HttpRiakOperations {
 		request.setHeader(HttpHeaders.Names.ACCEPT, RiakHttpHeaders.MULTI_PART);
 
 		final String procedure = "get/sibling";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					String vclock;
+		return handle(procedure, request, handler, new MessageHandler() {
+			String vclock;
 
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							this.vclock = response
-									.getHeader(RiakHttpHeaders.VECTOR_CLOCK);
-							handler.begin();
-							return false;
-						} else if (receive instanceof PartMessage) {
-							PartMessage part = (PartMessage) receive;
-							boolean done = part.isLast();
-							part.setHeader(RiakHttpHeaders.VECTOR_CLOCK,
-									this.vclock);
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof HttpResponse) {
+					HttpResponse response = (HttpResponse) receive;
+					this.vclock = response
+							.getHeader(RiakHttpHeaders.VECTOR_CLOCK);
+					handler.begin();
+					return false;
+				} else if (receive instanceof PartMessage) {
+					PartMessage part = (PartMessage) receive;
+					boolean done = part.isLast();
+					part.setHeader(RiakHttpHeaders.VECTOR_CLOCK, this.vclock);
 
-							if (done) {
-								handler.end(RestRiakOperations.this.support
-										.newResponse());
-							} else {
-								RiakObject<byte[]> ro = RestRiakOperations.this.factory
-										.convert(part, part.getContent(),
-												location);
-								handler.handle(RestRiakOperations.this.support
-										.newResponse(ro));
-							}
-							return done;
-						}
-						return false;
+					if (done) {
+						handler.end(RestRiakOperations.this.support
+								.newResponse());
+						future.setSuccess();
+					} else {
+						RiakObject<byte[]> ro = RestRiakOperations.this.factory
+								.convert(part, part.getContent(), location);
+						handler.handle(RestRiakOperations.this.support
+								.newResponse(ro));
 					}
-				});
+					return done;
+				}
+				return false;
+			}
+		});
 	}
 
 	@Override
@@ -402,11 +408,13 @@ public class RestRiakOperations implements HttpRiakOperations {
 						} finally {
 							handler.end(RestRiakOperations.this.support
 									.newResponse());
-							RestRiakOperations.this.support.remove(procedure);
+							RestRiakOperations.this.support
+									.decrementProgress(procedure);
 						}
 						future.setSuccess();
 					} else if (response.getStatus().getCode() == 300) {
-						RestRiakOperations.this.support.remove(procedure);
+						RestRiakOperations.this.support
+								.decrementProgress(procedure);
 						ChannelPipeline pipeline = ctx.getPipeline();
 						pipeline.remove(procedure);
 						dispatchToGetSibling(content.getLocation(), options,
@@ -509,25 +517,26 @@ public class RestRiakOperations implements HttpRiakOperations {
 			HttpRequest request) {
 		final RiakObject<byte[]> copied = new DefaultRiakObject(content);
 
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							if (NettyUtil.isSuccessful(response.getStatus())) {
-								Location location = to(response);
-								if (location != null) {
-									copied.setLocation(location);
-									handler.handle(RestRiakOperations.this.support
-											.newResponse(copied));
-									return true;
-								}
-							}
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof HttpResponse) {
+					HttpResponse response = (HttpResponse) receive;
+					if (NettyUtil.isSuccessful(response.getStatus())) {
+						Location location = to(response);
+						if (location != null) {
+							copied.setLocation(location);
+							handler.handle(RestRiakOperations.this.support
+									.newResponse(copied));
+							future.setSuccess();
+							return true;
 						}
-						return false;
 					}
-				});
+				}
+				return false;
+			}
+		});
 	}
 
 	protected Location to(HttpMessage response) {
@@ -555,23 +564,21 @@ public class RestRiakOperations implements HttpRiakOperations {
 		}
 		final String procedure = "post/returnbody";
 		return handle(procedure, request, handler,
-				new ChunkedMessageAggregator(procedure,
-						new ChunkedMessageHandler() {
-							@Override
-							public void handle(HttpResponse response,
-									ChannelBuffer buffer) throws Exception {
-								Location location = to(response);
-								if (location == null) {
-									// TODO ...
-									throw new IllegalStateException();
-								}
-								RiakObject<byte[]> ro = RestRiakOperations.this.factory
-										.convert(response, buffer, location);
-								handler.handle(RestRiakOperations.this.support
-										.newResponse(ro));
-
-							}
-						}));
+				new ChunkedMessageAggregator(procedure, new MessageHandler() {
+					@Override
+					public boolean handle(Object receive,
+							CountDownRiakFuture future) throws Exception {
+						HttpResponse response = (HttpResponse) receive;
+						Location location = to(response);
+						RiakObject<byte[]> ro = RestRiakOperations.this.factory
+								.convert(response, response.getContent(),
+										location);
+						handler.handle(RestRiakOperations.this.support
+								.newResponse(ro));
+						future.setSuccess();
+						return true;
+					}
+				}));
 	}
 
 	@Override
@@ -623,25 +630,28 @@ public class RestRiakOperations implements HttpRiakOperations {
 	protected RiakFuture mapReduce(HttpRequest request,
 			final RiakResponseHandler<MapReduceResponse> handler) {
 		final String procedure = "mapReduce";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							return false;
-						} else if (receive instanceof HttpChunk) {
-							HttpChunk chunk = (HttpChunk) receive;
-							boolean done = chunk.isLast();
-							ObjectNode node = to(chunk.getContent());
-							MapReduceResponse response = new RestMapReduceResponse(
-									node, done);
-							handler.handle(RestRiakOperations.this.support
-									.newResponse(response));
-							return done;
-						}
-						return false;
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof HttpResponse) {
+					return false;
+				} else if (receive instanceof HttpChunk) {
+					HttpChunk chunk = (HttpChunk) receive;
+					boolean done = chunk.isLast();
+					ObjectNode node = to(chunk.getContent());
+					MapReduceResponse response = new RestMapReduceResponse(
+							node, done);
+					handler.handle(RestRiakOperations.this.support
+							.newResponse(response));
+					if (done) {
+						future.setSuccess();
 					}
-				});
+					return done;
+				}
+				return false;
+			}
+		});
 	}
 
 	@Override
@@ -665,24 +675,26 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		HttpRequest request = this.factory.newWalkRequst(walkbegin, conditions);
 		final String procedure = "walk";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							// do nothing
-							return false;
-						} else if (receive instanceof PartMessage) {
-							PartMessage part = (PartMessage) receive;
-							boolean done = part.isLast();
-							if (done == false) {
-								notifyStep(part, handler);
-							}
-							return done;
-						}
-						return false;
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof HttpResponse) {
+					// do nothing
+					return false;
+				} else if (receive instanceof PartMessage) {
+					PartMessage part = (PartMessage) receive;
+					boolean done = part.isLast();
+					if (done) {
+						future.setSuccess();
+					} else {
+						notifyStep(part, handler);
 					}
-				});
+					return done;
+				}
+				return false;
+			}
+		});
 	}
 
 	protected void notifyStep(PartMessage message,
@@ -715,23 +727,23 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		HttpRequest request = this.factory.newGetStatsRequest();
 		final String procedure = "getStats";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							if (NettyUtil.isSuccessful(response.getStatus())) {
-								ObjectNode node = to(response.getContent());
-								handler.handle(RestRiakOperations.this.support
-										.newResponse(node));
-								return true;
-							}
-						}
-						return false;
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof HttpResponse) {
+					HttpResponse response = (HttpResponse) receive;
+					if (NettyUtil.isSuccessful(response.getStatus())) {
+						ObjectNode node = to(response.getContent());
+						handler.handle(RestRiakOperations.this.support
+								.newResponse(node));
+						future.setSuccess();
+						return true;
 					}
-				});
+				}
+				return false;
+			}
+		});
 	}
 
 	protected RiakFuture handle(final String name, Object send,
@@ -741,8 +753,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 	}
 
 	protected <T> RiakFuture handle(final String name, Object send,
-			final RiakResponseHandler<T> users,
-			final MessageHandler internal) {
+			final RiakResponseHandler<T> users, final MessageHandler internal) {
 		return this.support.handle(name, send, users,
 				new ContinuousMessageHandler<T>(users, internal, this.support));
 	}
@@ -759,47 +770,49 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	protected RiakFuture _getStream(final String procedure,
 			HttpRequest request, final StreamResponseHandler handler) {
-		return handle(procedure, request, handler,
-				new MessageHandler() {
+		return handle(procedure, request, handler, new MessageHandler() {
 
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							boolean done = response.isChunked() == false;
-							RiakObject<_> ro = new AbstractRiakObject<_>() {
-								@Override
-								public _ getContent() {
-									return _._;
-								}
-							};
-							RestRiakOperations.this.factory.convertHeaders(
-									response, ro);
-							handler.begin(ro);
-							if (done) {
-								try {
-									handler.handle(RestRiakOperations.this.support
-											.newResponse(response.getContent()));
-								} finally {
-									handler.end();
-								}
-							}
-							return done;
-						} else if (receive instanceof HttpChunk) {
-							HttpChunk chunk = (HttpChunk) receive;
-							boolean done = chunk.isLast();
-							if (done) {
-								handler.end();
-							} else {
-								handler.handle(RestRiakOperations.this.support
-										.newResponse(chunk.getContent()));
-							}
-							return done;
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof HttpResponse) {
+					HttpResponse response = (HttpResponse) receive;
+					boolean done = response.isChunked() == false;
+					RiakObject<_> ro = new AbstractRiakObject<_>() {
+						@Override
+						public _ getContent() {
+							return _._;
 						}
-
-						return false;
+					};
+					RestRiakOperations.this.factory
+							.convertHeaders(response, ro);
+					handler.begin(ro);
+					if (done) {
+						try {
+							handler.handle(RestRiakOperations.this.support
+									.newResponse(response.getContent()));
+						} finally {
+							handler.end();
+						}
+						future.setSuccess();
 					}
-				});
+					return done;
+				} else if (receive instanceof HttpChunk) {
+					HttpChunk chunk = (HttpChunk) receive;
+					boolean done = chunk.isLast();
+					if (done) {
+						handler.end();
+						future.setSuccess();
+					} else {
+						handler.handle(RestRiakOperations.this.support
+								.newResponse(chunk.getContent()));
+					}
+					return done;
+				}
+
+				return false;
+			}
+		});
 	}
 
 	@Override
@@ -826,37 +839,37 @@ public class RestRiakOperations implements HttpRiakOperations {
 				HttpMethod.POST);
 
 		final String procedure = "postStream";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
+		return handle(procedure, request, handler, new MessageHandler() {
 
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							HttpResponseStatus status = response.getStatus();
-							if (HttpResponseStatus.CONTINUE.equals(status)) {
-								InputStreamHandler ish = content.getContent();
-								RestRiakOperations.this.channel
-										.write(new ChunkedStream(ish.open()));
-								return false;
-							} else if (HttpResponseStatus.CREATED
-									.equals(status)) {
-								String loc = response
-										.getHeader(HttpHeaders.Names.LOCATION);
-								if (StringUtil.isEmpty(loc) == false
-										&& loc.startsWith("/"
-												+ RestRiakOperations.this.config
-														.getLuwakName() + "/")) {
-									final String newKey = loc.substring(7);
-									handler.handle(RestRiakOperations.this.support
-											.newResponse(newKey));
-									return true;
-								}
-							}
-						}
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof HttpResponse) {
+					HttpResponse response = (HttpResponse) receive;
+					HttpResponseStatus status = response.getStatus();
+					if (HttpResponseStatus.CONTINUE.equals(status)) {
+						InputStreamHandler ish = content.getContent();
+						RestRiakOperations.this.channel
+								.write(new ChunkedStream(ish.open()));
 						return false;
+					} else if (HttpResponseStatus.CREATED.equals(status)) {
+						String loc = response
+								.getHeader(HttpHeaders.Names.LOCATION);
+						if (StringUtil.isEmpty(loc) == false
+								&& loc.startsWith("/"
+										+ RestRiakOperations.this.config
+												.getLuwakName() + "/")) {
+							final String newKey = loc.substring(7);
+							handler.handle(RestRiakOperations.this.support
+									.newResponse(newKey));
+							future.setSuccess();
+							return true;
+						}
 					}
-				});
+				}
+				return false;
+			}
+		});
 	}
 
 	@Override
@@ -868,27 +881,28 @@ public class RestRiakOperations implements HttpRiakOperations {
 		HttpRequest request = this.factory.newStreamRequest(content, content
 				.getLocation().getKey(), HttpMethod.PUT);
 		final String procedure = "putStream";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof HttpResponse) {
-							HttpResponse response = (HttpResponse) receive;
-							HttpResponseStatus status = response.getStatus();
-							if (HttpResponseStatus.CONTINUE.equals(status)) {
-								InputStreamHandler ish = content.getContent();
-								RestRiakOperations.this.channel
-										.write(new ChunkedStream(ish.open()));
-								return false;
-							} else if (NettyUtil.isSuccessful(status)) {
-								handler.handle(RestRiakOperations.this.support
-										.newResponse());
-								return true;
-							}
-						}
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof HttpResponse) {
+					HttpResponse response = (HttpResponse) receive;
+					HttpResponseStatus status = response.getStatus();
+					if (HttpResponseStatus.CONTINUE.equals(status)) {
+						InputStreamHandler ish = content.getContent();
+						RestRiakOperations.this.channel
+								.write(new ChunkedStream(ish.open()));
 						return false;
+					} else if (NettyUtil.isSuccessful(status)) {
+						handler.handle(RestRiakOperations.this.support
+								.newResponse());
+						future.setSuccess();
+						return true;
 					}
-				});
+				}
+				return false;
+			}
+		});
 	}
 
 	@Override

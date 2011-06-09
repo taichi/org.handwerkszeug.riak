@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author taichi
  */
-class DefaultCompletionChannelHandler<T> extends
+public class DefaultCompletionChannelHandler<T> extends
 		AbstractCompletionChannelHandler<T> {
 
 	static final Logger LOG = LoggerFactory
@@ -20,8 +20,8 @@ class DefaultCompletionChannelHandler<T> extends
 	final MessageHandler handler;
 
 	public DefaultCompletionChannelHandler(CompletionSupport support,
-			String name, RiakResponseHandler<T> users,
-			MessageHandler handler, CountDownRiakFuture future) {
+			String name, RiakResponseHandler<T> users, MessageHandler handler,
+			CountDownRiakFuture future) {
 		super(support, name, users, future);
 		this.handler = handler;
 	}
@@ -34,11 +34,8 @@ class DefaultCompletionChannelHandler<T> extends
 			if (LOG.isDebugEnabled()) {
 				LOG.debug(Markers.DETAIL, Messages.Receive, this.name, receive);
 			}
-			if (this.handler.handle(receive)) {
-				// TODO happen to http error it's not success, but now force
-				// success.
-				this.future.setSuccess();
-				this.support.remove(this.name);
+			if (this.handler.handle(receive, this.future)) {
+				this.support.decrementProgress(this.name);
 				this.support.invokeNext();
 			}
 			e.getFuture().addListener(this.support);

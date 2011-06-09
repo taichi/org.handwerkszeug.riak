@@ -56,7 +56,7 @@ public class CompletionSupport implements ChannelFutureListener {
 		this.complete.compareAndSet(false, true);
 	}
 
-	public void remove(String name) {
+	public void decrementProgress(String name) {
 		this.inProgress.remove(name);
 	}
 

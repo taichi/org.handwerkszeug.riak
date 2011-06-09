@@ -38,6 +38,7 @@ import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.transport.internal.CompletionSupport;
+import org.handwerkszeug.riak.transport.internal.CountDownRiakFuture;
 import org.handwerkszeug.riak.transport.internal.MessageHandler;
 import org.handwerkszeug.riak.transport.protobuf.internal.MessageCodes;
 import org.handwerkszeug.riak.transport.protobuf.internal.ProtoBufMapReduceResponse;
@@ -81,7 +82,8 @@ import com.google.protobuf.ByteString.Output;
  */
 public class ProtoBufRiakOperations implements RiakOperations {
 
-	static final Logger LOG = LoggerFactory.getLogger(ProtoBufRiakOperations.class);
+	static final Logger LOG = LoggerFactory
+			.getLogger(ProtoBufRiakOperations.class);
 
 	protected CompletionSupport support;
 
@@ -98,7 +100,8 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		return handle(procedure, MessageCodes.RpbListBucketsReq, handler,
 				new MessageHandler() {
 					@Override
-					public boolean handle(Object receive) throws Exception {
+					public boolean handle(Object receive,
+							CountDownRiakFuture future) throws Exception {
 						if (receive instanceof RpbListBucketsResp) {
 							RpbListBucketsResp resp = (RpbListBucketsResp) receive;
 							List<String> list = new ArrayList<String>(resp
@@ -108,6 +111,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 							}
 							handler.handle(ProtoBufRiakOperations.this.support
 									.newResponse(list));
+							future.setSuccess();
 							return true;
 						}
 						return false;
@@ -125,26 +129,29 @@ public class ProtoBufRiakOperations implements RiakOperations {
 				.setBucket(ByteString.copyFromUtf8(bucket)).build();
 
 		final String procedure = "listKeys";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof RpbListKeysResp) {
-							RpbListKeysResp resp = (RpbListKeysResp) receive;
-							boolean done = resp.getDone();
-							List<String> list = new ArrayList<String>(resp
-									.getKeysCount());
-							for (ByteString bs : resp.getKeysList()) {
-								list.add(to(bs));
-							}
-							KeyResponse kr = new KeyResponse(list, done);
-							handler.handle(ProtoBufRiakOperations.this.support
-									.newResponse(kr));
-							return done;
-						}
-						return false;
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof RpbListKeysResp) {
+					RpbListKeysResp resp = (RpbListKeysResp) receive;
+					boolean done = resp.getDone();
+					List<String> list = new ArrayList<String>(resp
+							.getKeysCount());
+					for (ByteString bs : resp.getKeysList()) {
+						list.add(to(bs));
 					}
-				});
+					KeyResponse kr = new KeyResponse(list, done);
+					handler.handle(ProtoBufRiakOperations.this.support
+							.newResponse(kr));
+					if (done) {
+						future.setSuccess();
+					}
+					return done;
+				}
+				return false;
+			}
+		});
 	}
 
 	@Override
@@ -156,23 +163,24 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		RpbGetBucketReq request = RpbGetBucketReq.newBuilder()
 				.setBucket(ByteString.copyFromUtf8(bucket)).build();
 		final String procedure = "getBucket";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof RpbGetBucketResp) {
-							RpbGetBucketResp resp = (RpbGetBucketResp) receive;
-							RpbBucketProps props = resp.getProps();
-							Bucket pb = new ProtoBufBucket(bucket);
-							pb.setNumberOfReplicas(props.getNVal());
-							pb.setAllowMulti(props.getAllowMult());
-							handler.handle(ProtoBufRiakOperations.this.support
-									.newResponse(pb));
-							return true;
-						}
-						return false;
-					}
-				});
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof RpbGetBucketResp) {
+					RpbGetBucketResp resp = (RpbGetBucketResp) receive;
+					RpbBucketProps props = resp.getProps();
+					Bucket pb = new ProtoBufBucket(bucket);
+					pb.setNumberOfReplicas(props.getNVal());
+					pb.setAllowMulti(props.getAllowMult());
+					handler.handle(ProtoBufRiakOperations.this.support
+							.newResponse(pb));
+					future.setSuccess();
+					return true;
+				}
+				return false;
+			}
+		});
 	}
 
 	@Override
@@ -189,18 +197,19 @@ public class ProtoBufRiakOperations implements RiakOperations {
 				.setProps(props).build();
 
 		final String procedure = "setBucket";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (MessageCodes.RpbSetBucketResp.equals(receive)) {
-							handler.handle(ProtoBufRiakOperations.this.support
-									.newResponse());
-							return true;
-						}
-						return false;
-					}
-				});
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (MessageCodes.RpbSetBucketResp.equals(receive)) {
+					handler.handle(ProtoBufRiakOperations.this.support
+							.newResponse());
+					future.setSuccess();
+					return true;
+				}
+				return false;
+			}
+		});
 	}
 
 	@Override
@@ -244,7 +253,8 @@ public class ProtoBufRiakOperations implements RiakOperations {
 				}
 				RiakObject<byte[]> ro = convert(location, vclock,
 						resp.getContent(0));
-				handler.handle(ProtoBufRiakOperations.this.support.newResponse(ro));
+				handler.handle(ProtoBufRiakOperations.this.support
+						.newResponse(ro));
 			}
 		});
 	}
@@ -292,7 +302,8 @@ public class ProtoBufRiakOperations implements RiakOperations {
 
 		return handle(name, request, handler, new MessageHandler() {
 			@Override
-			public boolean handle(Object receive) throws Exception {
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
 				if (receive instanceof RpbGetResp) {
 					RpbGetResp resp = (RpbGetResp) receive;
 					int size = resp.getContentCount();
@@ -312,9 +323,11 @@ public class ProtoBufRiakOperations implements RiakOperations {
 								return 1;
 							}
 						});
+						future.setFailure();
 					} else {
 						String vclock = toVclock(resp.getVclock());
 						getHandler.handle(resp, vclock);
+						future.setSuccess();
 					}
 					return true;
 				}
@@ -426,7 +439,8 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		return handle(procedure, builder.build(), handler,
 				new MessageHandler() {
 					@Override
-					public boolean handle(Object receive) throws Exception {
+					public boolean handle(Object receive,
+							CountDownRiakFuture future) throws Exception {
 						if (receive instanceof RpbPutResp) {
 							RpbPutResp resp = (RpbPutResp) receive;
 							Location newloc = location;
@@ -441,6 +455,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 							}
 							handler.handle(ProtoBufRiakOperations.this.support
 									.newResponse(copied));
+							future.setSuccess();
 							return true;
 						}
 						return false;
@@ -479,7 +494,8 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		return handle(procedure, builder.build(), handler,
 				new MessageHandler() {
 					@Override
-					public boolean handle(Object receive) throws Exception {
+					public boolean handle(Object receive,
+							CountDownRiakFuture future) throws Exception {
 						if (receive instanceof RpbPutResp) {
 							RpbPutResp resp = (RpbPutResp) receive;
 							Location newloc = location;
@@ -496,6 +512,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 								handler.handle(ProtoBufRiakOperations.this.support
 										.newResponse(ro));
 							}
+							future.setSuccess();
 							return true;
 						}
 						return false;
@@ -514,10 +531,12 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		return handle(procedure, builder.build(), handler,
 				new MessageHandler() {
 					@Override
-					public boolean handle(Object receive) throws Exception {
+					public boolean handle(Object receive,
+							CountDownRiakFuture future) throws Exception {
 						if (receive instanceof RpbPutResp) {
 							handler.handle(ProtoBufRiakOperations.this.support
 									.newResponse());
+							future.setSuccess();
 							return true;
 						}
 						return false;
@@ -551,7 +570,8 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		return handle(procedure, builder.build(), handler,
 				new MessageHandler() {
 					@Override
-					public boolean handle(Object receive) throws Exception {
+					public boolean handle(Object receive,
+							CountDownRiakFuture future) throws Exception {
 						if (receive instanceof RpbPutResp) {
 							RpbPutResp resp = (RpbPutResp) receive;
 							try {
@@ -575,6 +595,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 								handler.end(ProtoBufRiakOperations.this.support
 										.newResponse());
 							}
+							future.setSuccess();
 							return true;
 						}
 						return false;
@@ -678,18 +699,19 @@ public class ProtoBufRiakOperations implements RiakOperations {
 
 	protected RiakFuture _delete(final String name,
 			final RiakResponseHandler<_> handler, RpbDelReq.Builder builder) {
-		return handle(name, builder.build(), handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (MessageCodes.RpbDelResp.equals(receive)) {
-							handler.handle(ProtoBufRiakOperations.this.support
-									.newResponse());
-							return true;
-						}
-						return false;
-					}
-				});
+		return handle(name, builder.build(), handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (MessageCodes.RpbDelResp.equals(receive)) {
+					handler.handle(ProtoBufRiakOperations.this.support
+							.newResponse());
+					future.setSuccess();
+					return true;
+				}
+				return false;
+			}
+		});
 	}
 
 	protected RpbDelReq.Builder buildDeleteRequest(Location location) {
@@ -746,21 +768,24 @@ public class ProtoBufRiakOperations implements RiakOperations {
 	protected RiakFuture mapReduce(RpbMapRedReq request,
 			final RiakResponseHandler<MapReduceResponse> handler) {
 		final String procedure = "mapReduce";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof RpbMapRedResp) {
-							RpbMapRedResp resp = (RpbMapRedResp) receive;
-							MapReduceResponse response = new ProtoBufMapReduceResponse(
-									resp);
-							handler.handle(ProtoBufRiakOperations.this.support
-									.newResponse(response));
-							return resp.getDone();
-						}
-						return false;
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof RpbMapRedResp) {
+					RpbMapRedResp resp = (RpbMapRedResp) receive;
+					MapReduceResponse response = new ProtoBufMapReduceResponse(
+							resp);
+					handler.handle(ProtoBufRiakOperations.this.support
+							.newResponse(response));
+					if (resp.getDone()) {
+						future.setSuccess();
 					}
-				});
+					return resp.getDone();
+				}
+				return false;
+			}
+		});
 	}
 
 	@Override
@@ -769,10 +794,12 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		return handle(procedure, MessageCodes.RpbPingReq, handler,
 				new MessageHandler() {
 					@Override
-					public boolean handle(Object receive) throws Exception {
+					public boolean handle(Object receive,
+							CountDownRiakFuture future) throws Exception {
 						if (MessageCodes.RpbPingResp.equals(receive)) {
 							handler.handle(ProtoBufRiakOperations.this.support
 									.newResponse("pong"));
+							future.setSuccess();
 							return true;
 						}
 						return false;
@@ -794,12 +821,14 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		return handle(procedure, MessageCodes.RpbGetClientIdReq, handler,
 				new MessageHandler() {
 					@Override
-					public boolean handle(Object receive) throws Exception {
+					public boolean handle(Object receive,
+							CountDownRiakFuture future) throws Exception {
 						if (receive instanceof RpbGetClientIdResp) {
 							RpbGetClientIdResp resp = (RpbGetClientIdResp) receive;
 							String cid = to(resp.getClientId());
 							handler.handle(ProtoBufRiakOperations.this.support
 									.newResponse(cid));
+							future.setSuccess();
 							return true;
 						}
 						return false;
@@ -827,18 +856,19 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		RpbSetClientIdReq request = RpbSetClientIdReq.newBuilder()
 				.setClientId(ByteString.copyFromUtf8(id)).build();
 		final String procedure = "setClientId";
-		return handle(procedure, request, handler,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (MessageCodes.RpbSetClientIdResp.equals(receive)) {
-							handler.handle(ProtoBufRiakOperations.this.support
-									.newResponse());
-							return true;
-						}
-						return false;
-					}
-				});
+		return handle(procedure, request, handler, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (MessageCodes.RpbSetClientIdResp.equals(receive)) {
+					handler.handle(ProtoBufRiakOperations.this.support
+							.newResponse());
+					future.setSuccess();
+					return true;
+				}
+				return false;
+			}
+		});
 	}
 
 	/**
@@ -853,7 +883,8 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		return handle(procedure, MessageCodes.RpbGetServerInfoReq, handler,
 				new MessageHandler() {
 					@Override
-					public boolean handle(Object receive) throws Exception {
+					public boolean handle(Object receive,
+							CountDownRiakFuture future) throws Exception {
 						if (receive instanceof RpbGetServerInfoResp) {
 							RpbGetServerInfoResp resp = (RpbGetServerInfoResp) receive;
 							ServerInfo info = new ServerInfo(
@@ -861,6 +892,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 											.getServerVersion()));
 							handler.handle(ProtoBufRiakOperations.this.support
 									.newResponse(info));
+							future.setSuccess();
 							return true;
 						}
 						return false;
@@ -869,21 +901,21 @@ public class ProtoBufRiakOperations implements RiakOperations {
 	}
 
 	protected <T> RiakFuture handle(final String name, Object send,
-			final RiakResponseHandler<T> users,
-			final MessageHandler internal) {
-		return this.support.handle(name, send, users,
-				new MessageHandler() {
-					@Override
-					public boolean handle(Object receive) throws Exception {
-						if (receive instanceof RpbErrorResp) {
-							RpbErrorResp error = (RpbErrorResp) receive;
-							users.onError(new PbcErrorResponse(error));
-							return true;
-						} else {
-							return internal.handle(receive);
-						}
-					}
-				});
+			final RiakResponseHandler<T> users, final MessageHandler internal) {
+		return this.support.handle(name, send, users, new MessageHandler() {
+			@Override
+			public boolean handle(Object receive, CountDownRiakFuture future)
+					throws Exception {
+				if (receive instanceof RpbErrorResp) {
+					RpbErrorResp error = (RpbErrorResp) receive;
+					users.onError(new PbcErrorResponse(error));
+					future.setFailure();
+					return true;
+				} else {
+					return internal.handle(receive, future);
+				}
+			}
+		});
 	}
 
 	class PbcErrorResponse implements RiakResponse {

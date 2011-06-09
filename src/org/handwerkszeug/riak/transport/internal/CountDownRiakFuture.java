@@ -23,6 +23,7 @@ public class CountDownRiakFuture implements RiakFuture {
 	ChannelPipeline pipeline;
 	boolean success;
 	boolean canceled;
+	boolean failure;
 	Throwable cause;
 
 	public CountDownRiakFuture(String name, ChannelPipeline pipeline) {
@@ -56,7 +57,7 @@ public class CountDownRiakFuture implements RiakFuture {
 
 	@Override
 	public boolean isDone() {
-		return this.success || this.canceled || this.cause != null;
+		return this.latch.getCount() < 1;
 	}
 
 	@Override
@@ -82,6 +83,11 @@ public class CountDownRiakFuture implements RiakFuture {
 
 	public void setFailure(Throwable cause) {
 		this.cause = cause;
+		finished();
+	}
+
+	public void setFailure() {
+		this.failure = true;
 		finished();
 	}
 

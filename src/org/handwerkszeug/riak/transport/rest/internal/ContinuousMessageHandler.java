@@ -2,6 +2,7 @@ package org.handwerkszeug.riak.transport.rest.internal;
 
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.transport.internal.CompletionSupport;
+import org.handwerkszeug.riak.transport.internal.CountDownRiakFuture;
 import org.handwerkszeug.riak.transport.internal.MessageHandler;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.jboss.netty.handler.codec.http.HttpResponse;
@@ -22,14 +23,17 @@ public class ContinuousMessageHandler<T> implements MessageHandler {
 	}
 
 	@Override
-	public boolean handle(Object receive) throws Exception {
+	public boolean handle(Object receive, CountDownRiakFuture future)
+			throws Exception {
 		if (receive instanceof HttpResponse) {
 			HttpResponse response = (HttpResponse) receive;
 			if (NettyUtil.isError(response.getStatus())) {
-				users.onError(new RestErrorResponse(response, this.support));
+				this.users
+						.onError(new RestErrorResponse(response, this.support));
+				future.setFailure();
 				return true;
 			}
 		}
-		return internal.handle(receive);
+		return this.internal.handle(receive, future);
 	}
 }

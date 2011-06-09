@@ -36,8 +36,7 @@ public abstract class AbstractCompletionChannelHandler<T> extends
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx,
 			final ExceptionEvent e) throws Exception {
-		this.support.remove(this.name);
-		this.future.setFailure(e.getCause());
+		this.support.decrementProgress(this.name);
 		LOG.error(Markers.BOUNDARY, e.getCause().getMessage(), e.getCause());
 		this.users.onError(new AbstractRiakResponse() {
 			@Override
@@ -50,6 +49,7 @@ public abstract class AbstractCompletionChannelHandler<T> extends
 				AbstractCompletionChannelHandler.this.support.complete();
 			}
 		});
+		this.future.setFailure(e.getCause());
 		this.support.invokeNext();
 	}
 

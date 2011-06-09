@@ -11,28 +11,28 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
  */
 public class ChunkedMessageAggregator implements MessageHandler {
 
-	ChannelBuffer chunkBuffer;
+	ChannelBuffer chunkedBuffer;
 	HttpResponse chunkedResponse;
 
 	final String procedure;
-	final ChunkedMessageHandler handler;
+	final MessageHandler handler;
 
-	public ChunkedMessageAggregator(String procedure,
-			ChunkedMessageHandler handler) {
+	public ChunkedMessageAggregator(String procedure, MessageHandler handler) {
 		this.procedure = procedure;
 		this.handler = handler;
 	}
 
 	@Override
-	public boolean handle(Object receive) throws Exception {
+	public boolean handle(Object receive, CountDownRiakFuture future)
+			throws Exception {
 		if (receive instanceof HttpResponse) {
 			HttpResponse response = (HttpResponse) receive;
 			if (NettyUtil.isSuccessful(response.getStatus())) {
 				if (response.isChunked()) {
-					this.chunkBuffer = ChannelBuffers.dynamicBuffer(2048);
+					this.chunkedBuffer = response.getContent();
 					this.chunkedResponse = response;
 				} else {
-					this.handler.handle(response, response.getContent());
+					this.handler.handle(response, future);
 					return true;
 				}
 			}
@@ -40,9 +40,12 @@ public class ChunkedMessageAggregator implements MessageHandler {
 			HttpChunk chunk = (HttpChunk) receive;
 			boolean done = chunk.isLast();
 			if (done) {
-				this.handler.handle(this.chunkedResponse, this.chunkBuffer);
+				this.chunkedResponse.setChunked(false);
+				this.chunkedResponse.setContent(this.chunkedBuffer);
+				this.handler.handle(this.chunkedResponse, future);
 			} else {
-				this.chunkBuffer.writeBytes(chunk.getContent());
+				this.chunkedBuffer = ChannelBuffers.wrappedBuffer(
+						this.chunkedBuffer, chunk.getContent());
 			}
 			return done;
 		}

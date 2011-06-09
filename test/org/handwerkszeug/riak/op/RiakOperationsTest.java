@@ -48,8 +48,10 @@ import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
+import org.handwerkszeug.riak.transport.internal.DefaultCompletionChannelHandler;
 import org.handwerkszeug.riak.transport.protobuf.ProtoBufRiakOperationsTest;
 import org.handwerkszeug.riak.util.JsonUtil;
+import org.handwerkszeug.riak.util.LogbackUtil;
 import org.handwerkszeug.riak.util.Streams;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -398,10 +400,6 @@ public abstract class RiakOperationsTest {
 		});
 
 		wait(waiter, is);
-		System.out.println("*****" + testdata.length());
-		System.out.println("*****" + result[0].length());
-		System.out.println(testdata);
-		System.out.println(result[0]);
 		assertEquals(testdata, result[0]);
 	}
 
@@ -435,40 +433,48 @@ public abstract class RiakOperationsTest {
 
 	@Test
 	public void testSibling() throws Exception {
-		final Location location = new Location("testSibling", "testKey");
-		testPut(location, "1");
-		try {
-			Bucket bucket = testBucketGet(location.getBucket());
-			bucket.setAllowMulti(true);
-			testBucketSet(bucket);
+		// for slow test problem.
+		// sibling message body is huge.
+		LogbackUtil.suppressLogging(new LogbackUtil.Action() {
+			@Override
+			public void execute() throws Exception {
+				final Location location = new Location("testSibling", "testKey");
+				testPut(location, "1");
+				try {
+					Bucket bucket = testBucketGet(location.getBucket());
+					bucket.setAllowMulti(true);
+					testBucketSet(bucket);
 
-			// remove current entry.
-			testDelete(location);
+					// remove current entry.
+					testDelete(location);
 
-			List<String> testdatas = new ArrayList<String>();
-			Random r = new Random();
-			byte[] bytes = new byte[1024 * 128];
-			r.nextBytes(bytes);
-			testdatas.add(Arrays.toString(bytes));
-			r.nextBytes(bytes);
-			testdatas.add(Arrays.toString(bytes));
-			r.nextBytes(bytes);
-			testdatas.add(Arrays.toString(bytes));
+					List<String> testdatas = new ArrayList<String>();
+					Random r = new Random();
+					byte[] bytes = new byte[1024 * 128];
+					r.nextBytes(bytes);
+					testdatas.add(Arrays.toString(bytes));
+					r.nextBytes(bytes);
+					testdatas.add(Arrays.toString(bytes));
+					r.nextBytes(bytes);
+					testdatas.add(Arrays.toString(bytes));
 
-			testSetClientId("AAAA");
-			testPut(location, testdatas.get(0));
+					testSetClientId("AAAA");
+					testPut(location, testdatas.get(0));
 
-			testSetClientId("BBBB");
-			testPut(location, testdatas.get(1));
+					testSetClientId("BBBB");
+					testPut(location, testdatas.get(1));
 
-			testSetClientId("CCCC");
-			testPutWithSibling(location, testdatas.get(2), testdatas);
+					testSetClientId("CCCC");
+					testPutWithSibling(location, testdatas.get(2), testdatas);
 
-			testGetWithSibling(location, testdatas);
-		} finally {
-			// for CUI manually check.
-			// testDelete(location);
-		}
+					testGetWithSibling(location, testdatas);
+				} finally {
+					// for CUI manually check.
+					// testDelete(location);
+				}
+			}
+		}, DefaultCompletionChannelHandler.class);
+
 	}
 
 	protected void testGetWithSibling(final Location location,
@@ -506,7 +512,7 @@ public abstract class RiakOperationsTest {
 					}
 				});
 
-		assertTrue("test is timeout.", waiter.await(10, TimeUnit.SECONDS));
+		assertTrue("test is timeout.", waiter.await(20, TimeUnit.SECONDS));
 		assertTrue(is[0]);
 		assertEquals(3, actuals.size());
 		for (String s : testdatas) {
@@ -563,7 +569,7 @@ public abstract class RiakOperationsTest {
 			}
 
 		});
-		assertTrue("test is timeout.", waiter.await(10, TimeUnit.SECONDS));
+		assertTrue("test is timeout.", waiter.await(20, TimeUnit.SECONDS));
 		assertTrue(is[0]);
 		assertEquals(3, actuals.size());
 		for (String s : testdatas) {
@@ -945,6 +951,7 @@ public abstract class RiakOperationsTest {
 			throws InterruptedException {
 		assertTrue("test is timeout.", waiter.await(3, TimeUnit.SECONDS));
 		assertTrue(is[0]);
+		assertTrue(waiter.isDone());
 	}
 
 	@Test
@@ -990,8 +997,9 @@ public abstract class RiakOperationsTest {
 						is[0] = true;
 					}
 				});
+		assertTrue("time is over.", waiter.await(5, TimeUnit.SECONDS));
 
-		wait(waiter, is);
+		// wait(waiter, is);
 		return loc[0];
 	}
 
