@@ -38,6 +38,7 @@ import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.transport.internal.CompletionSupport;
+import org.handwerkszeug.riak.transport.internal.MessageHandler;
 import org.handwerkszeug.riak.transport.protobuf.internal.MessageCodes;
 import org.handwerkszeug.riak.transport.protobuf.internal.ProtoBufMapReduceResponse;
 import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient;
@@ -63,7 +64,6 @@ import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbPutResp;
 import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbSetBucketReq;
 import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbSetClientIdReq;
 import org.handwerkszeug.riak.util.HttpUtil;
-import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
 import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
@@ -96,7 +96,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 
 		final String procedure = "listBuckets";
 		return handle(procedure, MessageCodes.RpbListBucketsReq, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbListBucketsResp) {
@@ -126,7 +126,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 
 		final String procedure = "listKeys";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbListKeysResp) {
@@ -157,7 +157,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 				.setBucket(ByteString.copyFromUtf8(bucket)).build();
 		final String procedure = "getBucket";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbGetBucketResp) {
@@ -190,7 +190,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 
 		final String procedure = "setBucket";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbSetBucketResp.equals(receive)) {
@@ -290,7 +290,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 				.setBucket(ByteString.copyFromUtf8(location.getBucket()))
 				.setKey(ByteString.copyFromUtf8(location.getKey())).build();
 
-		return handle(name, request, handler, new NettyUtil.MessageHandler() {
+		return handle(name, request, handler, new MessageHandler() {
 			@Override
 			public boolean handle(Object receive) throws Exception {
 				if (receive instanceof RpbGetResp) {
@@ -424,7 +424,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		final Location location = content.getLocation();
 		final RiakObject<byte[]> copied = new DefaultRiakObject(content);
 		return handle(procedure, builder.build(), handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbPutResp) {
@@ -477,7 +477,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		final Location location = content.getLocation();
 		final String procedure = "post/returnbody";
 		return handle(procedure, builder.build(), handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbPutResp) {
@@ -512,7 +512,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		RpbPutReq.Builder builder = buildPutRequest(content);
 		final String procedure = "put";
 		return handle(procedure, builder.build(), handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbPutResp) {
@@ -549,7 +549,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		RpbPutReq.Builder builder = buildPutRequest(content, options);
 		final String procedure = "put/opt";
 		return handle(procedure, builder.build(), handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbPutResp) {
@@ -679,7 +679,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 	protected RiakFuture _delete(final String name,
 			final RiakResponseHandler<_> handler, RpbDelReq.Builder builder) {
 		return handle(name, builder.build(), handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbDelResp.equals(receive)) {
@@ -747,7 +747,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 			final RiakResponseHandler<MapReduceResponse> handler) {
 		final String procedure = "mapReduce";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbMapRedResp) {
@@ -767,7 +767,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 	public RiakFuture ping(final RiakResponseHandler<String> handler) {
 		final String procedure = "ping";
 		return handle(procedure, MessageCodes.RpbPingReq, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbPingResp.equals(receive)) {
@@ -792,7 +792,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 	public RiakFuture getClientId(final RiakResponseHandler<String> handler) {
 		final String procedure = "getClientId";
 		return handle(procedure, MessageCodes.RpbGetClientIdReq, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbGetClientIdResp) {
@@ -828,7 +828,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 				.setClientId(ByteString.copyFromUtf8(id)).build();
 		final String procedure = "setClientId";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (MessageCodes.RpbSetClientIdResp.equals(receive)) {
@@ -851,7 +851,7 @@ public class ProtoBufRiakOperations implements RiakOperations {
 			final RiakResponseHandler<ServerInfo> handler) {
 		final String procedure = "getServerInfo";
 		return handle(procedure, MessageCodes.RpbGetServerInfoReq, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbGetServerInfoResp) {
@@ -870,9 +870,9 @@ public class ProtoBufRiakOperations implements RiakOperations {
 
 	protected <T> RiakFuture handle(final String name, Object send,
 			final RiakResponseHandler<T> users,
-			final NettyUtil.MessageHandler internal) {
+			final MessageHandler internal) {
 		return this.support.handle(name, send, users,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof RpbErrorResp) {

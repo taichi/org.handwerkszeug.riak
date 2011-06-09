@@ -3,7 +3,6 @@ package org.handwerkszeug.riak.transport.internal;
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
-import org.handwerkszeug.riak.util.NettyUtil;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.slf4j.Logger;
@@ -18,11 +17,11 @@ class DefaultCompletionChannelHandler<T> extends
 	static final Logger LOG = LoggerFactory
 			.getLogger(DefaultCompletionChannelHandler.class);
 
-	final NettyUtil.MessageHandler handler;
+	final MessageHandler handler;
 
 	public DefaultCompletionChannelHandler(CompletionSupport support,
 			String name, RiakResponseHandler<T> users,
-			NettyUtil.MessageHandler handler, CountDownRiakFuture future) {
+			MessageHandler handler, CountDownRiakFuture future) {
 		super(support, name, users, future);
 		this.handler = handler;
 	}

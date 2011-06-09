@@ -17,7 +17,6 @@ import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
-import org.handwerkszeug.riak.util.NettyUtil;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -67,7 +66,7 @@ public class CompletionSupport implements ChannelFutureListener {
 	}
 
 	public <T> RiakFuture handle(String name, Object send,
-			RiakResponseHandler<T> users, NettyUtil.MessageHandler handler) {
+			RiakResponseHandler<T> users, MessageHandler handler) {
 		CountDownRiakFuture future = newRiakFuture(name);
 		ChannelHandler ch = new DefaultCompletionChannelHandler<T>(this, name,
 				users, handler, future);

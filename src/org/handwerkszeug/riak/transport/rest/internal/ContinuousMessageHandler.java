@@ -2,14 +2,14 @@ package org.handwerkszeug.riak.transport.rest.internal;
 
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.transport.internal.CompletionSupport;
+import org.handwerkszeug.riak.transport.internal.MessageHandler;
 import org.handwerkszeug.riak.util.NettyUtil;
-import org.handwerkszeug.riak.util.NettyUtil.MessageHandler;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 /**
  * @author taichi
  */
-public class ContinuousMessageHandler<T> implements NettyUtil.MessageHandler {
+public class ContinuousMessageHandler<T> implements MessageHandler {
 	final CompletionSupport support;
 	final RiakResponseHandler<T> users;
 	final MessageHandler internal;

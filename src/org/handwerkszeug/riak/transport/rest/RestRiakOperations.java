@@ -30,8 +30,11 @@ import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.transport.internal.AbstractCompletionChannelHandler;
+import org.handwerkszeug.riak.transport.internal.ChunkedMessageAggregator;
+import org.handwerkszeug.riak.transport.internal.ChunkedMessageHandler;
 import org.handwerkszeug.riak.transport.internal.CompletionSupport;
 import org.handwerkszeug.riak.transport.internal.CountDownRiakFuture;
+import org.handwerkszeug.riak.transport.internal.MessageHandler;
 import org.handwerkszeug.riak.transport.rest.internal.BucketHolder;
 import org.handwerkszeug.riak.transport.rest.internal.ContinuousMessageHandler;
 import org.handwerkszeug.riak.transport.rest.internal.RequestFactory;
@@ -98,7 +101,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		HttpRequest request = this.factory.newPingRequest();
 		final String procedure = "ping";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof HttpResponse) {
@@ -132,7 +135,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		HttpRequest request = this.factory.newListBucketsRequest();
 		final String procedure = "listBuckets";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof HttpResponse) {
@@ -180,7 +183,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		HttpRequest request = this.factory.newListKeysRequest(bucket);
 		final String procedure = "listKeys";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof HttpResponse) {
@@ -228,7 +231,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		final String procedure = "getBucket";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof HttpResponse) {
@@ -286,8 +289,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		String procedure = "get/single";
 		return handle(procedure, request, handler,
-				new NettyUtil.ChunkedMessageAggregator(procedure,
-						new NettyUtil.ChunkedMessageHandler() {
+				new ChunkedMessageAggregator(procedure,
+						new ChunkedMessageHandler() {
 							@Override
 							public void handle(HttpResponse response,
 									ChannelBuffer buffer) throws Exception {
@@ -311,7 +314,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		final String procedure = "get/sibling";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					String vclock;
 
 					@Override
@@ -507,7 +510,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		final RiakObject<byte[]> copied = new DefaultRiakObject(content);
 
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof HttpResponse) {
@@ -552,8 +555,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 		}
 		final String procedure = "post/returnbody";
 		return handle(procedure, request, handler,
-				new NettyUtil.ChunkedMessageAggregator(procedure,
-						new NettyUtil.ChunkedMessageHandler() {
+				new ChunkedMessageAggregator(procedure,
+						new ChunkedMessageHandler() {
 							@Override
 							public void handle(HttpResponse response,
 									ChannelBuffer buffer) throws Exception {
@@ -621,7 +624,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 			final RiakResponseHandler<MapReduceResponse> handler) {
 		final String procedure = "mapReduce";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof HttpResponse) {
@@ -663,7 +666,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		HttpRequest request = this.factory.newWalkRequst(walkbegin, conditions);
 		final String procedure = "walk";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof HttpResponse) {
@@ -713,7 +716,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 		HttpRequest request = this.factory.newGetStatsRequest();
 		final String procedure = "getStats";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -739,7 +742,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 	protected <T> RiakFuture handle(final String name, Object send,
 			final RiakResponseHandler<T> users,
-			final NettyUtil.MessageHandler internal) {
+			final MessageHandler internal) {
 		return this.support.handle(name, send, users,
 				new ContinuousMessageHandler<T>(users, internal, this.support));
 	}
@@ -757,7 +760,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 	protected RiakFuture _getStream(final String procedure,
 			HttpRequest request, final StreamResponseHandler handler) {
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -824,7 +827,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 
 		final String procedure = "postStream";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 
 					@Override
 					public boolean handle(Object receive) throws Exception {
@@ -866,7 +869,7 @@ public class RestRiakOperations implements HttpRiakOperations {
 				.getLocation().getKey(), HttpMethod.PUT);
 		final String procedure = "putStream";
 		return handle(procedure, request, handler,
-				new NettyUtil.MessageHandler() {
+				new MessageHandler() {
 					@Override
 					public boolean handle(Object receive) throws Exception {
 						if (receive instanceof HttpResponse) {

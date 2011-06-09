@@ -3,6 +3,7 @@ package org.handwerkszeug.riak.transport.rest.internal;
 import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.transport.internal.CompletionSupport;
+import org.handwerkszeug.riak.transport.internal.MessageHandler;
 import org.handwerkszeug.riak.util.NettyUtil;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
@@ -10,7 +11,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 /**
  * @author taichi
  */
-public class SimpleMessageHandler implements NettyUtil.MessageHandler {
+public class SimpleMessageHandler implements MessageHandler {
 	final String name;
 	final RiakResponseHandler<_> users;
 	final CompletionSupport support;
