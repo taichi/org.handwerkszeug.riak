@@ -81,11 +81,10 @@ public class DefaultMapReduceQuery implements MapReduceQuery {
 			this.inputs.appendTo(root);
 		}
 
-		ArrayNode query = root.putArray(FIELD_QUERY);
 		if (this.queries.isEmpty()) {
 			throw new IllegalStateException(Messages.QueriesMustSet);
 		} else {
-			add(query, this.queries);
+			add(root.putArray(FIELD_QUERY), this.queries);
 		}
 
 		if (0 < this.timeout) {
