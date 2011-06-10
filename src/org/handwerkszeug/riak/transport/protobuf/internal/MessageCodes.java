@@ -18,7 +18,7 @@ import com.google.protobuf.MessageLite;
 public enum MessageCodes implements VariableEnum {
 
 	/** @see Riakclient.RpbErrorResp */
-	RpbErrorResp(0, Riakclient.RpbErrorResp.getDefaultInstance()),
+	RpbErrorResp(0, RawProtoBufRiakclient.RpbErrorResp.getDefaultInstance()),
 	/**  */
 	RpbPingReq(1),
 	/**  */
@@ -26,48 +26,48 @@ public enum MessageCodes implements VariableEnum {
 	/**  */
 	RpbGetClientIdReq(3),
 	/** @see Riakclient.RpbGetClientIdResp */
-	RpbGetClientIdResp(4, Riakclient.RpbGetClientIdResp.getDefaultInstance()),
+	RpbGetClientIdResp(4, RawProtoBufRiakclient.RpbGetClientIdResp.getDefaultInstance()),
 	/** @see Riakclient.RpbSetClientIdReq */
-	RpbSetClientIdReq(5, Riakclient.RpbSetClientIdReq.getDefaultInstance()),
+	RpbSetClientIdReq(5, RawProtoBufRiakclient.RpbSetClientIdReq.getDefaultInstance()),
 	/**  */
 	RpbSetClientIdResp(6),
 	/**  */
 	RpbGetServerInfoReq(7),
 	/** @see Riakclient.RpbGetServerInfoResp */
-	RpbGetServerInfoResp(8, Riakclient.RpbGetServerInfoResp
+	RpbGetServerInfoResp(8, RawProtoBufRiakclient.RpbGetServerInfoResp
 			.getDefaultInstance()),
 	/** @see Riakclient.RpbGetReq */
-	RpbGetReq(9, Riakclient.RpbGetReq.getDefaultInstance()),
+	RpbGetReq(9, RawProtoBufRiakclient.RpbGetReq.getDefaultInstance()),
 	/** @see Riakclient.RpbGetResp */
-	RpbGetResp(10, Riakclient.RpbGetResp.getDefaultInstance()),
+	RpbGetResp(10, RawProtoBufRiakclient.RpbGetResp.getDefaultInstance()),
 	/** @see Riakclient.RpbPutReq */
-	RpbPutReq(11, Riakclient.RpbPutReq.getDefaultInstance()),
+	RpbPutReq(11, RawProtoBufRiakclient.RpbPutReq.getDefaultInstance()),
 	/** @see Riakclient.RpbPutResp */
-	RpbPutResp(12, Riakclient.RpbPutResp.getDefaultInstance()),
+	RpbPutResp(12, RawProtoBufRiakclient.RpbPutResp.getDefaultInstance()),
 	/** @see Riakclient.RpbDelReq */
-	RpbDelReq(13, Riakclient.RpbDelReq.getDefaultInstance()),
+	RpbDelReq(13, RawProtoBufRiakclient.RpbDelReq.getDefaultInstance()),
 	/**  */
 	RpbDelResp(14),
 	/**  */
 	RpbListBucketsReq(15),
 	/** @see Riakclient.RpbListBucketsResp */
-	RpbListBucketsResp(16, Riakclient.RpbListBucketsResp.getDefaultInstance()),
+	RpbListBucketsResp(16, RawProtoBufRiakclient.RpbListBucketsResp.getDefaultInstance()),
 	/** @see Riakclient.RpbListKeysReq */
-	RpbListKeysReq(17, Riakclient.RpbListKeysReq.getDefaultInstance()),
+	RpbListKeysReq(17, RawProtoBufRiakclient.RpbListKeysReq.getDefaultInstance()),
 	/** @see Riakclient.RpbListKeysResp */
-	RpbListKeysResp(18, Riakclient.RpbListKeysResp.getDefaultInstance()),
+	RpbListKeysResp(18, RawProtoBufRiakclient.RpbListKeysResp.getDefaultInstance()),
 	/** @see Riakclient.RpbGetBucketReq */
-	RpbGetBucketReq(19, Riakclient.RpbGetBucketReq.getDefaultInstance()),
+	RpbGetBucketReq(19, RawProtoBufRiakclient.RpbGetBucketReq.getDefaultInstance()),
 	/** @see Riakclient.RpbGetBucketResp */
-	RpbGetBucketResp(20, Riakclient.RpbGetBucketResp.getDefaultInstance()),
+	RpbGetBucketResp(20, RawProtoBufRiakclient.RpbGetBucketResp.getDefaultInstance()),
 	/** @see Riakclient.RpbSetBucketReq */
-	RpbSetBucketReq(21, Riakclient.RpbSetBucketReq.getDefaultInstance()),
+	RpbSetBucketReq(21, RawProtoBufRiakclient.RpbSetBucketReq.getDefaultInstance()),
 	/**  */
 	RpbSetBucketResp(22),
 	/** @see Riakclient.RpbMapRedReq */
-	RpbMapRedReq(23, Riakclient.RpbMapRedReq.getDefaultInstance()),
+	RpbMapRedReq(23, RawProtoBufRiakclient.RpbMapRedReq.getDefaultInstance()),
 	/** @see Riakclient.RpbMapRedResp */
-	RpbMapRedResp(24, Riakclient.RpbMapRedResp.getDefaultInstance());
+	RpbMapRedResp(24, RawProtoBufRiakclient.RpbMapRedResp.getDefaultInstance());
 
 	private final int code;
 	private final MessageLite prototype;

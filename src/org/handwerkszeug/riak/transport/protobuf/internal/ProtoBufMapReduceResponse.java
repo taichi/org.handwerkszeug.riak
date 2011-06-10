@@ -10,7 +10,7 @@ import org.codehaus.jackson.node.ArrayNode;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
 import org.handwerkszeug.riak.nls.Messages;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbMapRedResp;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbMapRedResp;
 
 import com.google.protobuf.ByteString;
 

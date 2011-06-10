@@ -42,28 +42,28 @@ import org.handwerkszeug.riak.transport.internal.CountDownRiakFuture;
 import org.handwerkszeug.riak.transport.internal.MessageHandler;
 import org.handwerkszeug.riak.transport.protobuf.internal.MessageCodes;
 import org.handwerkszeug.riak.transport.protobuf.internal.ProtoBufMapReduceResponse;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbBucketProps;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbContent;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbDelReq;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbErrorResp;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbGetBucketReq;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbGetBucketResp;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbGetClientIdResp;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbGetReq;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbGetResp;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbGetServerInfoResp;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbLink;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbListBucketsResp;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbListKeysReq;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbListKeysResp;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbMapRedReq;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbMapRedResp;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbPair;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbPutReq;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbPutResp;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbSetBucketReq;
-import org.handwerkszeug.riak.transport.protobuf.internal.Riakclient.RpbSetClientIdReq;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbBucketProps;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbContent;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbDelReq;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbErrorResp;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbGetBucketReq;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbGetBucketResp;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbGetClientIdResp;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbGetReq;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbGetResp;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbGetServerInfoResp;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbLink;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbListBucketsResp;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbListKeysReq;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbListKeysResp;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbMapRedReq;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbMapRedResp;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbPair;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbPutReq;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbPutResp;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbSetBucketReq;
+import org.handwerkszeug.riak.transport.protobuf.internal.RawProtoBufRiakclient.RpbSetClientIdReq;
 import org.handwerkszeug.riak.util.HttpUtil;
 import org.handwerkszeug.riak.util.StringUtil;
 import org.jboss.netty.channel.Channel;
@@ -920,9 +920,9 @@ public class ProtoBufRiakOperations implements RiakOperations {
 
 	class PbcErrorResponse implements RiakResponse {
 
-		final Riakclient.RpbErrorResp error;
+		final RawProtoBufRiakclient.RpbErrorResp error;
 
-		public PbcErrorResponse(Riakclient.RpbErrorResp error) {
+		public PbcErrorResponse(RawProtoBufRiakclient.RpbErrorResp error) {
 			this.error = error;
 		}
 
