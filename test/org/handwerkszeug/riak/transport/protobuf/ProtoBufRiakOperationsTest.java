@@ -19,8 +19,6 @@ import org.handwerkszeug.riak.model.ServerInfo;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakOperationsTest;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
-import org.handwerkszeug.riak.transport.protobuf.ProtoBufRiakConfig;
-import org.handwerkszeug.riak.transport.protobuf.ProtoBufRiakOperations;
 import org.handwerkszeug.riak.transport.protobuf.internal.ProtoBufPipelineFactory;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -32,8 +30,8 @@ import org.junit.Test;
  */
 public class ProtoBufRiakOperationsTest extends RiakOperationsTest {
 
-	static final ProtoBufRiakConfig config = ProtoBufRiakConfig.newConfig(Hosts.RIAK_HOST,
-			Hosts.RIAK_PB_PORT);
+	static final ProtoBufRiakConfig config = ProtoBufRiakConfig.newConfig(
+			Hosts.RIAK_HOST, Hosts.RIAK_PB_PORT);
 
 	ProtoBufRiakOperations target;
 
@@ -149,7 +147,7 @@ public class ProtoBufRiakOperationsTest extends RiakOperationsTest {
 
 	@Override
 	@Test
-	@Ignore("Riak 0.14.1 has bug. 0.14.2 fix that bug.")
+	@Ignore("Riak 0.14.2 has bug. fix that bug in the future")
 	public void testPost() throws Exception {
 		super.testPost();
 	}
