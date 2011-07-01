@@ -1,5 +1,6 @@
 package org.handwerkszeug.riak.mapreduce;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.codehaus.jackson.node.ArrayNode;
@@ -656,36 +657,39 @@ public class MapReduceKeyFilters {
 			};
 		}
 
-		public static MapReduceKeyFilter and(final MapReduceKeyFilter left,
-				final MapReduceKeyFilter right) {
+		public static MapReduceKeyFilter and(
+				final List<MapReduceKeyFilter> lefts,
+				final List<MapReduceKeyFilter> rights) {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
 					ArrayNode node = InternalFunctions.and(json);
-					left.appendTo(node.addArray());
-					right.appendTo(node.addArray());
+					InternalFunctions.appendTo(lefts, node);
+					InternalFunctions.appendTo(rights, node);
 				}
 			};
 		}
 
-		public static MapReduceKeyFilter or(final MapReduceKeyFilter left,
-				final MapReduceKeyFilter right) {
+		public static MapReduceKeyFilter or(
+				final List<MapReduceKeyFilter> lefts,
+				final List<MapReduceKeyFilter> rights) {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
 					ArrayNode node = InternalFunctions.or(json);
-					left.appendTo(node.addArray());
-					right.appendTo(node.addArray());
+					InternalFunctions.appendTo(lefts, node);
+					InternalFunctions.appendTo(rights, node);
 				}
 			};
 		}
 
-		public static MapReduceKeyFilter not(final MapReduceKeyFilter left) {
+		public static MapReduceKeyFilter not(
+				final List<MapReduceKeyFilter> filters) {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
 					ArrayNode node = InternalFunctions.not(json);
-					left.appendTo(node.addArray());
+					InternalFunctions.appendTo(filters, node);
 				}
 			};
 		}
@@ -698,6 +702,13 @@ class InternalFunctions {
 		ArrayNode node = container.addArray();
 		node.add(name);
 		return node;
+	}
+
+	static void appendTo(List<MapReduceKeyFilter> filters, ArrayNode container) {
+		ArrayNode la = container.addArray();
+		for (MapReduceKeyFilter f : filters) {
+			f.appendTo(la);
+		}
 	}
 
 	/*
