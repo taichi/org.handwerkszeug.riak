@@ -1,6 +1,5 @@
 package org.handwerkszeug.riak.mapreduce;
 
-import java.util.List;
 import java.util.regex.Pattern;
 
 import org.codehaus.jackson.node.ArrayNode;
@@ -658,8 +657,8 @@ public class MapReduceKeyFilters {
 		}
 
 		public static MapReduceKeyFilter and(
-				final List<MapReduceKeyFilter> lefts,
-				final List<MapReduceKeyFilter> rights) {
+				final Iterable<MapReduceKeyFilter> lefts,
+				final Iterable<MapReduceKeyFilter> rights) {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
@@ -671,8 +670,8 @@ public class MapReduceKeyFilters {
 		}
 
 		public static MapReduceKeyFilter or(
-				final List<MapReduceKeyFilter> lefts,
-				final List<MapReduceKeyFilter> rights) {
+				final Iterable<MapReduceKeyFilter> lefts,
+				final Iterable<MapReduceKeyFilter> rights) {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
@@ -684,7 +683,7 @@ public class MapReduceKeyFilters {
 		}
 
 		public static MapReduceKeyFilter not(
-				final List<MapReduceKeyFilter> filters) {
+				final Iterable<MapReduceKeyFilter> filters) {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
@@ -704,7 +703,8 @@ class InternalFunctions {
 		return node;
 	}
 
-	static void appendTo(List<MapReduceKeyFilter> filters, ArrayNode container) {
+	static void appendTo(Iterable<MapReduceKeyFilter> filters,
+			ArrayNode container) {
 		ArrayNode la = container.addArray();
 		for (MapReduceKeyFilter f : filters) {
 			f.appendTo(la);
