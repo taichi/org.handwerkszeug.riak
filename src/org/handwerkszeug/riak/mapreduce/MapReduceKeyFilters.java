@@ -544,7 +544,7 @@ public class MapReduceKeyFilters {
 		/**
 		 * Tests that the input is contained in the set given as the arguments.
 		 */
-		public static MapReduceKeyFilter setMember(final String[] members) {
+		public static MapReduceKeyFilter setMember(final String... members) {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
@@ -559,7 +559,7 @@ public class MapReduceKeyFilters {
 		/**
 		 * Tests that the input is contained in the set given as the arguments.
 		 */
-		public static MapReduceKeyFilter setMember(final int[] members) {
+		public static MapReduceKeyFilter intMember(final int... members) {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
@@ -574,7 +574,7 @@ public class MapReduceKeyFilters {
 		/**
 		 * Tests that the input is contained in the set given as the arguments.
 		 */
-		public static MapReduceKeyFilter setMember(final long[] members) {
+		public static MapReduceKeyFilter longMember(final long... members) {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
@@ -589,7 +589,7 @@ public class MapReduceKeyFilters {
 		/**
 		 * Tests that the input is contained in the set given as the arguments.
 		 */
-		public static MapReduceKeyFilter setMember(final double[] members) {
+		public static MapReduceKeyFilter doubleMember(final double... members) {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {
@@ -604,7 +604,7 @@ public class MapReduceKeyFilters {
 		/**
 		 * Tests that the input is contained in the set given as the arguments.
 		 */
-		public static MapReduceKeyFilter setMember(final float[] members) {
+		public static MapReduceKeyFilter floatMember(final float... members) {
 			return new MapReduceKeyFilter() {
 				@Override
 				public void appendTo(ArrayNode json) {

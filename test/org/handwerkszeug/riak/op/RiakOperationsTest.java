@@ -701,7 +701,7 @@ public abstract class RiakOperationsTest {
 		}
 	}
 
-	public void testMapReduce(final String bucket) throws Exception {
+	protected void testMapReduce(final String bucket) throws Exception {
 		final boolean[] is = { false };
 
 		final int[] actual = new int[1];
