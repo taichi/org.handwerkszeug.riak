@@ -37,7 +37,7 @@ import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakOperationsTest;
-import org.handwerkszeug.riak.op.RiakResponseHandler;
+import org.handwerkszeug.riak.op.TestingHandler;
 import org.handwerkszeug.riak.transport.internal.DefaultCompletionChannelHandler;
 import org.handwerkszeug.riak.transport.rest.internal.RestPipelineFactory;
 import org.handwerkszeug.riak.util.LogbackUtil;
@@ -142,12 +142,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	public void put(RiakObject<byte[]> ro) throws Exception {
 		final boolean[] is = { false };
 
-		RiakFuture waiter = this.target.put(ro, new RiakResponseHandler<_>() {
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				fail(response.getMessage());
-			}
-
+		RiakFuture waiter = this.target.put(ro, new TestingHandler<_>() {
 			@Override
 			public void handle(RiakContentsResponse<_> response)
 					throws Exception {
@@ -168,12 +163,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 		final List<List<byte[]>> actual = new ArrayList<List<byte[]>>();
 		RiakFuture waiter = this.target.walk(init, conds,
-				new RiakResponseHandler<List<RiakObject<byte[]>>>() {
-					@Override
-					public void onError(RiakResponse response) throws Exception {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<List<RiakObject<byte[]>>>() {
 					@Override
 					public void handle(
 							RiakContentsResponse<List<RiakObject<byte[]>>> response)
@@ -219,12 +209,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	public void testGetStats() throws Exception {
 		final boolean[] is = { false };
 		RiakFuture waiter = this.target
-				.getStats(new RiakResponseHandler<ObjectNode>() {
-					@Override
-					public void onError(RiakResponse response) throws Exception {
-						fail(response.getMessage());
-					}
-
+				.getStats(new TestingHandler<ObjectNode>() {
 					@Override
 					public void handle(RiakContentsResponse<ObjectNode> response)
 							throws Exception {
@@ -247,12 +232,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 		final List<String> list = new ArrayList<String>();
 		RiakFuture waiter = this.target.listKeys("luwak_tld",
-				new RiakResponseHandler<KeyResponse>() {
-					@Override
-					public void onError(RiakResponse response) throws Exception {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<KeyResponse>() {
 					@Override
 					public void handle(
 							RiakContentsResponse<KeyResponse> response)
@@ -330,13 +310,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		ro.setLinks(links);
 
 		RiakFuture waiter = this.target.postStream(ro,
-				new RiakResponseHandler<String>() {
-
-					@Override
-					public void onError(RiakResponse response) throws Exception {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<String>() {
 					@Override
 					public void handle(RiakContentsResponse<String> response)
 							throws Exception {
@@ -452,19 +426,13 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	public void testDeleteFromLuwak(String key) throws Exception {
 		final boolean[] is = { false };
 
-		RiakFuture waiter = this.target.delete(key,
-				new RiakResponseHandler<_>() {
-					@Override
-					public void onError(RiakResponse response) throws Exception {
-						fail(response.getMessage());
-					}
-
-					@Override
-					public void handle(RiakContentsResponse<_> response)
-							throws Exception {
-						is[0] = true;
-					}
-				});
+		RiakFuture waiter = this.target.delete(key, new TestingHandler<_>() {
+			@Override
+			public void handle(RiakContentsResponse<_> response)
+					throws Exception {
+				is[0] = true;
+			}
+		});
 
 		wait(waiter, is);
 	}
@@ -508,20 +476,13 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 		map.put("Mmm", "XXXXX");
 		ro.setUserMetadata(map);
 
-		RiakFuture waiter = this.target.putStream(ro,
-				new RiakResponseHandler<_>() {
-
-					@Override
-					public void onError(RiakResponse response) throws Exception {
-						fail(response.getMessage());
-					}
-
-					@Override
-					public void handle(RiakContentsResponse<_> response)
-							throws Exception {
-						is[0] = true;
-					}
-				});
+		RiakFuture waiter = this.target.putStream(ro, new TestingHandler<_>() {
+			@Override
+			public void handle(RiakContentsResponse<_> response)
+					throws Exception {
+				is[0] = true;
+			}
+		});
 
 		wait(waiter, is);
 	}

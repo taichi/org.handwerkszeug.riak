@@ -100,12 +100,7 @@ public abstract class RiakOperationsTest {
 	@Test
 	public void testPing() throws Exception {
 		final boolean[] is = { false };
-		RiakFuture waiter = this.target.ping(new RiakResponseHandler<String>() {
-			@Override
-			public void onError(RiakResponse response) throws RiakException {
-				fail(response.getMessage());
-			}
-
+		RiakFuture waiter = this.target.ping(new TestingHandler<String>() {
 			@Override
 			public void handle(RiakContentsResponse<String> response)
 					throws RiakException {
@@ -122,13 +117,7 @@ public abstract class RiakOperationsTest {
 		final boolean[] is = { false };
 
 		RiakFuture waiter = this.target
-				.listBuckets(new RiakResponseHandler<List<String>>() {
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						fail(response.getMessage());
-					}
-
+				.listBuckets(new TestingHandler<List<String>>() {
 					@Override
 					public void handle(
 							RiakContentsResponse<List<String>> response)
@@ -169,14 +158,7 @@ public abstract class RiakOperationsTest {
 
 		final int[] counter = { 0 };
 		RiakFuture waiter = this.target.listKeys(bucket,
-				new RiakResponseHandler<KeyResponse>() {
-
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<KeyResponse>() {
 					@Override
 					public void handle(
 							RiakContentsResponse<KeyResponse> response)
@@ -188,7 +170,6 @@ public abstract class RiakOperationsTest {
 						if (kr.getDone()) {
 							is[0] = true;
 						}
-
 					}
 				});
 
@@ -220,13 +201,7 @@ public abstract class RiakOperationsTest {
 		bucket.setNumberOfReplicas(1);
 
 		RiakFuture waiter = this.target.setBucket(bucket,
-				new RiakResponseHandler<_>() {
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<_>() {
 					@Override
 					public void handle(RiakContentsResponse<_> response)
 							throws RiakException {
@@ -242,13 +217,7 @@ public abstract class RiakOperationsTest {
 		final Bucket[] bu = new Bucket[1];
 
 		RiakFuture waiter = this.target.getBucket(bucket,
-				new RiakResponseHandler<Bucket>() {
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<Bucket>() {
 					@Override
 					public void handle(RiakContentsResponse<Bucket> response)
 							throws RiakException {
@@ -276,13 +245,7 @@ public abstract class RiakOperationsTest {
 		final boolean[] is = { false };
 
 		RiakFuture waiter = this.target.get(location,
-				new RiakResponseHandler<RiakObject<byte[]>>() {
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<RiakObject<byte[]>>() {
 					@Override
 					public void handle(
 							RiakContentsResponse<RiakObject<byte[]>> response)
@@ -301,12 +264,8 @@ public abstract class RiakOperationsTest {
 	public void testPut(Location location, final String testdata)
 			throws Exception {
 
-		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
-			@Override
-			public byte[] getContent() {
-				return testdata.getBytes();
-			}
-		};
+		DefaultRiakObject ro = new DefaultRiakObject(location);
+		ro.setContent(testdata.getBytes());
 		ro.setCharset("UTF-8");
 		List<Link> links = new ArrayList<Link>();
 		links.add(new Link(new Location(location.getBucket(), "tag"), "foo"));
@@ -320,12 +279,7 @@ public abstract class RiakOperationsTest {
 		ro.setUserMetadata(map);
 
 		final boolean[] is = { false };
-		RiakFuture waiter = this.target.put(ro, new RiakResponseHandler<_>() {
-			@Override
-			public void onError(RiakResponse response) throws RiakException {
-				fail(response.getMessage());
-			}
-
+		RiakFuture waiter = this.target.put(ro, new TestingHandler<_>() {
 			@Override
 			public void handle(RiakContentsResponse<_> response)
 					throws RiakException {
@@ -340,13 +294,7 @@ public abstract class RiakOperationsTest {
 		final boolean[] is = { false };
 
 		RiakFuture waiter = this.target.delete(location,
-				new RiakResponseHandler<_>() {
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<_>() {
 					@Override
 					public void handle(RiakContentsResponse<_> response)
 							throws RiakException {
@@ -383,12 +331,7 @@ public abstract class RiakOperationsTest {
 			public Quorum getReadQuorum() {
 				return Quorum.of(2);
 			}
-		}, new RiakResponseHandler<RiakObject<byte[]>>() {
-			@Override
-			public void onError(RiakResponse response) throws Exception {
-				fail(response.getMessage());
-			}
-
+		}, new TestingHandler<RiakObject<byte[]>>() {
 			@Override
 			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
 					throws Exception {
@@ -529,12 +472,8 @@ public abstract class RiakOperationsTest {
 		final boolean[] is = { false };
 		final boolean[] beginEnd = new boolean[2];
 
-		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
-			@Override
-			public byte[] getContent() {
-				return testdata.getBytes();
-			}
-		};
+		DefaultRiakObject ro = new DefaultRiakObject(location);
+		ro.setContent(testdata.getBytes());
 
 		final List<String> actuals = new ArrayList<String>();
 		RiakFuture waiter = this.target.put(ro, new DefaultPutOptions() {
@@ -596,12 +535,8 @@ public abstract class RiakOperationsTest {
 		final boolean[] is = { false };
 		final boolean[] beginEnd = new boolean[2];
 
-		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
-			@Override
-			public byte[] getContent() {
-				return testdata.getBytes();
-			}
-		};
+		DefaultRiakObject ro = new DefaultRiakObject(location);
+		ro.setContent(testdata.getBytes());
 
 		RiakFuture waiter = this.target.put(ro, new DefaultPutOptions() {
 			@Override
@@ -650,13 +585,7 @@ public abstract class RiakOperationsTest {
 		final boolean[] is = { false };
 
 		RiakFuture waiter = this.target.delete(location, Quorum.of(2),
-				new RiakResponseHandler<_>() {
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<_>() {
 					@Override
 					public void handle(RiakContentsResponse<_> response)
 							throws RiakException {
@@ -680,13 +609,7 @@ public abstract class RiakOperationsTest {
 		}
 
 		RiakFuture waiter = this.target.listKeys(from,
-				new RiakResponseHandler<KeyResponse>() {
-					@Override
-					public void onError(RiakResponse response) throws Exception {
-						response.operationComplete();
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<KeyResponse>() {
 					@Override
 					public void handle(
 							RiakContentsResponse<KeyResponse> response)
@@ -797,13 +720,7 @@ public abstract class RiakOperationsTest {
 								NamedFunctionPhase.reduce(Erlang.reduce_sum,
 										true));
 					}
-				}, new RiakResponseHandler<MapReduceResponse>() {
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						fail(response.getMessage());
-					}
-
+				}, new TestingHandler<MapReduceResponse>() {
 					@Override
 					public void handle(
 							RiakContentsResponse<MapReduceResponse> response)
@@ -846,13 +763,7 @@ public abstract class RiakOperationsTest {
 
 		final int[] actual = new int[1];
 		RiakFuture waiter = this.target.mapReduce(loadJson(path),
-				new RiakResponseHandler<MapReduceResponse>() {
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<MapReduceResponse>() {
 					@Override
 					public void handle(
 							RiakContentsResponse<MapReduceResponse> response)
@@ -920,12 +831,7 @@ public abstract class RiakOperationsTest {
 						query.setQueries(JavaScriptPhase.BuiltIns.map(
 								JavaScript.mapValuesJson, true));
 					}
-				}, new RiakResponseHandler<MapReduceResponse>() {
-					@Override
-					public void onError(RiakResponse response) throws Exception {
-						fail(response.getMessage());
-					}
-
+				}, new TestingHandler<MapReduceResponse>() {
 					@Override
 					public void handle(
 							RiakContentsResponse<MapReduceResponse> response)
@@ -977,12 +883,7 @@ public abstract class RiakOperationsTest {
 
 		final ArrayNode[] actual = new ArrayNode[1];
 		RiakFuture waiter = this.target.mapReduce(query,
-				new RiakResponseHandler<MapReduceResponse>() {
-					@Override
-					public void onError(RiakResponse response) throws Exception {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<MapReduceResponse>() {
 					@Override
 					public void handle(
 							RiakContentsResponse<MapReduceResponse> response)
@@ -1030,20 +931,11 @@ public abstract class RiakOperationsTest {
 			throws Exception {
 		final boolean[] is = { false };
 
-		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
-			@Override
-			public byte[] getContent() {
-				return testdata.getBytes();
-			}
-		};
+		DefaultRiakObject ro = new DefaultRiakObject(location);
+		ro.setContent(testdata.getBytes());
 		final Location[] loc = new Location[1];
 		RiakFuture waiter = this.target.post(ro,
-				new RiakResponseHandler<RiakObject<byte[]>>() {
-					@Override
-					public void onError(RiakResponse response) throws Exception {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<RiakObject<byte[]>>() {
 					@Override
 					public void handle(
 							RiakContentsResponse<RiakObject<byte[]>> response)
@@ -1067,12 +959,8 @@ public abstract class RiakOperationsTest {
 			final String testdata) throws Exception {
 		final boolean[] is = { false };
 
-		RiakObject<byte[]> ro = new DefaultRiakObject(location) {
-			@Override
-			public byte[] getContent() {
-				return testdata.getBytes();
-			}
-		};
+		DefaultRiakObject ro = new DefaultRiakObject(location);
+		ro.setContent(testdata.getBytes());
 
 		PutOptions options = new DefaultPutOptions() {
 			@Override
@@ -1083,12 +971,7 @@ public abstract class RiakOperationsTest {
 
 		final Location[] loc = new Location[1];
 		RiakFuture waiter = this.target.post(ro, options,
-				new RiakResponseHandler<RiakObject<byte[]>>() {
-					@Override
-					public void onError(RiakResponse response) throws Exception {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<RiakObject<byte[]>>() {
 					@Override
 					public void handle(
 							RiakContentsResponse<RiakObject<byte[]>> response)
