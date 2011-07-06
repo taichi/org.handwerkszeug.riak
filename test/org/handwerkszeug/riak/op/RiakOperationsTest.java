@@ -601,7 +601,8 @@ public abstract class RiakOperationsTest {
 		final String from = "testMoveFrom";
 		final String to = "testMoveTo";
 
-		for (int i = 0; i < 10; i++) {
+		final int recordCount = 100;
+		for (int i = 0; i < recordCount; i++) {
 			testPut(new Location(from, String.valueOf(i)), "data" + i);
 		}
 
@@ -650,7 +651,7 @@ public abstract class RiakOperationsTest {
 		try {
 			assertTrue("test is timeout.", latch.await(20, TimeUnit.SECONDS));
 		} finally {
-			for (int i = 0; i < 10; i++) {
+			for (int i = 0; i < recordCount; i++) {
 				testDelete(new Location(to, String.valueOf(i)));
 			}
 		}
