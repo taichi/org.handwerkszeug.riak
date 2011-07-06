@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutorService;
 /**
  * @author taichi
  */
-public interface Config {
+public interface RiakConfig {
 
 	Integer getTimeout();
 

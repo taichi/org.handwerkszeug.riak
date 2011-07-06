@@ -2,12 +2,12 @@ package org.handwerkszeug.riak.transport.protobuf;
 
 import java.net.InetSocketAddress;
 
-import org.handwerkszeug.riak.config.AbstractConfig;
+import org.handwerkszeug.riak.config.DefaultRiakConfig;
 
 /**
  * @author taichi
  */
-public class ProtoBufRiakConfig extends AbstractConfig {
+public class ProtoBufRiakConfig extends DefaultRiakConfig {
 
 	public ProtoBufRiakConfig(InetSocketAddress address) {
 		super(address);

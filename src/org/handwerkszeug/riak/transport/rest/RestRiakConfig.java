@@ -2,12 +2,12 @@ package org.handwerkszeug.riak.transport.rest;
 
 import java.net.InetSocketAddress;
 
-import org.handwerkszeug.riak.config.AbstractConfig;
+import org.handwerkszeug.riak.config.DefaultRiakConfig;
 
 /**
  * @author taichi
  */
-public class RestRiakConfig extends AbstractConfig {
+public class RestRiakConfig extends DefaultRiakConfig {
 
 	public RestRiakConfig(InetSocketAddress address) {
 		super(address);

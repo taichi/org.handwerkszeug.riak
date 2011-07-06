@@ -4,15 +4,14 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-
 /**
  * @author taichi
  */
-public abstract class AbstractConfig implements Config {
+public class DefaultRiakConfig implements RiakConfig {
 
 	final InetSocketAddress address;
 
-	protected AbstractConfig(InetSocketAddress address) {
+	protected DefaultRiakConfig(InetSocketAddress address) {
 		this.address = address;
 	}
 
