@@ -31,6 +31,7 @@ import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
 import org.handwerkszeug.riak.transport.internal.AbstractCompletionChannelHandler;
 import org.handwerkszeug.riak.transport.internal.ChunkedMessageAggregator;
+import org.handwerkszeug.riak.transport.internal.Completion;
 import org.handwerkszeug.riak.transport.internal.CompletionSupport;
 import org.handwerkszeug.riak.transport.internal.CountDownRiakFuture;
 import org.handwerkszeug.riak.transport.internal.MessageHandler;
@@ -68,7 +69,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author taichi
  */
-public class RestRiakOperations implements HttpRiakOperations {
+public class RestRiakOperations implements HttpRiakOperations, Completion {
 
 	static final Logger LOG = LoggerFactory.getLogger(RestRiakOperations.class);
 
@@ -914,4 +915,8 @@ public class RestRiakOperations implements HttpRiakOperations {
 		return handle("delete/luwak", request, handler);
 	}
 
+	@Override
+	public void complete() {
+		this.support.operationComplete();
+	}
 }

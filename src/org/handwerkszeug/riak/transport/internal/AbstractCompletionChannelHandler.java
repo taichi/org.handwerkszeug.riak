@@ -43,11 +43,6 @@ public abstract class AbstractCompletionChannelHandler<T> extends
 			public String getMessage() {
 				return e.getCause().getMessage();
 			}
-
-			@Override
-			public void operationComplete() {
-				AbstractCompletionChannelHandler.this.support.complete();
-			}
 		});
 		this.future.setFailure(e.getCause());
 		this.support.invokeNext();

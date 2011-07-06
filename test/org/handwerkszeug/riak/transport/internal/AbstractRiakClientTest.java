@@ -4,15 +4,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.handwerkszeug.riak.RiakAction;
 import org.handwerkszeug.riak.RiakClient;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
-import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.op.RiakOperations;
-import org.handwerkszeug.riak.op.RiakResponseHandler;
+import org.handwerkszeug.riak.op.TestingHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,19 +43,12 @@ public abstract class AbstractRiakClientTest<OP extends RiakOperations> {
 			public void execute(OP operations) {
 				final String[] actual = new String[1];
 				RiakFuture waiter = operations
-						.ping(new RiakResponseHandler<String>() {
-							@Override
-							public void onError(RiakResponse response)
-									throws Exception {
-								fail(response.getMessage());
-							}
-
+						.ping(new TestingHandler<String>() {
 							@Override
 							public void handle(
 									RiakContentsResponse<String> response)
 									throws Exception {
 								actual[0] = response.getContents();
-								response.operationComplete();
 							}
 						});
 				try {
@@ -69,4 +62,53 @@ public abstract class AbstractRiakClientTest<OP extends RiakOperations> {
 		});
 	}
 
+	@Test
+	public void testExecute2() throws Exception {
+		final String[] actual = new String[1];
+		final CountDownLatch latch = new CountDownLatch(1);
+		this.target.execute(new RiakAction<OP>() {
+			@Override
+			public void execute(OP operations) {
+				operations.ping(new TestingHandler<String>() {
+					@Override
+					public void handle(RiakContentsResponse<String> response)
+							throws Exception {
+						actual[0] = response.getContents();
+						latch.countDown();
+					}
+				});
+			}
+		});
+		assertTrue("test is timeout.", latch.await(3, TimeUnit.SECONDS));
+		assertEquals("pong", actual[0]);
+	}
+
+	@Test
+	public void testExecute3() throws Exception {
+		final String[] actual = new String[1];
+		final CountDownLatch latch = new CountDownLatch(1);
+		this.target.execute(new RiakAction<OP>() {
+			@Override
+			public void execute(OP operations) {
+				RiakFuture waiter = operations
+						.ping(new TestingHandler<String>() {
+							@Override
+							public void handle(
+									RiakContentsResponse<String> response)
+									throws Exception {
+								actual[0] = response.getContents();
+							}
+						});
+				latch.countDown();
+				try {
+					assertTrue("test is timeout.",
+							waiter.await(3, TimeUnit.SECONDS));
+				} catch (InterruptedException e) {
+					fail(e.getMessage());
+				}
+			}
+		});
+		assertTrue("test is timeout.", latch.await(3, TimeUnit.SECONDS));
+		assertEquals("pong", actual[0]);
+	}
 }

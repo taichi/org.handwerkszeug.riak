@@ -8,6 +8,4 @@ public interface RiakResponse {
 	String getMessage();
 
 	int getResponseCode();
-
-	void operationComplete();
 }

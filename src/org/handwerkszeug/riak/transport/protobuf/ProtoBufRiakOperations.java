@@ -37,6 +37,7 @@ import org.handwerkszeug.riak.op.Querying;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.handwerkszeug.riak.op.SiblingHandler;
+import org.handwerkszeug.riak.transport.internal.Completion;
 import org.handwerkszeug.riak.transport.internal.CompletionSupport;
 import org.handwerkszeug.riak.transport.internal.CountDownRiakFuture;
 import org.handwerkszeug.riak.transport.internal.MessageHandler;
@@ -80,7 +81,7 @@ import com.google.protobuf.ByteString.Output;
  *      href="https://github.com/basho/riak_kv/blob/master/src/riak_kv_pb_socket.erl">Riak
  *      Protocol Buffers Server</a>
  */
-public class ProtoBufRiakOperations implements RiakOperations {
+public class ProtoBufRiakOperations implements RiakOperations, Completion {
 
 	static final Logger LOG = LoggerFactory
 			.getLogger(ProtoBufRiakOperations.class);
@@ -918,6 +919,11 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		});
 	}
 
+	@Override
+	public void complete() {
+		this.support.operationComplete();
+	}
+
 	class PbcErrorResponse implements RiakResponse {
 
 		final RawProtoBufRiakclient.RpbErrorResp error;
@@ -934,11 +940,6 @@ public class ProtoBufRiakOperations implements RiakOperations {
 		@Override
 		public String getMessage() {
 			return this.error.getErrmsg().toStringUtf8();
-		}
-
-		@Override
-		public void operationComplete() {
-			ProtoBufRiakOperations.this.support.complete();
 		}
 	}
 

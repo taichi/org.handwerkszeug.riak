@@ -16,7 +16,7 @@ public class RestErrorResponse implements RiakResponse {
 
 	public RestErrorResponse(HttpResponse master, CompletionSupport support) {
 		this.master = master;
-		this.support = support;
+		this.support = support; // XXX
 	}
 
 	@Override
@@ -33,8 +33,4 @@ public class RestErrorResponse implements RiakResponse {
 		return "";
 	}
 
-	@Override
-	public void operationComplete() {
-		this.support.complete();
-	}
 }

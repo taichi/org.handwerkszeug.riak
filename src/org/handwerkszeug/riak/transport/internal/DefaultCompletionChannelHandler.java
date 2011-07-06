@@ -38,12 +38,13 @@ public class DefaultCompletionChannelHandler<T> extends
 				this.support.decrementProgress(this.name);
 				this.support.invokeNext();
 			}
-			e.getFuture().addListener(this.support);
 		} catch (Exception ex) {
 			throw ex;
 		} catch (Error ex) {
 			setFailure(ex);
 			throw ex;
+		} finally {
+			this.support.responseComplete();
 		}
 	}
 }

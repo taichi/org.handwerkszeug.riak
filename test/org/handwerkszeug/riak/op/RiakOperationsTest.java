@@ -683,7 +683,6 @@ public abstract class RiakOperationsTest {
 				new RiakResponseHandler<KeyResponse>() {
 					@Override
 					public void onError(RiakResponse response) throws Exception {
-						response.operationComplete();
 						fail(response.getMessage());
 					}
 

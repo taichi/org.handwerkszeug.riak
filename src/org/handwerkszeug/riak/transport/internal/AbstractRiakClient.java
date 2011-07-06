@@ -18,7 +18,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 /**
  * @author taichi
  */
-public abstract class AbstractRiakClient<CONF extends RiakConfig, OP extends BucketOperations & ObjectKeyOperations & Querying>
+public abstract class AbstractRiakClient<CONF extends RiakConfig, OP extends BucketOperations & ObjectKeyOperations & Querying & Completion>
 		implements RiakClient<OP> {
 
 	protected final CONF config;
@@ -48,7 +48,11 @@ public abstract class AbstractRiakClient<CONF extends RiakConfig, OP extends Buc
 		future = future.awaitUninterruptibly();
 		Channel channel = future.getChannel();
 		OP op = newOperations(channel);
-		action.execute(op);
+		try {
+			action.execute(op);
+		} finally {
+			op.complete();
+		}
 	}
 
 	protected abstract OP newOperations(Channel channel);
