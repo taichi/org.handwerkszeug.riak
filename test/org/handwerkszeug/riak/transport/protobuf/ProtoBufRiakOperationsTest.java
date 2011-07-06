@@ -3,7 +3,6 @@ package org.handwerkszeug.riak.transport.protobuf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.net.SocketAddress;
 
@@ -14,11 +13,10 @@ import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
-import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.model.ServerInfo;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakOperationsTest;
-import org.handwerkszeug.riak.op.RiakResponseHandler;
+import org.handwerkszeug.riak.op.TestingHandler;
 import org.handwerkszeug.riak.transport.protobuf.internal.ProtoBufPipelineFactory;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -58,11 +56,7 @@ public class ProtoBufRiakOperationsTest extends RiakOperationsTest {
 		testGetClientId(id);
 
 		try {
-			this.target.setClientId("12345", new RiakResponseHandler<_>() {
-				@Override
-				public void onError(RiakResponse response) throws RiakException {
-				}
-
+			this.target.setClientId("12345", new TestingHandler<_>() {
 				@Override
 				public void handle(RiakContentsResponse<_> response)
 						throws RiakException {
@@ -79,13 +73,7 @@ public class ProtoBufRiakOperationsTest extends RiakOperationsTest {
 		final boolean[] is = { false };
 
 		RiakFuture waiter = this.target.setClientId(id,
-				new RiakResponseHandler<_>() {
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						fail(response.getMessage());
-					}
-
+				new TestingHandler<_>() {
 					@Override
 					public void handle(RiakContentsResponse<_> response)
 							throws RiakException {
@@ -101,13 +89,7 @@ public class ProtoBufRiakOperationsTest extends RiakOperationsTest {
 		final String[] act = new String[1];
 
 		RiakFuture waiter = this.target
-				.getClientId(new RiakResponseHandler<String>() {
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						fail(response.getMessage());
-					}
-
+				.getClientId(new TestingHandler<String>() {
 					@Override
 					public void handle(RiakContentsResponse<String> response)
 							throws RiakException {
@@ -126,12 +108,7 @@ public class ProtoBufRiakOperationsTest extends RiakOperationsTest {
 		final boolean[] is = { false };
 
 		RiakFuture waiter = this.target
-				.getServerInfo(new RiakResponseHandler<ServerInfo>() {
-					@Override
-					public void onError(RiakResponse response)
-							throws RiakException {
-						fail(response.getMessage());
-					}
+				.getServerInfo(new TestingHandler<ServerInfo>() {
 
 					@Override
 					public void handle(RiakContentsResponse<ServerInfo> response)

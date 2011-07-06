@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -60,7 +61,6 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -596,11 +596,8 @@ public abstract class RiakOperationsTest {
 		wait(waiter, is);
 	}
 
-	@Ignore
 	@Test
 	public void testMove() throws Exception {
-		final boolean[] is = { false };
-
 		final String from = "testMoveFrom";
 		final String to = "testMoveTo";
 
@@ -608,74 +605,52 @@ public abstract class RiakOperationsTest {
 			testPut(new Location(from, String.valueOf(i)), "data" + i);
 		}
 
-		RiakFuture waiter = this.target.listKeys(from,
-				new TestingHandler<KeyResponse>() {
-					@Override
-					public void handle(
-							RiakContentsResponse<KeyResponse> response)
-							throws Exception {
-						KeyResponse kr = response.getContents();
-						if (kr.getDone()) {
-							return;
-						}
-						final AtomicInteger counter = new AtomicInteger(kr
-								.getKeys().size());
-						for (final String k : kr.getKeys()) {
-							RiakFuture deleteRF = RiakOperationsTest.this.target
-									.delete(new Location(from, k),
-											new RiakResponseHandler<_>() {
-												@Override
-												public void onError(
-														RiakResponse response)
-														throws Exception {
-													fail(response.getMessage());
-												}
-
+		final CountDownLatch latch = new CountDownLatch(1);
+		final AtomicInteger counter = new AtomicInteger(0);
+		this.target.listKeys(from, new TestingHandler<KeyResponse>() {
+			@Override
+			public void handle(RiakContentsResponse<KeyResponse> response)
+					throws Exception {
+				KeyResponse kr = response.getContents();
+				if (kr.getDone()) {
+					return;
+				}
+				counter.addAndGet(kr.getKeys().size());
+				for (final String k : kr.getKeys()) {
+					RiakOperationsTest.this.target.delete(
+							new Location(from, k), new TestingHandler<_>() {
+								@Override
+								public void handle(
+										RiakContentsResponse<_> response)
+										throws Exception {
+									DefaultRiakObject ro = new DefaultRiakObject(
+											new Location(to, k));
+									ro.setContent("data".getBytes());
+									RiakOperationsTest.this.target.put(ro,
+											new TestingHandler<_>() {
 												@Override
 												public void handle(
 														RiakContentsResponse<_> response)
 														throws Exception {
-													DefaultRiakObject ro = new DefaultRiakObject(
-															new Location(to, k));
-													ro.setContent("data"
-															.getBytes());
-													RiakFuture putRF = RiakOperationsTest.this.target
-															.put(ro,
-																	new RiakResponseHandler<_>() {
-																		@Override
-																		public void onError(
-																				RiakResponse response)
-																				throws Exception {
-																			fail(response
-																					.getMessage());
-																		}
-
-																		@Override
-																		public void handle(
-																				RiakContentsResponse<_> response)
-																				throws Exception {
-																			int i = counter
-																					.decrementAndGet();
-																			if (i < 1) {
-																				is[0] = true;
-																			}
-																		}
-																	});
-													putRF.await(3,
-															TimeUnit.SECONDS);
+													int i = counter
+															.decrementAndGet();
+													System.out.println("less "
+															+ i);
+													if (i < 1) {
+														latch.countDown();
+													}
 												}
 											});
-							deleteRF.await(3, TimeUnit.SECONDS);
+								}
+							});
 
-						}
-					}
-				});
+				}
+			}
+		});
 		try {
-			assertTrue("test is timeout.", waiter.await(20, TimeUnit.SECONDS));
-			assertTrue(is[0]);
+			assertTrue("test is timeout.", latch.await(20, TimeUnit.SECONDS));
 		} finally {
 			for (int i = 0; i < 10; i++) {
-				testDelete(new Location(from, String.valueOf(i)));
 				testDelete(new Location(to, String.valueOf(i)));
 			}
 		}
