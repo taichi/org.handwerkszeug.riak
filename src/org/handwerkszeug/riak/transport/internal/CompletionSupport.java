@@ -45,10 +45,22 @@ public class CompletionSupport implements ChannelFutureListener {
 
 	@Override
 	public void operationComplete(ChannelFuture future) throws Exception {
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(Markers.DETAIL,
+					"done:{} queue:{} inprocess:{} complete:{}", new Object[] {
+							future.isDone(), this.waitQueue.size(),
+							this.inProgress.size(), this.complete.get() });
+		}
 		if (future.isDone() && this.waitQueue.size() < 1
 				&& this.inProgress.size() < 1 && this.complete.get()) {
+			close(future.getChannel());
+		}
+	}
+
+	protected void close(Channel channel) {
+		if (channel.isOpen()) {
 			LOG.debug(Markers.BOUNDARY, Messages.CloseChannel);
-			future.getChannel().close();
+			channel.close();
 		}
 	}
 
@@ -84,7 +96,7 @@ public class CompletionSupport implements ChannelFutureListener {
 				cmd.execute();
 			} else {
 				if (LOG.isDebugEnabled()) {
-					LOG.debug(Markers.LIFECYCLE, Messages.Queue, name);
+					LOG.debug(Markers.DETAIL, Messages.Queue, name);
 				}
 				this.waitQueue.add(cmd);
 			}
@@ -101,7 +113,7 @@ public class CompletionSupport implements ChannelFutureListener {
 	protected void complete(String name, ChannelPipeline pipeline) {
 		pipeline.remove(name);
 		complete();
-		this.channel.close();
+		close(this.channel);
 	}
 
 	protected void invokeNext() {
@@ -110,6 +122,7 @@ public class CompletionSupport implements ChannelFutureListener {
 			if (this.inProgress.add(cmd.name)) {
 				i.remove();
 				cmd.execute();
+				break;
 			}
 		}
 	}
