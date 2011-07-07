@@ -306,6 +306,35 @@ public abstract class RiakOperationsTest {
 	}
 
 	@Test
+	public void testBatchDelete() throws Exception {
+		final String bucket = "testBatchDelete";
+		for (int i = 0; i < 10; i++) {
+			testPut(new Location(bucket, String.valueOf(i)), "a");
+		}
+
+		final CountDownLatch latch = new CountDownLatch(10);
+		this.target.listKeys(bucket, new TestingHandler<KeyResponse>() {
+			@Override
+			public void handle(RiakContentsResponse<KeyResponse> response)
+					throws Exception {
+				KeyResponse kr = response.getContents();
+				for (final String s : kr.getKeys()) {
+					RiakOperationsTest.this.target.delete(new Location(bucket,
+							s), new TestingHandler<_>() {
+						@Override
+						public void handle(RiakContentsResponse<_> response)
+								throws Exception {
+							latch.countDown();
+						}
+					});
+				}
+			}
+		});
+		assertTrue("timeout.", latch.await(5, TimeUnit.SECONDS));
+
+	}
+
+	@Test
 	public void testGetWithOpt() throws Exception {
 		final Location location = new Location("testGetWithOpt", "testKey");
 

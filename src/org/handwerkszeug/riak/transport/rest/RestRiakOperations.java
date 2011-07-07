@@ -51,7 +51,6 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -409,15 +408,11 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 						} finally {
 							handler.end(RestRiakOperations.this.support
 									.newResponse());
-							RestRiakOperations.this.support
-									.decrementProgress(procedure);
 						}
 						future.setSuccess();
 					} else if (response.getStatus().getCode() == 300) {
 						RestRiakOperations.this.support
 								.decrementProgress(procedure);
-						ChannelPipeline pipeline = ctx.getPipeline();
-						pipeline.remove(procedure);
 						dispatchToGetSibling(content.getLocation(), options,
 								handler, future);
 					}

@@ -18,6 +18,7 @@ import org.handwerkszeug.riak.mapreduce.MapReduceKeyFilters.Predicates;
 import org.handwerkszeug.riak.mapreduce.MapReduceKeyFilters.Transform;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.JavaScript;
+import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
@@ -56,6 +57,7 @@ public class MapReduceKeyFiltersTest {
 		ChannelFuture future = this.bootstrap.connect(config.getRiakAddress());
 		this.channel = future.awaitUninterruptibly().getChannel();
 		this.target = new ProtoBufRiakOperations(this.channel);
+		deleteFromBucket();
 	}
 
 	@After
@@ -66,6 +68,24 @@ public class MapReduceKeyFiltersTest {
 
 	void waitFor(RiakFuture rf) throws Exception {
 		assertTrue("timeout.", rf.await(5, TimeUnit.SECONDS));
+	}
+
+	public void deleteFromBucket() throws Exception {
+		final List<String> keys = new ArrayList<String>();
+		RiakFuture rf = this.target.listKeys(TEST_BUCKET,
+				new TestingHandler<KeyResponse>() {
+					@Override
+					public void handle(
+							RiakContentsResponse<KeyResponse> response)
+							throws Exception {
+						KeyResponse kr = response.getContents();
+						keys.addAll(kr.getKeys());
+					}
+				});
+		waitFor(rf);
+		for (String s : keys) {
+			delete(s);
+		}
 	}
 
 	void put(String key) throws Exception {

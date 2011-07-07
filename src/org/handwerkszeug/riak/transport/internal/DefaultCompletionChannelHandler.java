@@ -35,7 +35,6 @@ public class DefaultCompletionChannelHandler<T> extends
 				LOG.debug(Markers.DETAIL, Messages.Receive, this.name, receive);
 			}
 			if (this.handler.handle(receive, this.future)) {
-				this.support.decrementProgress(this.name);
 				this.support.invokeNext();
 			}
 		} catch (Exception ex) {

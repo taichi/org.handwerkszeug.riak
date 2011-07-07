@@ -83,12 +83,12 @@ public class CompletionSupport {
 	}
 
 	public void decrementProgress(String name) {
+		this.channel.getPipeline().remove(name);
 		this.inProgress.remove(name);
 	}
 
 	public CountDownRiakFuture newRiakFuture(String name) {
-		ChannelPipeline pipeline = this.channel.getPipeline();
-		return new CountDownRiakFuture(name, pipeline);
+		return new CountDownRiakFuture(name, this);
 	}
 
 	public <T> RiakFuture handle(String name, Object send,
@@ -125,7 +125,7 @@ public class CompletionSupport {
 	}
 
 	protected void completeOnError(String name, ChannelPipeline pipeline) {
-		pipeline.remove(name);
+		decrementProgress(name);
 		operationComplete();
 	}
 

@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.nls.Messages;
-import org.jboss.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,21 +19,21 @@ public class CountDownRiakFuture implements RiakFuture {
 
 	CountDownLatch latch;
 	String name;
-	ChannelPipeline pipeline;
+	CompletionSupport support;
 	boolean success;
 	boolean canceled;
 	boolean failure;
 	Throwable cause;
 
-	public CountDownRiakFuture(String name, ChannelPipeline pipeline) {
+	public CountDownRiakFuture(String name, CompletionSupport support) {
 		this.latch = new CountDownLatch(1);
 		this.name = name;
-		this.pipeline = pipeline;
+		this.support = support;
 	}
 
 	public void finished() {
 		LOG.debug(Markers.LIFECYCLE, Messages.Finished, this.name);
-		this.pipeline.remove(this.name);
+		this.support.decrementProgress(this.name);
 		this.latch.countDown();
 	}
 
@@ -62,7 +61,6 @@ public class CountDownRiakFuture implements RiakFuture {
 
 	@Override
 	public boolean isSuccess() {
-		this.latch.countDown();
 		return this.success;
 	}
 
