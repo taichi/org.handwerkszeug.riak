@@ -99,23 +99,22 @@ public abstract class RiakOperationsTest {
 
 	@Test
 	public void testPing() throws Exception {
-		final boolean[] is = { false };
+		final String[] actual = new String[1];
 		RiakFuture waiter = this.target.ping(new TestingHandler<String>() {
 			@Override
 			public void handle(RiakContentsResponse<String> response)
 					throws RiakException {
-				assertEquals("pong", response.getContents());
-				is[0] = true;
+				actual[0] = response.getContents();
 			}
 		});
 
-		wait(waiter, is);
+		waitFor(waiter);
+		assertEquals("pong", actual[0]);
 	}
 
 	@Test
 	public void testListBuckets() throws Exception {
-		final boolean[] is = { false };
-
+		final List<String> actual = new ArrayList<String>();
 		RiakFuture waiter = this.target
 				.listBuckets(new TestingHandler<List<String>>() {
 					@Override
@@ -123,14 +122,11 @@ public abstract class RiakOperationsTest {
 							RiakContentsResponse<List<String>> response)
 							throws RiakException {
 						List<String> keys = response.getContents();
-						assertNotNull(keys);
-						assertTrue(0 < keys.size());
-
-						is[0] = true;
+						actual.addAll(keys);
 					}
 				});
-
-		wait(waiter, is);
+		waitFor(waiter);
+		assertTrue(0 < actual.size());
 	}
 
 	@Test
@@ -153,10 +149,10 @@ public abstract class RiakOperationsTest {
 		}
 	}
 
-	public void testListKeys(String bucket, int allsize) throws Exception {
+	public void testListKeys(String bucket, int expected) throws Exception {
 		final boolean[] is = { false };
 
-		final int[] counter = { 0 };
+		final int[] actual = { 0 };
 		RiakFuture waiter = this.target.listKeys(bucket,
 				new TestingHandler<KeyResponse>() {
 					@Override
@@ -165,7 +161,7 @@ public abstract class RiakOperationsTest {
 							throws RiakException {
 						KeyResponse kr = response.getContents();
 						List<String> list = kr.getKeys();
-						counter[0] += list.size();
+						actual[0] += list.size();
 
 						if (kr.getDone()) {
 							is[0] = true;
@@ -173,8 +169,10 @@ public abstract class RiakOperationsTest {
 					}
 				});
 
-		wait(waiter, is);
-		assertEquals(allsize, counter[0]);
+		waitFor(waiter);
+		assertEquals(expected, actual[0]);
+		assertTrue(is[0]);
+
 	}
 
 	@Test
@@ -208,12 +206,12 @@ public abstract class RiakOperationsTest {
 						is[0] = true;
 					}
 				});
+		waitFor(waiter);
+		assertTrue(is[0]);
 
-		wait(waiter, is);
 	}
 
 	public Bucket testBucketGet(String bucket) throws Exception {
-		final boolean[] is = { false };
 		final Bucket[] bu = new Bucket[1];
 
 		RiakFuture waiter = this.target.getBucket(bucket,
@@ -223,11 +221,10 @@ public abstract class RiakOperationsTest {
 							throws RiakException {
 						assertNotNull(response.getContents());
 						bu[0] = response.getContents();
-						is[0] = true;
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
 		return bu[0];
 	}
 
@@ -242,8 +239,8 @@ public abstract class RiakOperationsTest {
 
 	public void testGet(Location location, final String testdata)
 			throws Exception {
-		final boolean[] is = { false };
 
+		final String[] actual = new String[1];
 		RiakFuture waiter = this.target.get(location,
 				new TestingHandler<RiakObject<byte[]>>() {
 					@Override
@@ -251,14 +248,12 @@ public abstract class RiakOperationsTest {
 							RiakContentsResponse<RiakObject<byte[]>> response)
 							throws RiakException {
 						RiakObject<byte[]> content = response.getContents();
-						String actual = new String(content.getContent());
-						assertEquals(testdata, actual);
-						is[0] = true;
+						actual[0] = new String(content.getContent());
 					}
-
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
+		assertEquals(testdata, actual[0]);
 	}
 
 	public void testPut(Location location, final String testdata)
@@ -287,7 +282,9 @@ public abstract class RiakOperationsTest {
 			}
 		});
 
-		wait(waiter, is);
+		waitFor(waiter);
+		assertTrue(is[0]);
+
 	}
 
 	public void testDelete(Location location) throws Exception {
@@ -302,7 +299,8 @@ public abstract class RiakOperationsTest {
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
+		assertTrue(is[0]);
 	}
 
 	@Test
@@ -352,9 +350,8 @@ public abstract class RiakOperationsTest {
 
 	protected void testGetWithOpt(final Location location, final String testdata)
 			throws InterruptedException {
-		final boolean[] is = { false };
-
 		final String[] result = new String[1];
+		final Location[] actual = new Location[1];
 		RiakFuture waiter = this.target.get(location, new DefaultGetOptions() {
 			@Override
 			public Quorum getReadQuorum() {
@@ -365,14 +362,14 @@ public abstract class RiakOperationsTest {
 			public void handle(RiakContentsResponse<RiakObject<byte[]>> response)
 					throws Exception {
 				RiakObject<byte[]> ro = response.getContents();
-				assertEquals(location, ro.getLocation());
 				result[0] = new String(ro.getContent());
-				is[0] = true;
+				actual[0] = ro.getLocation();
 			}
 		});
 
-		wait(waiter, is);
+		waitFor(waiter);
 		assertEquals(testdata, result[0]);
+		assertEquals(location, actual[0]);
 	}
 
 	@Test
@@ -398,7 +395,9 @@ public abstract class RiakOperationsTest {
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
+		assertTrue(is[0]);
+
 	}
 
 	protected abstract void testSetClientId(String id) throws Exception;
@@ -451,7 +450,6 @@ public abstract class RiakOperationsTest {
 
 	protected void testGetWithSibling(final Location location,
 			final List<String> testdatas) throws InterruptedException {
-		final boolean[] is = { false };
 		final boolean[] beginEnd = new boolean[2];
 
 		final List<String> actuals = new ArrayList<String>();
@@ -475,7 +473,6 @@ public abstract class RiakOperationsTest {
 						RiakObject<byte[]> ro = response.getContents();
 						assertEquals(location, ro.getLocation());
 						actuals.add(new String(ro.getContent()));
-						is[0] = true;
 					}
 
 					@Override
@@ -485,7 +482,6 @@ public abstract class RiakOperationsTest {
 				});
 
 		assertTrue("test is timeout.", waiter.await(20, TimeUnit.SECONDS));
-		assertTrue(is[0]);
 		assertEquals(3, actuals.size());
 		for (String s : testdatas) {
 			assertTrue(s, actuals.contains(s));
@@ -498,7 +494,6 @@ public abstract class RiakOperationsTest {
 	protected void testPutWithSibling(final Location location,
 			final String testdata, final List<String> testdatas)
 			throws Exception {
-		final boolean[] is = { false };
 		final boolean[] beginEnd = new boolean[2];
 
 		DefaultRiakObject ro = new DefaultRiakObject(location);
@@ -528,7 +523,6 @@ public abstract class RiakOperationsTest {
 				RiakObject<byte[]> ro = response.getContents();
 				assertEquals(location, ro.getLocation());
 				actuals.add(new String(ro.getContent()));
-				is[0] = true;
 			}
 
 			@Override
@@ -538,7 +532,6 @@ public abstract class RiakOperationsTest {
 
 		});
 		assertTrue("test is timeout.", waiter.await(20, TimeUnit.SECONDS));
-		assertTrue(is[0]);
 		assertEquals(3, actuals.size());
 		for (String s : testdatas) {
 			assertTrue(s, actuals.contains(s));
@@ -561,7 +554,6 @@ public abstract class RiakOperationsTest {
 
 	public void testPutWithOpt(Location location, final String testdata)
 			throws Exception {
-		final boolean[] is = { false };
 		final boolean[] beginEnd = new boolean[2];
 
 		DefaultRiakObject ro = new DefaultRiakObject(location);
@@ -589,7 +581,6 @@ public abstract class RiakOperationsTest {
 					throws Exception {
 				RiakObject<byte[]> ro = response.getContents();
 				assertEquals(testdata, new String(ro.getContent()));
-				is[0] = true;
 			}
 
 			@Override
@@ -598,7 +589,7 @@ public abstract class RiakOperationsTest {
 			}
 		});
 
-		wait(waiter, is);
+		waitFor(waiter);
 		assertTrue("begin", beginEnd[0]);
 		assertTrue("end", beginEnd[1]);
 	}
@@ -622,7 +613,8 @@ public abstract class RiakOperationsTest {
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
+		assertTrue(is[0]);
 	}
 
 	@Test
@@ -740,8 +732,10 @@ public abstract class RiakOperationsTest {
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
 		assertEquals(165, actual[0]);
+		assertTrue(is[0]);
+
 	}
 
 	@Test
@@ -783,8 +777,10 @@ public abstract class RiakOperationsTest {
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
 		assertEquals(165, actual[0]);
+		assertTrue(is[0]);
+
 	}
 
 	String loadJson(final String path) {
@@ -820,8 +816,7 @@ public abstract class RiakOperationsTest {
 		String data = "{\"a\":\"xxxx\",\"b\":\"c\"}";
 		testPut(location, data);
 
-		final boolean[] is = { false };
-
+		final JsonNode[] actual = new JsonNode[1];
 		RiakFuture waiter = this.target.mapReduce(
 				new MapReduceQueryConstructor() {
 
@@ -845,15 +840,14 @@ public abstract class RiakOperationsTest {
 						if (mrr.getDone()) {
 						} else {
 							ArrayNode an = mrr.getResponse();
-							JsonNode jn = an.get(0);
-							assertNotNull(jn);
-							assertEquals(jn.getClass(), ObjectNode.class);
-							is[0] = true;
+							actual[0] = an.get(0);
 						}
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
+		assertNotNull(actual[0]);
+		assertEquals(actual[0].getClass(), ObjectNode.class);
 
 		testDelete(location);
 	}
@@ -902,7 +896,7 @@ public abstract class RiakOperationsTest {
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
 
 		testDelete(new Location(bucket, "p1"));
 		testDelete(new Location(bucket, "p2"));
@@ -913,10 +907,8 @@ public abstract class RiakOperationsTest {
 		assertEquals(expected, actual[0]);
 	}
 
-	protected void wait(final RiakFuture waiter, final boolean[] is)
-			throws InterruptedException {
+	protected void waitFor(final RiakFuture waiter) throws InterruptedException {
 		assertTrue("test is timeout.", waiter.await(3, TimeUnit.SECONDS));
-		assertTrue(is[0]);
 		assertTrue(waiter.isDone());
 	}
 
@@ -934,7 +926,6 @@ public abstract class RiakOperationsTest {
 
 	public Location testPost(final Location location, final String testdata)
 			throws Exception {
-		final boolean[] is = { false };
 
 		DefaultRiakObject ro = new DefaultRiakObject(location);
 		ro.setContent(testdata.getBytes());
@@ -951,7 +942,6 @@ public abstract class RiakOperationsTest {
 						assertEquals(location.getBucket(), l.getBucket());
 						assertFalse(l.getKey().isEmpty());
 						loc[0] = l;
-						is[0] = true;
 					}
 				});
 		assertTrue("time is over.", waiter.await(5, TimeUnit.SECONDS));
@@ -962,8 +952,6 @@ public abstract class RiakOperationsTest {
 
 	public Location testPostWithReturn(final Location location,
 			final String testdata) throws Exception {
-		final boolean[] is = { false };
-
 		DefaultRiakObject ro = new DefaultRiakObject(location);
 		ro.setContent(testdata.getBytes());
 
@@ -987,11 +975,10 @@ public abstract class RiakOperationsTest {
 						assertEquals(location.getBucket(), l.getBucket());
 						assertFalse(l.getKey().isEmpty());
 						loc[0] = l;
-						is[0] = true;
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
 		return loc[0];
 	}
 }

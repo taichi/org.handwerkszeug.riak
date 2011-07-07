@@ -13,7 +13,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
-import org.handwerkszeug.riak.model.AbstractRiakResponse;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.nls.Messages;
@@ -106,7 +105,7 @@ public class CompletionSupport {
 
 		Command cmd = new Command(this.channel, send, name, handler);
 		try {
-			if (this.inProgress.add(cmd.name)) {
+			if (this.inProgress.size() < 1 && this.inProgress.add(cmd.name)) {
 				cmd.execute();
 			} else {
 				if (LOG.isDebugEnabled()) {
@@ -145,15 +144,7 @@ public class CompletionSupport {
 	}
 
 	public <T> RiakContentsResponse<T> newResponse(final T contents) {
-		return new AbstractCompletionRiakResponse<T>() {
-			@Override
-			public T getContents() {
-				return contents;
-			}
-		};
+		return new RiakContentsResponse<T>(contents);
 	}
 
-	public abstract class AbstractCompletionRiakResponse<T> extends
-			AbstractRiakResponse implements RiakContentsResponse<T> {
-	}
 }

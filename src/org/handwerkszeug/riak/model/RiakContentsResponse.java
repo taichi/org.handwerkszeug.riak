@@ -3,10 +3,15 @@ package org.handwerkszeug.riak.model;
 /**
  * @author taichi
  */
-public interface RiakContentsResponse<T> extends RiakResponse {
+public class RiakContentsResponse<T> extends AbstractRiakResponse {
 
-	/**
-	 * @return
-	 */
-	T getContents();
+	final T contents;
+
+	public RiakContentsResponse(T contents) {
+		this.contents = contents;
+	}
+
+	public T getContents() {
+		return this.contents;
+	}
 }

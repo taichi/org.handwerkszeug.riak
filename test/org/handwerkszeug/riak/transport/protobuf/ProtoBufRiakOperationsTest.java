@@ -81,45 +81,43 @@ public class ProtoBufRiakOperationsTest extends RiakOperationsTest {
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
+		assertTrue(is[0]);
 	}
 
 	public void testGetClientId(final String id) throws Exception {
-		final boolean[] is = { false };
-		final String[] act = new String[1];
+		final String[] actual = new String[1];
 
 		RiakFuture waiter = this.target
 				.getClientId(new TestingHandler<String>() {
 					@Override
 					public void handle(RiakContentsResponse<String> response)
 							throws RiakException {
-						is[0] = true;
-						act[0] = response.getContents();
+						actual[0] = response.getContents();
 					}
 
 				});
 
-		wait(waiter, is);
-		assertEquals(act[0], id);
+		waitFor(waiter);
+		assertEquals(actual[0], id);
 	}
 
 	@Test
 	public void testGetServerInfo() throws Exception {
-		final boolean[] is = { false };
-
+		final ServerInfo[] actual = new ServerInfo[1];
 		RiakFuture waiter = this.target
 				.getServerInfo(new TestingHandler<ServerInfo>() {
 
 					@Override
 					public void handle(RiakContentsResponse<ServerInfo> response)
 							throws RiakException {
-						ServerInfo info = response.getContents();
-						assertNotNull(info.getNode());
-						assertNotNull(info.getServerVersion());
-						is[0] = true;
+						actual[0] = response.getContents();
 					}
 				});
-		wait(waiter, is);
+		waitFor(waiter);
+		assertNotNull(actual[0]);
+		assertNotNull(actual[0].getNode());
+		assertNotNull(actual[0].getServerVersion());
 	}
 
 	@Override

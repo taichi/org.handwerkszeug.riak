@@ -150,13 +150,12 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 			}
 		});
 
-		wait(waiter, is);
+		waitFor(waiter);
+		assertTrue(is[0]);
 	}
 
 	public void testWalk(Location init, List<List<byte[]>> expected)
 			throws Exception {
-		final boolean[] is = { false };
-
 		List<LinkCondition> conds = new ArrayList<LinkCondition>();
 		conds.add(LinkCondition.bucket(null, true));
 		conds.add(LinkCondition.bucket(null, false));
@@ -168,21 +167,15 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 					public void handle(
 							RiakContentsResponse<List<RiakObject<byte[]>>> response)
 							throws Exception {
-						try {
-							List<byte[]> list = new ArrayList<byte[]>();
-							for (RiakObject<byte[]> ro : response.getContents()) {
-								list.add(ro.getContent());
-							}
-							actual.add(list);
-						} finally {
-							if (1 < actual.size()) {
-								is[0] = true;
-							}
+						List<byte[]> list = new ArrayList<byte[]>();
+						for (RiakObject<byte[]> ro : response.getContents()) {
+							list.add(ro.getContent());
 						}
+						actual.add(list);
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
 		assertEquals(2, actual.size());
 
 		List<String> e1 = new ArrayList<String>();
@@ -207,29 +200,27 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 
 	@Test
 	public void testGetStats() throws Exception {
-		final boolean[] is = { false };
+		final ObjectNode[] actual = new ObjectNode[1];
 		RiakFuture waiter = this.target
 				.getStats(new TestingHandler<ObjectNode>() {
 					@Override
 					public void handle(RiakContentsResponse<ObjectNode> response)
 							throws Exception {
 						assertNotNull(response.getContents());
-						ObjectNode node = response.getContents();
-						assertNotNull(node.get("riak_kv_version"));
-						System.out.println(node);
-
-						is[0] = true;
+						actual[0] = response.getContents();
 					}
 				});
-		wait(waiter, is);
+		waitFor(waiter);
+		ObjectNode node = actual[0];
+		assertNotNull(node);
+		assertNotNull(node.get("riak_kv_version"));
+		System.out.println(node);
 	}
 
 	static final String LARGEFILE = "org/handwerkszeug/riak/transport/rest/large_data.jpg";
 
 	@Test
 	public void testDeleteAllFromLuwak() throws Exception {
-		final boolean[] is = { true };
-
 		final List<String> list = new ArrayList<String>();
 		RiakFuture waiter = this.target.listKeys("luwak_tld",
 				new TestingHandler<KeyResponse>() {
@@ -244,7 +235,7 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
 
 		for (String s : list) {
 			testDeleteFromLuwak(s);
@@ -259,7 +250,6 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 			@Override
 			public void execute() throws Exception {
 				for (int i = 0; i < 5; i++) {
-
 					String key = testPostToLuwak();
 					try {
 						System.out.println("luwak storaging wait.");
@@ -276,8 +266,6 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	public String testPostToLuwak() throws Exception {
-		final boolean[] is = { false };
-
 		URL url = getClass().getClassLoader().getResource(LARGEFILE);
 		final File file = new File(url.getFile());
 		final String[] key = new String[1];
@@ -315,12 +303,11 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 					public void handle(RiakContentsResponse<String> response)
 							throws Exception {
 						key[0] = response.getContents();
-						assertNotNull(key[0]);
-						is[0] = true;
 					}
 				});
 
-		wait(waiter, is);
+		waitFor(waiter);
+		assertNotNull(key[0]);
 		return key[0];
 	}
 
@@ -418,7 +405,8 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 					}
 
 				});
-		wait(waiter, is);
+		waitFor(waiter);
+		assertTrue(is[0]);
 
 		assertEquals("length", 10000, download.length());
 	}
@@ -434,7 +422,8 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 			}
 		});
 
-		wait(waiter, is);
+		waitFor(waiter);
+		assertTrue(is[0]);
 	}
 
 	@Test
@@ -484,6 +473,8 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 			}
 		});
 
-		wait(waiter, is);
+		waitFor(waiter);
+		assertTrue(is[0]);
+
 	}
 }
