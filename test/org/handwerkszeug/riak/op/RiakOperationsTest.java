@@ -20,7 +20,6 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
@@ -306,11 +305,12 @@ public abstract class RiakOperationsTest {
 	@Test
 	public void testBatchDelete() throws Exception {
 		final String bucket = "testBatchDelete";
-		for (int i = 0; i < 10; i++) {
+		int records = 10;
+		for (int i = 0; i < records; i++) {
 			testPut(new Location(bucket, String.valueOf(i)), "a");
 		}
 
-		final CountDownLatch latch = new CountDownLatch(10);
+		final CountDownLatch latch = new CountDownLatch(records);
 		this.target.listKeys(bucket, new TestingHandler<KeyResponse>() {
 			@Override
 			public void handle(RiakContentsResponse<KeyResponse> response)
@@ -329,7 +329,6 @@ public abstract class RiakOperationsTest {
 			}
 		});
 		assertTrue("timeout.", latch.await(5, TimeUnit.SECONDS));
-
 	}
 
 	@Test
@@ -622,13 +621,15 @@ public abstract class RiakOperationsTest {
 		final String from = "testMoveFrom";
 		final String to = "testMoveTo";
 
+		delete(from);
+		delete(to);
+
 		final int recordCount = 100;
 		for (int i = 0; i < recordCount; i++) {
 			testPut(new Location(from, String.valueOf(i)), "data" + i);
 		}
 
-		final CountDownLatch latch = new CountDownLatch(1);
-		final AtomicInteger counter = new AtomicInteger(0);
+		final CountDownLatch latch = new CountDownLatch(recordCount);
 		this.target.listKeys(from, new TestingHandler<KeyResponse>() {
 			@Override
 			public void handle(RiakContentsResponse<KeyResponse> response)
@@ -637,7 +638,6 @@ public abstract class RiakOperationsTest {
 				if (kr.getDone()) {
 					return;
 				}
-				counter.addAndGet(kr.getKeys().size());
 				for (final String k : kr.getKeys()) {
 					RiakOperationsTest.this.target.delete(
 							new Location(from, k), new TestingHandler<_>() {
@@ -654,13 +654,7 @@ public abstract class RiakOperationsTest {
 												public void handle(
 														RiakContentsResponse<_> response)
 														throws Exception {
-													int i = counter
-															.decrementAndGet();
-													System.out.println("less "
-															+ i);
-													if (i < 1) {
-														latch.countDown();
-													}
+													latch.countDown();
 												}
 											});
 								}
@@ -669,14 +663,33 @@ public abstract class RiakOperationsTest {
 				}
 			}
 		});
-		try {
-			assertTrue("test is timeout.", latch.await(20, TimeUnit.SECONDS));
-		} finally {
-			for (int i = 0; i < recordCount; i++) {
-				testDelete(new Location(to, String.valueOf(i)));
-			}
-		}
+		assertTrue("timeout.", latch.await(20, TimeUnit.SECONDS));
+	}
 
+	protected void delete(String bucket) throws Exception {
+		final List<String> keys = new ArrayList<String>();
+		RiakFuture rf = this.target.listKeys(bucket,
+				new TestingHandler<KeyResponse>() {
+					@Override
+					public void handle(
+							RiakContentsResponse<KeyResponse> response)
+							throws Exception {
+						keys.addAll(response.getContents().getKeys());
+					}
+				});
+		waitFor(rf);
+		final CountDownLatch latch = new CountDownLatch(keys.size());
+		for (String s : keys) {
+			this.target.delete(new Location(bucket, s),
+					new TestingHandler<_>() {
+						@Override
+						public void handle(RiakContentsResponse<_> response)
+								throws Exception {
+							latch.countDown();
+						}
+					});
+		}
+		assertTrue("timeout.", latch.await(5, TimeUnit.SECONDS));
 	}
 
 	@Test
