@@ -994,4 +994,48 @@ public abstract class RiakOperationsTest {
 		waitFor(waiter);
 		return loc[0];
 	}
+
+	@Test
+	public void testExceptionHandling() throws Exception {
+		final String expected = "testMessage";
+		final String[] actual = new String[1];
+		final CountDownLatch latch = new CountDownLatch(1);
+		this.target.ping(new RiakResponseHandler<String>() {
+			@Override
+			public void onError(RiakResponse response) throws Exception {
+				actual[0] = response.getMessage();
+				latch.countDown();
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<String> response)
+					throws Exception {
+				throw new Exception(expected);
+			}
+		});
+		assertTrue("timeout.", latch.await(3, TimeUnit.SECONDS));
+		assertEquals(expected, actual[0]);
+	}
+
+	@Test
+	public void testErrorHandling() throws Exception {
+		final String expected = "testMessage";
+		final String[] actual = new String[1];
+		final CountDownLatch latch = new CountDownLatch(1);
+		this.target.ping(new RiakResponseHandler<String>() {
+			@Override
+			public void onError(RiakResponse response) throws Exception {
+				actual[0] = response.getMessage();
+				latch.countDown();
+			}
+
+			@Override
+			public void handle(RiakContentsResponse<String> response)
+					throws Exception {
+				throw new Error(expected);
+			}
+		});
+		assertTrue("timeout.", latch.await(3, TimeUnit.SECONDS));
+		assertEquals(expected, actual[0]);
+	}
 }

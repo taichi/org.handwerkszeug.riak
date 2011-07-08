@@ -19,7 +19,6 @@ import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandler;
-import org.jboss.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,11 +100,9 @@ public class CompletionSupport {
 	public <T> RiakFuture handle(String name, Object send,
 			RiakResponseHandler<T> users, ChannelHandler handler,
 			RiakFuture future) {
-		ChannelPipeline pipeline = this.channel.getPipeline();
-
 		Command cmd = new Command(this.channel, send, name, handler);
 		try {
-			if (this.inProgress.size() < 1 && this.inProgress.add(cmd.name)) {
+			if (entry(cmd)) {
 				cmd.execute();
 			} else {
 				if (LOG.isDebugEnabled()) {
@@ -115,15 +112,19 @@ public class CompletionSupport {
 			}
 			return future;
 		} catch (Exception e) {
-			completeOnError(name, pipeline);
+			completeOnError(name);
 			throw new RiakException(e);
 		} catch (Error e) {
-			completeOnError(name, pipeline);
+			completeOnError(name);
 			throw e;
 		}
 	}
 
-	protected void completeOnError(String name, ChannelPipeline pipeline) {
+	protected boolean entry(Command cmd) {
+		return this.inProgress.size() < 1 && this.inProgress.add(cmd.name);
+	}
+
+	protected void completeOnError(String name) {
 		decrementProgress(name);
 		operationComplete();
 	}
@@ -131,7 +132,7 @@ public class CompletionSupport {
 	protected void invokeNext() {
 		for (Iterator<Command> i = this.waitQueue.iterator(); i.hasNext();) {
 			Command cmd = i.next();
-			if (this.inProgress.add(cmd.name)) {
+			if (entry(cmd)) {
 				i.remove();
 				cmd.execute();
 				break;

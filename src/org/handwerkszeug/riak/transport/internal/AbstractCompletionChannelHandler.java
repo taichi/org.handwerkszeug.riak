@@ -46,11 +46,4 @@ public abstract class AbstractCompletionChannelHandler<T> extends
 		this.future.setFailure(e.getCause());
 		this.support.invokeNext();
 	}
-
-	protected void setFailure(Throwable ex) {
-		LOG.error(Markers.DETAIL, ex.getMessage(), ex);
-		this.future.setFailure(ex);
-		this.support.invokeNext();
-	}
-
 }

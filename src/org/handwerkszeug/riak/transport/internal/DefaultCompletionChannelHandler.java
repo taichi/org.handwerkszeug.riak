@@ -37,11 +37,6 @@ public class DefaultCompletionChannelHandler<T> extends
 			if (this.handler.handle(receive, this.future)) {
 				this.support.invokeNext();
 			}
-		} catch (Exception ex) {
-			throw ex;
-		} catch (Error ex) {
-			setFailure(ex);
-			throw ex;
 		} finally {
 			this.support.responseComplete();
 		}
