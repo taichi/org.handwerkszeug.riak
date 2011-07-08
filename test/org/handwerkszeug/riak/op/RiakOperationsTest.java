@@ -999,21 +999,22 @@ public abstract class RiakOperationsTest {
 	public void testExceptionHandling() throws Exception {
 		final String expected = "testMessage";
 		final String[] actual = new String[1];
-		final CountDownLatch latch = new CountDownLatch(1);
-		this.target.ping(new RiakResponseHandler<String>() {
+		final Exception exception = new Exception(expected);
+		RiakFuture rf = this.target.ping(new RiakResponseHandler<String>() {
 			@Override
 			public void onError(RiakResponse response) throws Exception {
 				actual[0] = response.getMessage();
-				latch.countDown();
 			}
 
 			@Override
 			public void handle(RiakContentsResponse<String> response)
 					throws Exception {
-				throw new Exception(expected);
+				throw exception;
 			}
 		});
-		assertTrue("timeout.", latch.await(3, TimeUnit.SECONDS));
+		waitFor(rf);
+		assertFalse(rf.isSuccess());
+		assertEquals(exception, rf.getCause());
 		assertEquals(expected, actual[0]);
 	}
 
@@ -1021,21 +1022,22 @@ public abstract class RiakOperationsTest {
 	public void testErrorHandling() throws Exception {
 		final String expected = "testMessage";
 		final String[] actual = new String[1];
-		final CountDownLatch latch = new CountDownLatch(1);
-		this.target.ping(new RiakResponseHandler<String>() {
+		final Error error = new Error(expected);
+		RiakFuture rf = this.target.ping(new RiakResponseHandler<String>() {
 			@Override
 			public void onError(RiakResponse response) throws Exception {
 				actual[0] = response.getMessage();
-				latch.countDown();
 			}
 
 			@Override
 			public void handle(RiakContentsResponse<String> response)
 					throws Exception {
-				throw new Error(expected);
+				throw error;
 			}
 		});
-		assertTrue("timeout.", latch.await(3, TimeUnit.SECONDS));
+		waitFor(rf);
+		assertFalse(rf.isSuccess());
+		assertEquals(error, rf.getCause());
 		assertEquals(expected, actual[0]);
 	}
 }
