@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.handwerkszeug</groupId>
 	<artifactId>alt-riak-java-client</artifactId>
-	<version>0.4.0-SNAPSHOT</version>
+	<version>0.4.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>alt-riak-java-client</name>
 	<url>https://github.com/taichi/org.handwerkszeug.riak</url>
