@@ -11,16 +11,16 @@ import org.slf4j.LoggerFactory;
 /**
  * @author taichi
  */
-class Command {
+class OperationTask {
 
-	static final Logger LOG = LoggerFactory.getLogger(Command.class);
+	static final Logger LOG = LoggerFactory.getLogger(OperationTask.class);
 
 	Channel channel;
 	Object message;
 	String name;
 	ChannelHandler handler;
 
-	public Command(Channel channel, Object message, String name,
+	public OperationTask(Channel channel, Object message, String name,
 			ChannelHandler handler) {
 		super();
 		this.channel = channel;

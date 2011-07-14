@@ -32,7 +32,7 @@ public class CompletionSupport {
 	final Channel channel;
 
 	final Set<String> inProgress = new ConcurrentSkipListSet<String>();
-	final Queue<Command> waitQueue = new ConcurrentLinkedQueue<Command>();
+	final Queue<OperationTask> waitQueue = new ConcurrentLinkedQueue<OperationTask>();
 	final AtomicBoolean operationComplete = new AtomicBoolean(false);
 	final ReentrantLock lock = new ReentrantLock();
 
@@ -100,7 +100,7 @@ public class CompletionSupport {
 	public <T> RiakFuture handle(String name, Object send,
 			RiakResponseHandler<T> users, ChannelHandler handler,
 			RiakFuture future) {
-		Command cmd = new Command(this.channel, send, name, handler);
+		OperationTask cmd = new OperationTask(this.channel, send, name, handler);
 		try {
 			if (entry(cmd)) {
 				cmd.execute();
@@ -120,7 +120,7 @@ public class CompletionSupport {
 		}
 	}
 
-	protected boolean entry(Command cmd) {
+	protected boolean entry(OperationTask cmd) {
 		return this.inProgress.size() < 1 && this.inProgress.add(cmd.name);
 	}
 
@@ -130,8 +130,8 @@ public class CompletionSupport {
 	}
 
 	protected void invokeNext() {
-		for (Iterator<Command> i = this.waitQueue.iterator(); i.hasNext();) {
-			Command cmd = i.next();
+		for (Iterator<OperationTask> i = this.waitQueue.iterator(); i.hasNext();) {
+			OperationTask cmd = i.next();
 			if (entry(cmd)) {
 				i.remove();
 				cmd.execute();
