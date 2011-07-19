@@ -16,4 +16,6 @@ public interface RiakConfig {
 
 	ExecutorService getWorkerExecutor();
 
+	ExecutorService getActionExecutor();
+
 }

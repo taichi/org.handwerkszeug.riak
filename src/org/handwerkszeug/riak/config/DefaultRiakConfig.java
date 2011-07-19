@@ -35,4 +35,8 @@ public class DefaultRiakConfig implements RiakConfig {
 		return Executors.newCachedThreadPool();
 	}
 
+	@Override
+	public ExecutorService getActionExecutor() {
+		return Executors.newCachedThreadPool();
+	}
 }

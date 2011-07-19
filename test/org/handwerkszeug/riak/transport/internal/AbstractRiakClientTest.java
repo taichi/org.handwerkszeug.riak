@@ -55,6 +55,7 @@ public abstract class AbstractRiakClientTest<OP extends RiakOperations> {
 					assertTrue("test is timeout.",
 							waiter.await(3, TimeUnit.SECONDS));
 					assertEquals("pong", actual[0]);
+					fail();
 				} catch (InterruptedException e) {
 					fail(e.getMessage());
 				}
@@ -87,22 +88,26 @@ public abstract class AbstractRiakClientTest<OP extends RiakOperations> {
 	public void testExecute3() throws Exception {
 		final String[] actual = new String[1];
 		final CountDownLatch latch = new CountDownLatch(1);
+		System.out.println("**** " + Thread.currentThread().getName());
 		this.target.execute(new RiakAction<OP>() {
 			@Override
 			public void execute(OP operations) {
+				System.out.println("++++ " + Thread.currentThread().getName());
 				RiakFuture waiter = operations
 						.ping(new TestingHandler<String>() {
 							@Override
 							public void handle(
 									RiakContentsResponse<String> response)
 									throws Exception {
+								System.out.println("---- "
+										+ Thread.currentThread().getName());
 								actual[0] = response.getContents();
 							}
 						});
-				latch.countDown();
 				try {
 					assertTrue("test is timeout.",
 							waiter.await(3, TimeUnit.SECONDS));
+					latch.countDown();
 				} catch (InterruptedException e) {
 					fail(e.getMessage());
 				}
