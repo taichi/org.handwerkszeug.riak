@@ -29,7 +29,7 @@ public class ContinuousMessageHandler<T> implements MessageHandler {
 			HttpResponse response = (HttpResponse) receive;
 			if (NettyUtil.isError(response.getStatus())) {
 				this.users
-						.onError(new RestErrorResponse(response, this.support));
+						.onError(new RestErrorResponse(response));
 				future.setFailure();
 				return true;
 			}

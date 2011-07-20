@@ -1,7 +1,6 @@
 package org.handwerkszeug.riak.transport.rest.internal;
 
 import org.handwerkszeug.riak.model.RiakResponse;
-import org.handwerkszeug.riak.transport.internal.CompletionSupport;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.util.CharsetUtil;
@@ -12,11 +11,9 @@ import org.jboss.netty.util.CharsetUtil;
 public class RestErrorResponse implements RiakResponse {
 
 	final HttpResponse master;
-	final CompletionSupport support;
 
-	public RestErrorResponse(HttpResponse master, CompletionSupport support) {
+	public RestErrorResponse(HttpResponse master) {
 		this.master = master;
-		this.support = support; // XXX
 	}
 
 	@Override
