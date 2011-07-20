@@ -391,8 +391,7 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 				if (receive instanceof HttpResponse) {
 					HttpResponse response = (HttpResponse) receive;
 					if (NettyUtil.isError(response.getStatus())) {
-						handler.onError(new RestErrorResponse(response,
-								RestRiakOperations.this.support));
+						handler.onError(new RestErrorResponse(response));
 						future.finished();
 					} else if (NettyUtil.isSuccessful(response.getStatus())) {
 						try {
@@ -466,8 +465,7 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 				if (receive instanceof HttpResponse) {
 					HttpResponse response = (HttpResponse) receive;
 					if (NettyUtil.isError(response.getStatus())) {
-						handler.onError(new RestErrorResponse(response,
-								RestRiakOperations.this.support));
+						handler.onError(new RestErrorResponse(response));
 						future.finished();
 					} else {
 						this.vclock = response

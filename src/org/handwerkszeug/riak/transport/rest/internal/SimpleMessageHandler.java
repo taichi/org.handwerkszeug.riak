@@ -32,7 +32,7 @@ public class SimpleMessageHandler implements MessageHandler {
 			HttpResponseStatus status = response.getStatus();
 			if (NettyUtil.isError(status)) {
 				this.users
-						.onError(new RestErrorResponse(response, this.support));
+						.onError(new RestErrorResponse(response));
 				future.setFailure();
 				return true;
 			}
