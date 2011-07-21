@@ -100,15 +100,15 @@ public class CompletionSupport {
 	public <T> RiakFuture handle(String name, Object send,
 			RiakResponseHandler<T> users, ChannelHandler handler,
 			RiakFuture future) {
-		OperationTask cmd = new OperationTask(this.channel, send, name, handler);
+		OperationTask tsk = new OperationTask(this.channel, send, name, handler);
 		try {
-			if (entry(cmd)) {
-				cmd.execute();
+			if (entry(tsk)) {
+				tsk.execute();
 			} else {
 				if (LOG.isDebugEnabled()) {
 					LOG.debug(Markers.DETAIL, Messages.Queue, name);
 				}
-				this.waitQueue.add(cmd);
+				this.waitQueue.add(tsk);
 			}
 			return future;
 		} catch (Exception e) {
@@ -120,8 +120,8 @@ public class CompletionSupport {
 		}
 	}
 
-	protected boolean entry(OperationTask cmd) {
-		return this.inProgress.size() < 1 && this.inProgress.add(cmd.name);
+	protected boolean entry(OperationTask tsk) {
+		return this.inProgress.size() < 1 && this.inProgress.add(tsk.name);
 	}
 
 	protected void completeOnError(String name) {
@@ -131,10 +131,10 @@ public class CompletionSupport {
 
 	protected void invokeNext() {
 		for (Iterator<OperationTask> i = this.waitQueue.iterator(); i.hasNext();) {
-			OperationTask cmd = i.next();
-			if (entry(cmd)) {
+			OperationTask tsk = i.next();
+			if (entry(tsk)) {
 				i.remove();
-				cmd.execute();
+				tsk.execute();
 				break;
 			}
 		}

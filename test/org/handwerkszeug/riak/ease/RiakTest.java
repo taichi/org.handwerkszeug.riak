@@ -2,7 +2,10 @@ package org.handwerkszeug.riak.ease;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakOperations;
@@ -42,5 +45,12 @@ public abstract class RiakTest<OP extends RiakOperations> {
 		assertEquals(data, new String(ro.getContent()));
 
 		this.target.delete(location).execute();
+
+		try {
+			this.target.get(location).execute();
+			fail();
+		} catch (RiakException e) {
+			assertTrue(true);
+		}
 	}
 }
