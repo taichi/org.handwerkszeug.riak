@@ -9,7 +9,6 @@ import org.handwerkszeug.riak.ease.internal.AbstractRiakCommand;
 import org.handwerkszeug.riak.ease.internal.ResultHolder;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.Quorum;
-import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.op.RiakOperations;
 
 /**
@@ -41,13 +40,7 @@ public class DeleteCommand<OP extends RiakOperations> extends
 		this.client.execute(new RiakAction<OP>() {
 			@Override
 			public void execute(OP operations) {
-				EaseHandler<_> eh = new EaseHandler<_>(holder) {
-					@Override
-					public void handle(RiakContentsResponse<_> response)
-							throws Exception {
-						holder.setResult(_._);
-					}
-				};
+				SimpleEaseHandler<_> eh = new SimpleEaseHandler<_>(holder);
 				if (DeleteCommand.this.readWrite == null) {
 					operations.delete(DeleteCommand.this.location, eh);
 				} else {

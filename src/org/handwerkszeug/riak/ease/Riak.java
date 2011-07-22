@@ -4,6 +4,7 @@ import static org.handwerkszeug.riak.util.Validation.notNull;
 
 import org.handwerkszeug.riak.RiakClient;
 import org.handwerkszeug.riak.ease.internal.DefaultExceptionHandler;
+import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakObject;
@@ -27,8 +28,8 @@ public abstract class Riak<OP extends RiakOperations> {
 		this.handler = handler;
 	}
 
-	public String ping() {
-		return new PingCommand<OP>(this.client, this.handler).execute();
+	public PingCommand<OP> ping() {
+		return new PingCommand<OP>(this.client, this.handler);
 	}
 
 	public GetCommand<OP> get(Location location) {
@@ -52,6 +53,21 @@ public abstract class Riak<OP extends RiakOperations> {
 	public DeleteCommand<OP> delete(Location location) {
 		notNull(location, "location");
 		return new DeleteCommand<OP>(this.client, this.handler, location);
+	}
+
+	public ListKeysCommand<OP> listKeys(String bucket) {
+		notNull(bucket, "bucket");
+		return new ListKeysCommand<OP>(this.client, this.handler, bucket);
+	}
+
+	public GetBucketCommand<OP> getBucket(String bucket) {
+		notNull(bucket, "bucket");
+		return new GetBucketCommand<OP>(this.client, this.handler, bucket);
+	}
+
+	public SetBucketCommand<OP> setBucket(Bucket bucket) {
+		notNull(bucket, "bucket");
+		return new SetBucketCommand<OP>(this.client, this.handler, bucket);
 	}
 
 	public void dispose() {
