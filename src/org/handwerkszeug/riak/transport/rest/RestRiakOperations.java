@@ -465,6 +465,8 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 				this.support, procedure, handler, future) {
 			String vclock;
 
+			Exception failed;
+
 			@Override
 			public void messageReceived(ChannelHandlerContext ctx,
 					MessageEvent e) throws Exception {
@@ -491,15 +493,24 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 					if (done) {
 						try {
 							handler.end();
-							future.setSuccess();
+							if (this.failed == null) {
+								future.setSuccess();
+							} else {
+								future.setFailure(this.failed);
+							}
 						} finally {
 							RestRiakOperations.this.support.responseComplete();
 						}
 					} else {
 						RiakObject<byte[]> ro = RestRiakOperations.this.factory
 								.convert(part, part.getContent(), location);
-						handler.handle(RestRiakOperations.this.support
-								.newResponse(ro));
+						try {
+							handler.handle(RestRiakOperations.this.support
+									.newResponse(ro));
+						} catch (Exception ex) {
+							this.failed = ex;
+							LOG.error(Markers.DESIGN, ex.getMessage(), ex);
+						}
 					}
 				}
 			}
