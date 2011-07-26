@@ -475,7 +475,7 @@ public abstract class RiakOperationsTest {
 					}
 
 					@Override
-					public void end(RiakResponse response) {
+					public void end() {
 						beginEnd[1] = true;
 					}
 				});
@@ -525,7 +525,7 @@ public abstract class RiakOperationsTest {
 			}
 
 			@Override
-			public void end(RiakResponse response) {
+			public void end() {
 				beginEnd[1] = true;
 			}
 
@@ -583,7 +583,7 @@ public abstract class RiakOperationsTest {
 			}
 
 			@Override
-			public void end(RiakResponse response) {
+			public void end() {
 				beginEnd[1] = true;
 			}
 		});

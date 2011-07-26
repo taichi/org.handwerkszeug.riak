@@ -282,8 +282,7 @@ public class ProtoBufRiakOperations implements RiakOperations, Completion {
 										.newResponse(ro));
 							}
 						} finally {
-							handler.end(ProtoBufRiakOperations.this.support
-									.newResponse());
+							handler.end();
 						}
 					}
 				});
@@ -593,8 +592,7 @@ public class ProtoBufRiakOperations implements RiakOperations, Completion {
 									}
 								}
 							} finally {
-								handler.end(ProtoBufRiakOperations.this.support
-										.newResponse());
+								handler.end();
 							}
 							future.setSuccess();
 							return true;

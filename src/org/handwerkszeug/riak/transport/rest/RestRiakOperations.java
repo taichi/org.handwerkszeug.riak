@@ -338,8 +338,7 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 					part.setHeader(RiakHttpHeaders.VECTOR_CLOCK, this.vclock);
 
 					if (done) {
-						handler.end(RestRiakOperations.this.support
-								.newResponse());
+						handler.end();
 						future.setSuccess();
 					} else {
 						RiakObject<byte[]> ro = RestRiakOperations.this.factory
@@ -411,8 +410,7 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 								handler.handle(RestRiakOperations.this.support
 										.newResponse(ro));
 							} finally {
-								handler.end(RestRiakOperations.this.support
-										.newResponse());
+								handler.end();
 							}
 							future.setSuccess();
 						} finally {
@@ -492,8 +490,7 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 
 					if (done) {
 						try {
-							handler.end(RestRiakOperations.this.support
-									.newResponse());
+							handler.end();
 							future.setSuccess();
 						} finally {
 							RestRiakOperations.this.support.responseComplete();

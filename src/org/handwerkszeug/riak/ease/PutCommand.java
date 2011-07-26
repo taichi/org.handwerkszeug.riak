@@ -176,7 +176,7 @@ public class PutCommand<OP extends RiakOperations> extends
 		}
 
 		@Override
-		public void end(RiakResponse response) throws Exception {
+		public void end() throws Exception {
 			this.holder.setResult(this.content);
 		}
 	}
