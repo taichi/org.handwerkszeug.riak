@@ -391,24 +391,33 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 				if (receive instanceof HttpResponse) {
 					HttpResponse response = (HttpResponse) receive;
 					if (NettyUtil.isError(response.getStatus())) {
-						handler.onError(new RestErrorResponse(response));
-						future.finished();
+						try {
+							handler.onError(new RestErrorResponse(response));
+						} finally {
+							future.finished();
+							RestRiakOperations.this.support.responseComplete();
+						}
 					} else if (NettyUtil.isSuccessful(response.getStatus())) {
 						try {
-							handler.begin();
-							RiakObject<byte[]> ro = content;
-							if (options.getReturnBody()) {
-								ro = RestRiakOperations.this.factory.convert(
-										response, response.getContent(),
-										content.getLocation());
+							try {
+								handler.begin();
+								RiakObject<byte[]> ro = content;
+								if (options.getReturnBody()) {
+									ro = RestRiakOperations.this.factory
+											.convert(response,
+													response.getContent(),
+													content.getLocation());
+								}
+								handler.handle(RestRiakOperations.this.support
+										.newResponse(ro));
+							} finally {
+								handler.end(RestRiakOperations.this.support
+										.newResponse());
 							}
-							handler.handle(RestRiakOperations.this.support
-									.newResponse(ro));
+							future.setSuccess();
 						} finally {
-							handler.end(RestRiakOperations.this.support
-									.newResponse());
+							RestRiakOperations.this.support.responseComplete();
 						}
-						future.setSuccess();
 					} else if (response.getStatus().getCode() == 300) {
 						RestRiakOperations.this.support
 								.decrementProgress(procedure);
@@ -465,8 +474,12 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 				if (receive instanceof HttpResponse) {
 					HttpResponse response = (HttpResponse) receive;
 					if (NettyUtil.isError(response.getStatus())) {
-						handler.onError(new RestErrorResponse(response));
-						future.finished();
+						try {
+							handler.onError(new RestErrorResponse(response));
+						} finally {
+							future.finished();
+							RestRiakOperations.this.support.responseComplete();
+						}
 					} else {
 						this.vclock = response
 								.getHeader(RiakHttpHeaders.VECTOR_CLOCK);
@@ -478,9 +491,13 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 					part.setHeader(RiakHttpHeaders.VECTOR_CLOCK, this.vclock);
 
 					if (done) {
-						handler.end(RestRiakOperations.this.support
-								.newResponse());
-						future.setSuccess();
+						try {
+							handler.end(RestRiakOperations.this.support
+									.newResponse());
+							future.setSuccess();
+						} finally {
+							RestRiakOperations.this.support.responseComplete();
+						}
 					} else {
 						RiakObject<byte[]> ro = RestRiakOperations.this.factory
 								.convert(part, part.getContent(), location);

@@ -11,10 +11,8 @@ import org.handwerkszeug.riak.ease.internal.ResultHolder;
 import org.handwerkszeug.riak.model.GetOptions;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.Quorum;
-import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakOperations;
-import org.handwerkszeug.riak.op.RiakResponseHandler;
 
 /**
  * @author taichi
@@ -59,38 +57,10 @@ public class GetCommand<OP extends RiakOperations> extends
 		return this;
 	}
 
-	public GetCommand<OP> setIfModifiedSince(Date date) {
-		notNull(date, "date");
-		this.ifModifiedSince = date;
+	public GetCommand<OP> setIfModifiedSince(Date since) {
+		notNull(since, "since");
+		this.ifModifiedSince = since;
 		return this;
-	}
-
-	GetOptions toOptions() {
-		if (this.readQuorum == null && this.ifNoneMatch == null
-				&& this.ifMatch == null && this.ifModifiedSince == null) {
-			return null;
-		}
-		return new GetOptions() {
-			@Override
-			public Quorum getReadQuorum() {
-				return GetCommand.this.readQuorum;
-			}
-
-			@Override
-			public String getIfNoneMatch() {
-				return GetCommand.this.ifNoneMatch;
-			}
-
-			@Override
-			public Date getIfModifiedSince() {
-				return GetCommand.this.ifModifiedSince;
-			}
-
-			@Override
-			public String getIfMatch() {
-				return GetCommand.this.ifMatch;
-			}
-		};
 	}
 
 	@Override
@@ -99,21 +69,29 @@ public class GetCommand<OP extends RiakOperations> extends
 		this.client.execute(new RiakAction<OP>() {
 			@Override
 			public void execute(OP operations) {
-				RiakResponseHandler<RiakObject<byte[]>> rrh = new EaseHandler<RiakObject<byte[]>>(
-						holder) {
+				GetOptions opt = new GetOptions() {
 					@Override
-					public void handle(
-							RiakContentsResponse<RiakObject<byte[]>> response)
-							throws Exception {
-						holder.setResult(response.getContents());
+					public Quorum getReadQuorum() {
+						return GetCommand.this.readQuorum;
+					}
+
+					@Override
+					public String getIfNoneMatch() {
+						return GetCommand.this.ifNoneMatch;
+					}
+
+					@Override
+					public Date getIfModifiedSince() {
+						return GetCommand.this.ifModifiedSince;
+					}
+
+					@Override
+					public String getIfMatch() {
+						return GetCommand.this.ifMatch;
 					}
 				};
-				GetOptions opt = toOptions();
-				if (opt == null) {
-					operations.get(GetCommand.this.location, rrh);
-				} else {
-					operations.get(GetCommand.this.location, opt, rrh);
-				}
+				operations.get(GetCommand.this.location, opt,
+						new SimpleEaseHandler<RiakObject<byte[]>>(holder));
 			}
 		});
 		return holder.getResult();

@@ -40,7 +40,7 @@ public abstract class RiakTest<OP extends RiakOperations> {
 	}
 
 	@Test
-	public void testPutGet() {
+	public void testPutGetDelete() {
 		Location location = new Location("testGet", "key");
 		String data = String.valueOf(Math.random()) + "data";
 
