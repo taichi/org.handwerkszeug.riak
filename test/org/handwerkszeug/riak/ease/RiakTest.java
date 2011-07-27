@@ -1,6 +1,7 @@
 package org.handwerkszeug.riak.ease;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -12,6 +13,7 @@ import java.util.List;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.Location;
+import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.junit.After;
@@ -60,6 +62,39 @@ public abstract class RiakTest<OP extends RiakOperations> {
 	}
 
 	@Test
+	public void testPost() throws Exception {
+		String bucket = "testPost";
+		String data = String.valueOf(Math.random()) + "data";
+
+		RiakObject<byte[]> actual = this.target.post(bucket, data).execute();
+		assertPost(bucket, data, actual);
+
+		RiakObject<byte[]> actual2 = this.target.post(bucket, data)
+				.setWriteQuorum(Quorum.Default)
+				.setDurableWriteQuorum(Quorum.Default).setReturnBody(true)
+				.execute();
+		assertPost(bucket, data, actual2);
+
+	}
+
+	protected void assertPost(String bucket, String data,
+			RiakObject<byte[]> actual) {
+		assertNotNull(actual);
+
+		Location location = actual.getLocation();
+		assertNotNull(location);
+
+		try {
+			assertEquals(data, new String(actual.getContent()));
+			assertEquals(bucket, location.getBucket());
+			assertNotNull(location.getKey());
+			assertFalse(location.getKey().isEmpty());
+		} finally {
+			this.target.delete(location);
+		}
+	}
+
+	@Test
 	public void testListKeys() {
 		String bucket = "testListKeys";
 		int size = 10;
@@ -100,4 +135,5 @@ public abstract class RiakTest<OP extends RiakOperations> {
 
 		this.target.delete(location).execute();
 	}
+
 }

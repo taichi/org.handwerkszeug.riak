@@ -37,6 +37,19 @@ public abstract class Riak<OP extends RiakOperations> {
 		return new GetCommand<OP>(this.client, this.handler, location);
 	}
 
+	public PostCommand<OP> post(RiakObject<byte[]> ro) {
+		notNull(ro, "ro");
+		return new PostCommand<OP>(this.client, this.handler, ro);
+	}
+
+	public PostCommand<OP> post(String bucket, String data) {
+		notNull(bucket, "bucket");
+		notNull(data, "data");
+		DefaultRiakObject ro = new DefaultRiakObject(new Location(bucket, ""));
+		ro.setContent(data.getBytes());
+		return new PostCommand<OP>(this.client, this.handler, ro);
+	}
+
 	public PutCommand<OP> put(RiakObject<byte[]> ro) {
 		notNull(ro, "ro");
 		return new PutCommand<OP>(this.client, this.handler, ro);

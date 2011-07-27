@@ -5,6 +5,7 @@ import org.handwerkszeug.riak.RiakClient;
 import org.handwerkszeug.riak.ease.internal.AbstractRiakCommand;
 import org.handwerkszeug.riak.ease.internal.ExecutionDelegate;
 import org.handwerkszeug.riak.ease.internal.ResultHolder;
+import org.handwerkszeug.riak.model.PostOptions;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakOperations;
@@ -69,6 +70,37 @@ public class PostCommand<OP extends RiakOperations> extends
 		return holder.getResult();
 	}
 
-	static final ExecutionDelegate<RiakObject<byte[]>, PostCommand<?>> defaultExecution = null;
-	static final ExecutionDelegate<RiakObject<byte[]>, PostCommand<?>> optionalExecution = null;
+	static final ExecutionDelegate<RiakObject<byte[]>, PostCommand<?>> defaultExecution = new ExecutionDelegate<RiakObject<byte[]>, PostCommand<?>>() {
+		@Override
+		public <RO extends RiakOperations> void execute(PostCommand<?> cmd,
+				RO operations, ResultHolder<RiakObject<byte[]>> holder) {
+			operations.post(cmd.content,
+					cmd.new SimpleEaseHandler<RiakObject<byte[]>>(holder));
+		};
+	};
+	static final ExecutionDelegate<RiakObject<byte[]>, PostCommand<?>> optionalExecution = new ExecutionDelegate<RiakObject<byte[]>, PostCommand<?>>() {
+		@Override
+		public <RO extends RiakOperations> void execute(
+				final PostCommand<?> cmd, RO operations,
+				ResultHolder<RiakObject<byte[]>> holder) {
+			PostOptions options = new PostOptions() {
+				@Override
+				public Quorum getWriteQuorum() {
+					return cmd.writeQuorum;
+				}
+
+				@Override
+				public Quorum getDurableWriteQuorum() {
+					return cmd.durableWriteQuorum;
+				}
+
+				@Override
+				public boolean getReturnBody() {
+					return cmd.returnBody;
+				}
+			};
+			operations.post(cmd.content, options,
+					cmd.new SimpleEaseHandler<RiakObject<byte[]>>(holder));
+		};
+	};
 }

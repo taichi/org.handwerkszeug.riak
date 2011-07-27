@@ -27,9 +27,6 @@ public class PutCommand<OP extends RiakOperations> extends
 
 	protected final RiakObject<byte[]> content;
 
-	protected String vectorClock;
-
-	protected Quorum readQuorum;
 	protected Quorum writeQuorum;
 	protected Quorum durableWriteQuorum;
 
@@ -45,18 +42,6 @@ public class PutCommand<OP extends RiakOperations> extends
 			RiakObject<byte[]> content) {
 		super(client, handler);
 		this.content = content;
-	}
-
-	public PutCommand<OP> setVectorClock(String vectorClock) {
-		this.vectorClock = vectorClock;
-		this.delegate = optionalExecution;
-		return this;
-	}
-
-	public PutCommand<OP> setReadQuorum(Quorum quorum) {
-		this.readQuorum = quorum;
-		this.delegate = optionalExecution;
-		return this;
 	}
 
 	public PutCommand<OP> setWriteQuorum(Quorum quorum) {
@@ -134,16 +119,6 @@ public class PutCommand<OP extends RiakOperations> extends
 				final PutCommand<?> cmd, RO operations,
 				final ResultHolder<RiakObject<byte[]>> holder) {
 			PutOptions options = new PutOptions() {
-
-				@Override
-				public String getVectorClock() {
-					return cmd.vectorClock;
-				}
-
-				@Override
-				public Quorum getReadQuorum() {
-					return cmd.readQuorum;
-				}
 
 				@Override
 				public Quorum getWriteQuorum() {
