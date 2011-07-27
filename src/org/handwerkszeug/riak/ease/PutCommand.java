@@ -4,7 +4,9 @@ import java.util.Date;
 
 import org.handwerkszeug.riak.RiakAction;
 import org.handwerkszeug.riak.RiakClient;
+import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.ease.internal.AbstractRiakCommand;
+import org.handwerkszeug.riak.ease.internal.ExecutionDelegate;
 import org.handwerkszeug.riak.ease.internal.ResultHolder;
 import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.Quorum;
@@ -20,6 +22,8 @@ import org.handwerkszeug.riak.op.SiblingHandler;
  */
 public class PutCommand<OP extends RiakOperations> extends
 		AbstractRiakCommand<RiakObject<byte[]>, OP> {
+
+	protected ExecutionDelegate<RiakObject<byte[]>, PutCommand<?>> delegate = defaultExecution;
 
 	protected final RiakObject<byte[]> content;
 
@@ -45,46 +49,55 @@ public class PutCommand<OP extends RiakOperations> extends
 
 	public PutCommand<OP> setVectorClock(String vectorClock) {
 		this.vectorClock = vectorClock;
+		this.delegate = optionalExecution;
 		return this;
 	}
 
 	public PutCommand<OP> setReadQuorum(Quorum quorum) {
 		this.readQuorum = quorum;
+		this.delegate = optionalExecution;
 		return this;
 	}
 
 	public PutCommand<OP> setWriteQuorum(Quorum quorum) {
 		this.writeQuorum = quorum;
+		this.delegate = optionalExecution;
 		return this;
 	}
 
 	public PutCommand<OP> setDurableWriteQuorum(Quorum quorum) {
 		this.durableWriteQuorum = quorum;
+		this.delegate = optionalExecution;
 		return this;
 	}
 
 	public PutCommand<OP> setReturnBody(boolean is) {
 		this.returnBody = is;
+		this.delegate = optionalExecution;
 		return this;
 	}
 
 	public PutCommand<OP> setIfNoneMatch(String etag) {
 		this.ifNoneMatch = etag;
+		this.delegate = optionalExecution;
 		return this;
 	}
 
 	public PutCommand<OP> setIfMatch(String etag) {
 		this.ifMatch = etag;
+		this.delegate = optionalExecution;
 		return this;
 	}
 
 	public PutCommand<OP> setIfModifiedSince(Date since) {
 		this.ifModifiedSince = since;
+		this.delegate = optionalExecution;
 		return this;
 	}
 
 	public PutCommand<OP> setIfUnmodifiedSince(Date since) {
 		this.ifUnmodifiedSince = since;
+		this.delegate = optionalExecution;
 		return this;
 	}
 
@@ -94,61 +107,84 @@ public class PutCommand<OP extends RiakOperations> extends
 		this.client.execute(new RiakAction<OP>() {
 			@Override
 			public void execute(OP operations) {
-				PutOptions options = new PutOptions() {
-
-					@Override
-					public String getVectorClock() {
-						return PutCommand.this.vectorClock;
-					}
-
-					@Override
-					public Quorum getReadQuorum() {
-						return PutCommand.this.readQuorum;
-					}
-
-					@Override
-					public Quorum getWriteQuorum() {
-						return PutCommand.this.writeQuorum;
-					}
-
-					@Override
-					public Quorum getDurableWriteQuorum() {
-						return PutCommand.this.durableWriteQuorum;
-					}
-
-					@Override
-					public boolean getReturnBody() {
-						return PutCommand.this.returnBody;
-					}
-
-					@Override
-					public String getIfNoneMatch() {
-						return PutCommand.this.ifNoneMatch;
-					}
-
-					@Override
-					public String getIfMatch() {
-						return PutCommand.this.ifMatch;
-					}
-
-					@Override
-					public Date getIfModifiedSince() {
-						return PutCommand.this.ifModifiedSince;
-					}
-
-					@Override
-					public Date getIfUnmodifiedSince() {
-						return PutCommand.this.ifUnmodifiedSince;
-					}
-
-				};
-
-				operations.put(PutCommand.this.content, options,
-						new EaseSiblingHandler(holder));
+				PutCommand.this.delegate.execute(PutCommand.this, operations,
+						holder);
 			}
 		});
 		return holder.getResult();
 	}
+
+	static final ExecutionDelegate<RiakObject<byte[]>, PutCommand<?>> defaultExecution = new ExecutionDelegate<RiakObject<byte[]>, PutCommand<?>>() {
+		@Override
+		public <RO extends RiakOperations> void execute(PutCommand<?> cmd,
+				RO operations, final ResultHolder<RiakObject<byte[]>> holder) {
+			operations.put(cmd.content, cmd.new EaseHandler<_>(holder) {
+				@Override
+				public void handle(RiakContentsResponse<_> response)
+						throws Exception {
+					holder.setResult(null);
+				}
+			});
+		}
+	};
+
+	static final ExecutionDelegate<RiakObject<byte[]>, PutCommand<?>> optionalExecution = new ExecutionDelegate<RiakObject<byte[]>, PutCommand<?>>() {
+		@Override
+		public <RO extends RiakOperations> void execute(
+				final PutCommand<?> cmd, RO operations,
+				final ResultHolder<RiakObject<byte[]>> holder) {
+			PutOptions options = new PutOptions() {
+
+				@Override
+				public String getVectorClock() {
+					return cmd.vectorClock;
+				}
+
+				@Override
+				public Quorum getReadQuorum() {
+					return cmd.readQuorum;
+				}
+
+				@Override
+				public Quorum getWriteQuorum() {
+					return cmd.writeQuorum;
+				}
+
+				@Override
+				public Quorum getDurableWriteQuorum() {
+					return cmd.durableWriteQuorum;
+				}
+
+				@Override
+				public boolean getReturnBody() {
+					return cmd.returnBody;
+				}
+
+				@Override
+				public String getIfNoneMatch() {
+					return cmd.ifNoneMatch;
+				}
+
+				@Override
+				public String getIfMatch() {
+					return cmd.ifMatch;
+				}
+
+				@Override
+				public Date getIfModifiedSince() {
+					return cmd.ifModifiedSince;
+				}
+
+				@Override
+				public Date getIfUnmodifiedSince() {
+					return cmd.ifUnmodifiedSince;
+				}
+
+			};
+			operations.put(cmd.content, options, cmd.new EaseSiblingHandler(
+					holder));
+		}
+	};
 
 	class EaseSiblingHandler implements SiblingHandler {
 
