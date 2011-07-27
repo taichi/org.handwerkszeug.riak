@@ -35,6 +35,7 @@ import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
 import org.handwerkszeug.riak.mapreduce.NamedFunctionPhase;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultGetOptions;
+import org.handwerkszeug.riak.model.DefaultPostOptions;
 import org.handwerkszeug.riak.model.DefaultPutOptions;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.Erlang;
@@ -42,7 +43,7 @@ import org.handwerkszeug.riak.model.JavaScript;
 import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
-import org.handwerkszeug.riak.model.PutOptions;
+import org.handwerkszeug.riak.model.PostOptions;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
@@ -968,7 +969,7 @@ public abstract class RiakOperationsTest {
 		DefaultRiakObject ro = new DefaultRiakObject(location);
 		ro.setContent(testdata.getBytes());
 
-		PutOptions options = new DefaultPutOptions() {
+		PostOptions options = new DefaultPostOptions() {
 			@Override
 			public boolean getReturnBody() {
 				return true;

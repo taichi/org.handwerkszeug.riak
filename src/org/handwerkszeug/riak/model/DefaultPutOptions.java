@@ -11,16 +11,6 @@ public class DefaultPutOptions implements PutOptions {
 	}
 
 	@Override
-	public String getVectorClock() {
-		return null;
-	}
-
-	@Override
-	public Quorum getReadQuorum() {
-		return null;
-	}
-
-	@Override
 	public Quorum getWriteQuorum() {
 		return null;
 	}

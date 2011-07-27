@@ -18,10 +18,12 @@ import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
 import org.handwerkszeug.riak.model.AbstractRiakObject;
 import org.handwerkszeug.riak.model.Bucket;
+import org.handwerkszeug.riak.model.DefaultGetOptions;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.GetOptions;
 import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.Location;
+import org.handwerkszeug.riak.model.PostOptions;
 import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.Range;
@@ -425,12 +427,7 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 			final PutOptions options, final SiblingHandler handler,
 			final CountDownRiakFuture future) {
 		LOG.debug(Markers.DETAIL, "dispatchToGetSibling");
-		GetOptions go = new GetOptions() {
-			@Override
-			public Quorum getReadQuorum() {
-				return options.getReadQuorum();
-			}
-
+		GetOptions go = new DefaultGetOptions() {
 			@Override
 			public String getIfNoneMatch() {
 				return options.getIfNoneMatch();
@@ -543,7 +540,7 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 	}
 
 	@Override
-	public RiakFuture post(RiakObject<byte[]> content, PutOptions options,
+	public RiakFuture post(RiakObject<byte[]> content, PostOptions options,
 			final RiakResponseHandler<RiakObject<byte[]>> handler) {
 		notNull(content, "content");
 		notNull(options, "options");
