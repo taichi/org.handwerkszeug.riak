@@ -3,6 +3,7 @@ package org.handwerkszeug.riak.op;
 import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.model.GetOptions;
 import org.handwerkszeug.riak.model.Location;
+import org.handwerkszeug.riak.model.PostOptions;
 import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakFuture;
@@ -56,7 +57,7 @@ public interface ObjectKeyOperations {
 	 * Stores a new object in a bucket with a random Riak-assigned key.<br/>
 	 * set Location key as empty string.
 	 */
-	RiakFuture post(RiakObject<byte[]> content, PutOptions options,
+	RiakFuture post(RiakObject<byte[]> content, PostOptions options,
 			RiakResponseHandler<RiakObject<byte[]>> handler);
 
 	RiakFuture put(RiakObject<byte[]> content, RiakResponseHandler<_> handler);

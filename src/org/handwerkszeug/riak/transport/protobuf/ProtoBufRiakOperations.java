@@ -26,12 +26,14 @@ import org.handwerkszeug.riak.model.GetOptions;
 import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
+import org.handwerkszeug.riak.model.PostOptions;
 import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
 import org.handwerkszeug.riak.model.ServerInfo;
+import org.handwerkszeug.riak.model.StoreOptions;
 import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.op.Querying;
 import org.handwerkszeug.riak.op.RiakOperations;
@@ -471,14 +473,14 @@ public class ProtoBufRiakOperations implements RiakOperations, Completion {
 	}
 
 	protected RpbPutReq.Builder buildPostRequest(RiakObject<byte[]> content,
-			PutOptions options) {
+			PostOptions options) {
 		RpbPutReq.Builder builder = buildPostRequest(content);
 		merge(options, builder);
 		return builder;
 	}
 
 	@Override
-	public RiakFuture post(RiakObject<byte[]> content, PutOptions options,
+	public RiakFuture post(RiakObject<byte[]> content, PostOptions options,
 			final RiakResponseHandler<RiakObject<byte[]>> handler) {
 		notNull(content, "content");
 		notNull(options, "options");
@@ -606,15 +608,14 @@ public class ProtoBufRiakOperations implements RiakOperations, Completion {
 	protected RpbPutReq.Builder buildPutRequest(RiakObject<byte[]> content,
 			PutOptions options) {
 		RpbPutReq.Builder builder = buildPutRequest(content);
+		if (StringUtil.isEmpty(content.getVectorClock()) == false) {
+			builder.setVclock(fromVclock(content.getVectorClock()));
+		}
 		merge(options, builder);
 		return builder;
 	}
 
-	protected void merge(PutOptions options, RpbPutReq.Builder builder) {
-		if (StringUtil.isEmpty(options.getVectorClock()) == false) {
-			ByteString clock = fromVclock(options.getVectorClock());
-			builder.setVclock(clock);
-		}
+	protected void merge(StoreOptions options, RpbPutReq.Builder builder) {
 		if (options.getWriteQuorum() != null) {
 			builder.setW(options.getWriteQuorum().getInteger());
 		}

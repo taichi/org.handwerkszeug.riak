@@ -20,9 +20,11 @@ import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.GetOptions;
 import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
+import org.handwerkszeug.riak.model.PostOptions;
 import org.handwerkszeug.riak.model.PutOptions;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakObject;
+import org.handwerkszeug.riak.model.StoreOptions;
 import org.handwerkszeug.riak.nls.Messages;
 import org.handwerkszeug.riak.transport.rest.InputStreamHandler;
 import org.handwerkszeug.riak.transport.rest.LinkCondition;
@@ -165,26 +167,41 @@ public class RequestFactory {
 			PutOptions options) {
 		HttpRequest request = newPutRequest(content);
 
+		if (StringUtil.isEmpty(options.getIfNoneMatch()) == false) {
+			request.addHeader(HttpHeaders.Names.IF_NONE_MATCH,
+					options.getIfNoneMatch());
+		}
+
+		if (StringUtil.isEmpty(options.getIfMatch()) == false) {
+			request.addHeader(HttpHeaders.Names.IF_MATCH, options.getIfMatch());
+		}
+
+		if (options.getIfModifiedSince() != null) {
+			request.addHeader(HttpHeaders.Names.IF_MODIFIED_SINCE,
+					HttpUtil.format(options.getIfModifiedSince()));
+		}
+
+		if (options.getIfUnmodifiedSince() != null) {
+			request.addHeader(HttpHeaders.Names.IF_UNMODIFIED_SINCE,
+					HttpUtil.format(options.getIfUnmodifiedSince()));
+		}
+
 		QueryStringEncoder params = to(options, request);
 		request.setUri(params.toString());
 		return request;
 	}
 
 	public HttpRequest newPostRequest(RiakObject<byte[]> content,
-			PutOptions options) {
+			PostOptions options) {
 		HttpRequest request = newPostRequest(content);
 		QueryStringEncoder params = to(options, request);
 		request.setUri(params.toString());
 		return request;
 	}
 
-	protected QueryStringEncoder to(PutOptions options, HttpRequest request) {
+	protected QueryStringEncoder to(StoreOptions options, HttpRequest request) {
 		QueryStringEncoder params = new QueryStringEncoder(request.getUri());
 
-		if (options.getReadQuorum() != null) {
-			// PBC-API does't support this parameter. why not?
-			params.addParam("r", options.getReadQuorum().getString());
-		}
 		if (options.getWriteQuorum() != null) {
 			params.addParam("w", options.getWriteQuorum().getString());
 		}
