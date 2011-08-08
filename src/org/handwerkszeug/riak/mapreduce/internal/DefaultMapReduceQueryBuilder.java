@@ -19,7 +19,8 @@ import org.handwerkszeug.riak.util.JsonAppender;
 /**
  * @author taichi
  */
-public class DefaultMapReduceQueryBuilder<T> implements MapReduceQueryBuilder {
+public class DefaultMapReduceQueryBuilder<T> implements
+		MapReduceQueryBuilder<T> {
 
 	protected MapReduceQueryContext<T> context;
 	protected ExecutablePhase<T> executablePhase;

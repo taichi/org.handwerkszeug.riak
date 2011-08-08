@@ -1,5 +1,9 @@
 package org.handwerkszeug.riak.op;
 
+import static org.handwerkszeug.riak.mapreduce.MapReduceQuerySupport.equal;
+import static org.handwerkszeug.riak.mapreduce.MapReduceQuerySupport.lessThanEq;
+import static org.handwerkszeug.riak.mapreduce.MapReduceQuerySupport.stringToInt;
+import static org.handwerkszeug.riak.mapreduce.MapReduceQuerySupport.tokenize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -23,14 +27,18 @@ import java.util.concurrent.TimeUnit;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.mapreduce.MapReduceQueryBuilder;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultGetOptions;
 import org.handwerkszeug.riak.model.DefaultPostOptions;
 import org.handwerkszeug.riak.model.DefaultPutOptions;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
+import org.handwerkszeug.riak.model.Erlang;
+import org.handwerkszeug.riak.model.JavaScript;
 import org.handwerkszeug.riak.model.KeyResponse;
 import org.handwerkszeug.riak.model.Link;
 import org.handwerkszeug.riak.model.Location;
@@ -704,42 +712,34 @@ public abstract class RiakOperationsTest {
 	}
 
 	protected void testMapReduce(final String bucket) throws Exception {
-		// final boolean[] is = { false };
-		//
-		// final int[] actual = new int[1];
-		// RiakFuture waiter = this.target.mapReduce(
-		// new MapReduceQueryConstructor() {
-		// @Override
-		// public void cunstruct(MapReduceQuery query) {
-		// query.setInputs(MapReduceInputs.keyFilter(bucket,
-		// MapReduceKeyFilters.Transform.stringToInt(),
-		// MapReduceKeyFilters.Predicates.lessThanEq(10)));
-		// query.setQueries(
-		// NamedFunctionPhase.map(Erlang.map_object_value,
-		// false),
-		// NamedFunctionPhase.reduce(
-		// Erlang.reduce_string_to_integer, false),
-		// NamedFunctionPhase.reduce(Erlang.reduce_sum,
-		// true));
-		// }
-		// }, new TestingHandler<MapReduceResponse>() {
-		// @Override
-		// public void handle(
-		// RiakContentsResponse<MapReduceResponse> response)
-		// throws RiakException {
-		// if (response.getContents().getDone()) {
-		// is[0] = true;
-		// } else {
-		// ArrayNode an = response.getContents().getResponse();
-		// JsonNode jn = an.get(0);
-		// actual[0] = jn.getIntValue();
-		// }
-		// }
-		// });
-		//
-		// waitFor(waiter);
-		// assertEquals(165, actual[0]);
-		// assertTrue(is[0]);
+		final boolean[] is = { false };
+
+		final int[] actual = new int[1];
+		MapReduceQueryBuilder<RiakFuture> builder = this.target
+				.mapReduce(new TestingHandler<MapReduceResponse>() {
+					@Override
+					public void handle(
+							RiakContentsResponse<MapReduceResponse> response)
+							throws RiakException {
+						if (response.getContents().getDone()) {
+							is[0] = true;
+						} else {
+							ArrayNode an = response.getContents().getResponse();
+							JsonNode jn = an.get(0);
+							actual[0] = jn.getIntValue();
+						}
+					}
+				});
+
+		RiakFuture waiter = builder.inputs(bucket)
+				.keyFilters(stringToInt, lessThanEq(10))
+				.map(Erlang.map_object_value)
+				.reduce(Erlang.reduce_string_to_integer)
+				.reduce(Erlang.reduce_sum).execute();
+
+		waitFor(waiter);
+		assertEquals(165, actual[0]);
+		assertTrue(is[0]);
 
 	}
 
@@ -812,50 +812,41 @@ public abstract class RiakOperationsTest {
 		return json[0];
 	}
 
-	// @Test
-	// public void testMapReduceContainsJson() throws Exception {
-	// final String bucket = "testMapReduceContainsJson";
-	// String key = "left::right";
-	// Location location = new Location(bucket, key);
-	//
-	// String data = "{\"a\":\"xxxx\",\"b\":\"c\"}";
-	// testPut(location, data);
-	//
-	// final JsonNode[] actual = new JsonNode[1];
-	// RiakFuture waiter = this.target.mapReduce(
-	// new MapReduceQueryConstructor() {
-	//
-	// @Override
-	// public void cunstruct(MapReduceQuery query) {
-	// query.setInputs(MapReduceInputs
-	// .keyFilter(bucket,
-	// MapReduceKeyFilters.Transform.tokenize(
-	// "::", 1),
-	// MapReduceKeyFilters.Predicates
-	// .equal("left")));
-	// query.setQueries(JavaScriptPhase.BuiltIns.map(
-	// JavaScript.mapValuesJson, true));
-	// }
-	// }, new TestingHandler<MapReduceResponse>() {
-	// @Override
-	// public void handle(
-	// RiakContentsResponse<MapReduceResponse> response)
-	// throws Exception {
-	// MapReduceResponse mrr = response.getContents();
-	// if (mrr.getDone()) {
-	// } else {
-	// ArrayNode an = mrr.getResponse();
-	// actual[0] = an.get(0);
-	// }
-	// }
-	// });
-	//
-	// waitFor(waiter);
-	// assertNotNull(actual[0]);
-	// assertEquals(actual[0].getClass(), ObjectNode.class);
-	//
-	// testDelete(location);
-	// }
+	@Test
+	public void testMapReduceContainsJson() throws Exception {
+		final String bucket = "testMapReduceContainsJson";
+		String key = "left::right";
+		Location location = new Location(bucket, key);
+
+		String data = "{\"a\":\"xxxx\",\"b\":\"c\"}";
+		testPut(location, data);
+
+		final JsonNode[] actual = new JsonNode[1];
+		MapReduceQueryBuilder<RiakFuture> builder = this.target
+				.mapReduce(new TestingHandler<MapReduceResponse>() {
+					@Override
+					public void handle(
+							RiakContentsResponse<MapReduceResponse> response)
+							throws Exception {
+						MapReduceResponse mrr = response.getContents();
+						if (mrr.getDone()) {
+						} else {
+							ArrayNode an = mrr.getResponse();
+							actual[0] = an.get(0);
+						}
+					}
+				});
+
+		RiakFuture waiter = builder.inputs(bucket)
+				.keyFilters(tokenize("::", 1), equal("left"))
+				.map(JavaScript.mapValuesJson, true).execute();
+
+		waitFor(waiter);
+		assertNotNull(actual[0]);
+		assertEquals(actual[0].getClass(), ObjectNode.class);
+
+		testDelete(location);
+	}
 
 	@Test
 	public void testFromOfficialsByRawJson() throws Exception {

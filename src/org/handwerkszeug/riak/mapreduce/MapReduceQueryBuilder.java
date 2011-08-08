@@ -5,6 +5,6 @@ import org.handwerkszeug.riak.mapreduce.grammar.InputsProducer;
 /**
  * @author taichi
  */
-public interface MapReduceQueryBuilder extends InputsProducer {
+public interface MapReduceQueryBuilder<T> extends InputsProducer<T> {
 
 }

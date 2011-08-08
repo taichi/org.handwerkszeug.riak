@@ -13,7 +13,10 @@ import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
+import org.handwerkszeug.riak.mapreduce.MapReduceQueryBuilder;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
+import org.handwerkszeug.riak.mapreduce.internal.DefaultMapReduceQueryBuilder;
+import org.handwerkszeug.riak.mapreduce.internal.MapReduceQueryContext;
 import org.handwerkszeug.riak.model.AbstractRiakObject;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultGetOptions;
@@ -46,6 +49,7 @@ import org.handwerkszeug.riak.util.NettyUtil;
 import org.handwerkszeug.riak.util.StringUtil;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
+import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandler;
@@ -622,24 +626,6 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 		return _delete("delete/quorum", handler, request);
 	}
 
-	// @Override
-	// public RiakFuture mapReduce(MapReduceQueryConstructor constructor,
-	// RiakResponseHandler<MapReduceResponse> handler) {
-	// notNull(constructor, "constructor");
-	// notNull(handler, "handler");
-	//
-	// DefaultMapReduceQuery query = new DefaultMapReduceQuery();
-	// constructor.cunstruct(query);
-	//
-	// HttpRequest request = this.factory.newMapReduceRequest();
-	// ChannelBuffer buffer = ChannelBuffers.dynamicBuffer(1024);
-	// query.prepare(new ChannelBufferOutputStream(buffer));
-	// HttpHeaders.setContentLength(request, buffer.readableBytes());
-	// request.setContent(buffer);
-	//
-	// return mapReduce(request, handler);
-	// }
-
 	protected RiakFuture mapReduce(HttpRequest request,
 			final RiakResponseHandler<MapReduceResponse> handler) {
 		final String procedure = "mapReduce";
@@ -665,6 +651,28 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 				return false;
 			}
 		});
+	}
+
+	@Override
+	public MapReduceQueryBuilder<RiakFuture> mapReduce(
+			final RiakResponseHandler<MapReduceResponse> handler) {
+		notNull(handler, "handler");
+		MapReduceQueryContext<RiakFuture> context = new MapReduceQueryContext<RiakFuture>() {
+			@Override
+			public RiakFuture execute() {
+				HttpRequest request = RestRiakOperations.this.factory
+						.newMapReduceRequest();
+				ChannelBuffer buffer = ChannelBuffers.dynamicBuffer(1024);
+				prepare(new ChannelBufferOutputStream(buffer));
+				HttpHeaders.setContentLength(request, buffer.readableBytes());
+				request.setContent(buffer);
+				return mapReduce(request, handler);
+			}
+		};
+		DefaultMapReduceQueryBuilder<RiakFuture> builder = new DefaultMapReduceQueryBuilder<RiakFuture>(
+				context);
+		builder.initialize();
+		return builder;
 	}
 
 	@Override

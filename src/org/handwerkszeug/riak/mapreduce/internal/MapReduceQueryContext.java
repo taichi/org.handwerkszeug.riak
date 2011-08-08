@@ -17,6 +17,10 @@ import org.handwerkszeug.riak.mapreduce.grammar.Executable;
 import org.handwerkszeug.riak.mapreduce.grammar.Timeoutable;
 import org.handwerkszeug.riak.util.JsonAppender;
 
+/**
+ * @author taichi
+ * @param <T>
+ */
 public abstract class MapReduceQueryContext<T> implements Executable<T>,
 		Timeoutable<T> {
 
@@ -78,8 +82,6 @@ public abstract class MapReduceQueryContext<T> implements Executable<T>,
 			JsonFactory factory = new JsonFactory(this.codec);
 			JsonGenerator generator = factory.createJsonGenerator(stream);
 			prepare(generator);
-			// caller must close stream.
-			generator.flush();
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}
@@ -97,6 +99,8 @@ public abstract class MapReduceQueryContext<T> implements Executable<T>,
 
 		generator.writeNumberField("timeout", this.timeout);
 		generator.writeEndObject();
+		// caller must close stream.
+		generator.flush();
 	}
 
 	protected void prepareInputs(JsonGenerator generator) throws IOException,
