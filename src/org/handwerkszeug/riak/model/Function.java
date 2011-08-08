@@ -1,13 +1,25 @@
 package org.handwerkszeug.riak.model;
 
-import org.codehaus.jackson.node.ObjectNode;
+import java.io.IOException;
+
+
+import org.codehaus.jackson.JsonGenerator;
 import org.handwerkszeug.riak.util.JsonAppender;
 
-/**
- * @author taichi
- */
-public interface Function extends JsonAppender<ObjectNode> {
+public abstract class Function implements JsonAppender {
+	final Language language;
 
-	String getLanguage();
+	protected Function(Language language) {
+		this.language = language;
+	}
+
+	@Override
+	public void appendTo(JsonGenerator generator) throws IOException {
+		generator.writeStringField("language", this.language.name());
+		appendBody(generator);
+	}
+
+	protected abstract void appendBody(JsonGenerator generator)
+			throws IOException;
 
 }

@@ -17,8 +17,6 @@ import net.iharder.Base64;
 import org.handwerkszeug.riak.Markers;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak._;
-import org.handwerkszeug.riak.mapreduce.DefaultMapReduceQuery;
-import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
@@ -74,7 +72,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.ByteString.Output;
 
 /**
  * @author taichi
@@ -735,23 +732,23 @@ public class ProtoBufRiakOperations implements RiakOperations, Completion {
 	static final ByteString PbcJobEncoding = ByteString
 			.copyFromUtf8(Querying.JobEncoding);
 
-	@Override
-	public RiakFuture mapReduce(MapReduceQueryConstructor constructor,
-			RiakResponseHandler<MapReduceResponse> handler) {
-		notNull(constructor, "constructor");
-		notNull(handler, "handler");
-
-		DefaultMapReduceQuery query = new DefaultMapReduceQuery();
-		constructor.cunstruct(query);
-		RpbMapRedReq.Builder builder = RpbMapRedReq.newBuilder();
-		builder.setContentType(PbcJobEncoding);
-		Output out = ByteString.newOutput();
-		query.prepare(out);
-		ByteString byteJson = out.toByteString();
-		builder.setRequest(byteJson);
-
-		return mapReduce(builder.build(), handler);
-	}
+	// @Override
+	// public RiakFuture mapReduce(MapReduceQueryConstructor constructor,
+	// RiakResponseHandler<MapReduceResponse> handler) {
+	// notNull(constructor, "constructor");
+	// notNull(handler, "handler");
+	//
+	// DefaultMapReduceQuery query = new DefaultMapReduceQuery();
+	// constructor.cunstruct(query);
+	// RpbMapRedReq.Builder builder = RpbMapRedReq.newBuilder();
+	// builder.setContentType(PbcJobEncoding);
+	// Output out = ByteString.newOutput();
+	// query.prepare(out);
+	// ByteString byteJson = out.toByteString();
+	// builder.setRequest(byteJson);
+	//
+	// return mapReduce(builder.build(), handler);
+	// }
 
 	@Override
 	public RiakFuture mapReduce(String rawJson,

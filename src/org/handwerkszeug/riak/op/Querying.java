@@ -1,6 +1,5 @@
 package org.handwerkszeug.riak.op;
 
-import org.handwerkszeug.riak.mapreduce.MapReduceQueryConstructor;
 import org.handwerkszeug.riak.mapreduce.MapReduceResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
 
@@ -13,12 +12,6 @@ public interface Querying {
 	 * only support json.
 	 */
 	static final String JobEncoding = "application/json";
-
-	/**
-	 * @see <a href="http://wiki.basho.com/MapReduce.html">MapReduce</a>
-	 */
-	RiakFuture mapReduce(MapReduceQueryConstructor constructor,
-			RiakResponseHandler<MapReduceResponse> handler);
 
 	/**
 	 * @see <a href="http://wiki.basho.com/MapReduce.html">MapReduce</a>

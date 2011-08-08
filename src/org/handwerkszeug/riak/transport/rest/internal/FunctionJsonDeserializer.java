@@ -31,7 +31,7 @@ public class FunctionJsonDeserializer extends JsonDeserializer<Function> {
 				jp.nextToken();
 				String value = jp.getText();
 				if ("name".equals(name)) {
-					result = new JavaScript(value);
+					result = JavaScript.newFunction(value);
 				}
 				if ("mod".equals(name)) {
 					mod = value;
@@ -41,7 +41,7 @@ public class FunctionJsonDeserializer extends JsonDeserializer<Function> {
 				}
 				if (StringUtil.isEmpty(mod) == false
 						&& StringUtil.isEmpty(fun) == false) {
-					result = new Erlang(mod, fun);
+					result = Erlang.newFunction(mod, fun);
 				}
 			}
 			if (result != null) {

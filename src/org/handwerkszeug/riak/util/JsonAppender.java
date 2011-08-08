@@ -1,11 +1,13 @@
 package org.handwerkszeug.riak.util;
 
-import org.codehaus.jackson.JsonNode;
+import java.io.IOException;
+
+import org.codehaus.jackson.JsonGenerator;
 
 /**
  * @author taichi
  */
-public interface JsonAppender<T extends JsonNode> {
+public interface JsonAppender {
 
-	void appendTo(T json);
+	void appendTo(JsonGenerator generator) throws IOException;
 }

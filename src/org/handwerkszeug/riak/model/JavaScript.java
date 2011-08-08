@@ -1,64 +1,44 @@
 package org.handwerkszeug.riak.model;
 
-import static org.handwerkszeug.riak.util.Validation.notNull;
+import java.io.IOException;
 
-import org.codehaus.jackson.node.ObjectNode;
+import org.codehaus.jackson.JsonGenerator;
 
-/**
- * @author taichi
- */
-public class JavaScript implements Function {
+public abstract class JavaScript extends Function {
 
-	public static final String LANG = "javascript";
+	protected String name;
 
-	final String name;
-
-	public JavaScript(String name) {
-		notNull(name, "name");
+	protected JavaScript(String name) {
+		super(Language.javascript);
 		this.name = name;
-	}
-
-	@Override
-	public String getLanguage() {
-		return LANG;
 	}
 
 	public String getName() {
 		return this.name;
 	}
 
-	@Override
-	public void appendTo(ObjectNode json) {
-		json.put("name", this.name);
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("JavaScript [name=");
-		builder.append(name);
-		builder.append("]");
-		return builder.toString();
+	public static JavaScript newFunction(final String name) {
+		return new JavaScript(name) {
+			@Override
+			protected void appendBody(JsonGenerator generator)
+					throws IOException {
+				generator.writeStringField("name", this.name);
+			}
+		};
 	}
 
 	/*
-	 * built-in functions
+	 * BuiltIn Functions
 	 */
+	public static final JavaScript mapValues = newFunction("Riak.mapValues");
+	public static final JavaScript mapValuesJson = newFunction("Riak.mapValuesJson");
+	public static final JavaScript mapByFields = newFunction("Riak.mapByFields");
+	public static final JavaScript reduceSum = newFunction("Riak.reduceSum");
+	public static final JavaScript reduceMin = newFunction("Riak.reduceMin");
+	public static final JavaScript reduceMax = newFunction("Riak.reduceMax");
+	public static final JavaScript reduceSort = newFunction("Riak.reduceSort");
+	public static final JavaScript reduceNumericSort = newFunction("Riak.reduceNumericSort");
+	public static final JavaScript reduceLimit = newFunction("Riak.reduceLimit");
+	public static final JavaScript reduceSlice = newFunction("Riak.reduceSlice");
 
-	public static final JavaScript mapValues = new JavaScript("Riak.mapValues");
-	public static final JavaScript mapValuesJson = new JavaScript(
-			"Riak.mapValuesJson");
-	public static final JavaScript mapByFields = new JavaScript(
-			"Riak.mapByFields");
-	public static final JavaScript reduceSum = new JavaScript("Riak.reduceSum");
-	public static final JavaScript reduceMin = new JavaScript("Riak.reduceMin");
-	public static final JavaScript reduceMax = new JavaScript("Riak.reduceMax");
-	public static final JavaScript reduceSort = new JavaScript(
-			"Riak.reduceSort");
-	public static final JavaScript reduceNumericSort = new JavaScript(
-			"Riak.reduceNumericSort");
-	public static final JavaScript reduceLimit = new JavaScript(
-			"Riak.reduceLimit");
-	public static final JavaScript reduceSlice = new JavaScript(
-			"Riak.reduceSlice");
 }
