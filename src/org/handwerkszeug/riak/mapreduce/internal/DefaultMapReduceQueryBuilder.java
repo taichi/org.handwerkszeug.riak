@@ -40,12 +40,7 @@ public class DefaultMapReduceQueryBuilder<T> implements
 	@Override
 	public KeyFilterOrPhase<T> inputs(final String bucket) {
 		notNull(bucket, "bucket");
-		this.context.add(new MapReduceInput() {
-			@Override
-			public void appendTo(JsonGenerator generator) throws IOException {
-				generator.writeString(bucket);
-			}
-		});
+		this.context.add(new BucketInput(bucket));
 		return this.keyFilterOrPhase;
 	}
 

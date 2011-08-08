@@ -12,6 +12,7 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.ObjectCodec;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.handwerkszeug.riak.mapreduce.MapReduceInput;
 import org.handwerkszeug.riak.mapreduce.MapReduceKeyFilter;
 import org.handwerkszeug.riak.mapreduce.grammar.Executable;
 import org.handwerkszeug.riak.mapreduce.grammar.Timeoutable;
@@ -30,7 +31,7 @@ public abstract class MapReduceQueryContext<T> implements Executable<T>,
 
 	protected List<MapReducePhase> phases = new ArrayList<MapReducePhase>();
 
-	protected long timeout = 60000;
+	protected Long timeout = null;
 
 	protected ObjectCodec codec;
 
@@ -42,7 +43,7 @@ public abstract class MapReduceQueryContext<T> implements Executable<T>,
 		this.codec = codec;
 	}
 
-	public void add(JsonAppender primary, JsonAppender... inputs) {
+	public void add(MapReduceInput primary, MapReduceInput... inputs) {
 		this.inputs.add(primary);
 		for (JsonAppender input : inputs) {
 			this.inputs.add(input);
@@ -62,8 +63,8 @@ public abstract class MapReduceQueryContext<T> implements Executable<T>,
 		this.keyFilters = Collections.unmodifiableList(this.keyFilters);
 	}
 
-	public void add(PhaseType type, boolean keep, JsonAppender appendable) {
-		this.phases.add(new MapReducePhase(type, keep, appendable));
+	public void add(PhaseType type, boolean keep, JsonAppender phase) {
+		this.phases.add(new MapReducePhase(type, keep, phase));
 	}
 
 	@Override
@@ -97,7 +98,9 @@ public abstract class MapReduceQueryContext<T> implements Executable<T>,
 		}
 		generator.writeEndArray();
 
-		generator.writeNumberField("timeout", this.timeout);
+		if (this.timeout != null) {
+			generator.writeNumberField("timeout", this.timeout);
+		}
 		generator.writeEndObject();
 		// caller must close stream.
 		generator.flush();
