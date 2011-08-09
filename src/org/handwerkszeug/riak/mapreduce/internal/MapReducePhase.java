@@ -5,7 +5,14 @@ import java.io.IOException;
 import org.codehaus.jackson.JsonGenerator;
 import org.handwerkszeug.riak.util.JsonAppender;
 
+/**
+ * @author taichi
+ */
 public class MapReducePhase implements JsonAppender {
+
+	public enum PhaseType {
+		map, reduce, link;
+	}
 
 	final PhaseType phaseType;
 

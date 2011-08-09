@@ -51,7 +51,8 @@ public class MapReduceQueryContextTest {
 	public void testPrepareBucket() throws Exception {
 		String bucket = "testPrepareBucket";
 		this.target.add(new BucketInput(bucket));
-		this.target.add(PhaseType.map, true, Erlang.map_object_value);
+		this.target.add(MapReducePhase.PhaseType.map, true,
+				Erlang.map_object_value);
 		assertJson(bucket);
 	}
 
@@ -60,7 +61,8 @@ public class MapReduceQueryContextTest {
 		String bucket = "testPrepareKeyFilter";
 		this.target.add(new BucketInput(bucket));
 		this.target.add(stringToInt, between(10, 20));
-		this.target.add(PhaseType.map, false, Erlang.map_object_value);
+		this.target.add(MapReducePhase.PhaseType.map, false,
+				Erlang.map_object_value);
 		assertJson("testPrepareKeyFilter");
 	}
 }

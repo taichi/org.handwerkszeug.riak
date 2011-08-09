@@ -15,6 +15,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.handwerkszeug.riak.mapreduce.MapReduceInput;
 import org.handwerkszeug.riak.mapreduce.MapReduceKeyFilter;
 import org.handwerkszeug.riak.mapreduce.grammar.Timeoutable;
+import org.handwerkszeug.riak.mapreduce.internal.MapReducePhase.PhaseType;
 import org.handwerkszeug.riak.util.Executable;
 import org.handwerkszeug.riak.util.JsonAppender;
 

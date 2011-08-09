@@ -5,6 +5,9 @@ import java.io.IOException;
 import org.codehaus.jackson.JsonGenerator;
 import org.handwerkszeug.riak.mapreduce.MapReduceInput;
 
+/**
+ * @author taichi
+ */
 public class BucketInput implements MapReduceInput {
 	final String bucket;
 

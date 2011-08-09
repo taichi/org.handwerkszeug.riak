@@ -1,9 +1,9 @@
 package org.handwerkszeug.riak.mapreduce.internal;
 
 import static org.handwerkszeug.riak.mapreduce.internal.ArgAppender.arg;
-import static org.handwerkszeug.riak.mapreduce.internal.PhaseType.link;
-import static org.handwerkszeug.riak.mapreduce.internal.PhaseType.map;
-import static org.handwerkszeug.riak.mapreduce.internal.PhaseType.reduce;
+import static org.handwerkszeug.riak.mapreduce.internal.MapReducePhase.PhaseType.link;
+import static org.handwerkszeug.riak.mapreduce.internal.MapReducePhase.PhaseType.map;
+import static org.handwerkszeug.riak.mapreduce.internal.MapReducePhase.PhaseType.reduce;
 import static org.handwerkszeug.riak.util.Validation.notNull;
 
 import java.io.IOException;
@@ -17,6 +17,9 @@ import org.handwerkszeug.riak.model.Function;
 import org.handwerkszeug.riak.util.Executable;
 import org.handwerkszeug.riak.util.JsonAppender;
 
+/**
+ * @author taichi
+ */
 public class ExecutablePhaseImpl<T> implements ExecutablePhase<T> {
 
 	final MapReduceQueryContext<T> context;

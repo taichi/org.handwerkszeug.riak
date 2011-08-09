@@ -8,6 +8,9 @@ import org.handwerkszeug.riak.mapreduce.grammar.ExecutablePhase;
 import org.handwerkszeug.riak.mapreduce.grammar.KeyFilterOrPhase;
 import org.handwerkszeug.riak.model.Function;
 
+/**
+ * @author taichi
+ */
 public class KeyFilterOrPhaseImpl<T> implements KeyFilterOrPhase<T> {
 
 	protected MapReduceQueryContext<T> context;
