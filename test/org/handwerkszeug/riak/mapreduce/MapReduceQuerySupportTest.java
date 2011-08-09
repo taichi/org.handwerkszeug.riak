@@ -60,8 +60,8 @@ import org.junit.Test;
 /**
  * @author taichi
  */
-public class MapReduceKeyFiltersTest {
-	static final String TEST_BUCKET = "MapReduceKeyFiltersTest";
+public class MapReduceQuerySupportTest {
+	static final String TEST_BUCKET = "MapReduceQuerySupportTest";
 	ClientBootstrap bootstrap;
 	Channel channel;
 
