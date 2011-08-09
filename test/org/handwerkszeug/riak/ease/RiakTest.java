@@ -1,5 +1,7 @@
 package org.handwerkszeug.riak.ease;
 
+import static org.handwerkszeug.riak.mapreduce.MapReduceQuerySupport.greaterThan;
+import static org.handwerkszeug.riak.mapreduce.MapReduceQuerySupport.stringToInt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -10,8 +12,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.node.ArrayNode;
 import org.handwerkszeug.riak.RiakException;
 import org.handwerkszeug.riak.model.Bucket;
+import org.handwerkszeug.riak.model.JavaScript;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.model.RiakObject;
@@ -136,4 +141,25 @@ public abstract class RiakTest<OP extends RiakOperations> {
 		this.target.delete(location).execute();
 	}
 
+	@Test
+	public void testMapReduce() throws Exception {
+		String bucket = "testMapReduce";
+		for (int i = 0; i < 5; i++) {
+			Location loc = new Location(bucket, String.valueOf(i));
+			this.target.put(loc, "data").execute();
+		}
+		List<ArrayNode> list = this.target.mapReduce().inputs(bucket)
+				.keyFilters(stringToInt, greaterThan(2))
+				.map(JavaScript.mapValues, true).execute();
+
+		assertEquals(2, list.size());
+		ArrayNode an = list.get(0);
+		JsonNode jn = an.get(0);
+		assertEquals("data", jn.getTextValue());
+
+		for (int i = 0; i < 5; i++) {
+			Location loc = new Location(bucket, String.valueOf(i));
+			this.target.delete(loc).execute();
+		}
+	}
 }

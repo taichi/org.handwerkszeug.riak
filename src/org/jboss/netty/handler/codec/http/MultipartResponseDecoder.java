@@ -285,6 +285,9 @@ public class MultipartResponseDecoder extends SimpleChannelUpstreamHandler {
 				sb.append((char) nextByte);
 			}
 		}
+		if (LOG.isDebugEnabled() && 0 < sb.length()) {
+			LOG.error(sb.toString());
+		}
 		return "";
 	}
 

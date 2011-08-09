@@ -36,7 +36,7 @@ public abstract class AbstractRiakCommand<V, OP extends RiakOperations>
 
 	public abstract class EaseHandler<T> implements RiakResponseHandler<T> {
 
-		final ResultHolder<?> holder;
+		private final ResultHolder<?> holder;
 
 		protected EaseHandler(ResultHolder<?> holder) {
 			this.holder = holder;

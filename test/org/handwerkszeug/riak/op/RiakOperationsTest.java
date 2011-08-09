@@ -148,7 +148,7 @@ public abstract class RiakOperationsTest {
 		}
 	}
 
-	public void testListKeys(String bucket, int expected) throws Exception {
+	void testListKeys(String bucket, int expected) throws Exception {
 		final boolean[] is = { false };
 
 		final int[] actual = { 0 };
@@ -192,7 +192,7 @@ public abstract class RiakOperationsTest {
 		}
 	}
 
-	public void testBucketSet(Bucket bucket) throws Exception {
+	void testBucketSet(Bucket bucket) throws Exception {
 		final boolean[] is = { false };
 		bucket.setAllowMulti(true);
 		bucket.setNumberOfReplicas(1);
@@ -210,7 +210,7 @@ public abstract class RiakOperationsTest {
 
 	}
 
-	public Bucket testBucketGet(String bucket) throws Exception {
+	Bucket testBucketGet(String bucket) throws Exception {
 		final Bucket[] bu = new Bucket[1];
 
 		RiakFuture waiter = this.target.getBucket(bucket,
@@ -236,8 +236,7 @@ public abstract class RiakOperationsTest {
 		testDelete(location);
 	}
 
-	public void testGet(Location location, final String testdata)
-			throws Exception {
+	void testGet(Location location, final String testdata) throws Exception {
 
 		final String[] actual = new String[1];
 		RiakFuture waiter = this.target.get(location,
@@ -255,8 +254,7 @@ public abstract class RiakOperationsTest {
 		assertEquals(testdata, actual[0]);
 	}
 
-	public void testPut(Location location, final String testdata)
-			throws Exception {
+	void testPut(Location location, final String testdata) throws Exception {
 
 		DefaultRiakObject ro = new DefaultRiakObject(location);
 		ro.setContent(testdata.getBytes());
@@ -286,7 +284,7 @@ public abstract class RiakOperationsTest {
 
 	}
 
-	public void testDelete(Location location) throws Exception {
+	protected void testDelete(Location location) throws Exception {
 		final boolean[] is = { false };
 
 		RiakFuture waiter = this.target.delete(location,
@@ -347,7 +345,7 @@ public abstract class RiakOperationsTest {
 		}
 	}
 
-	protected void testGetWithOpt(final Location location, final String testdata)
+	void testGetWithOpt(final Location location, final String testdata)
 			throws InterruptedException {
 		final String[] result = new String[1];
 		final Location[] actual = new Location[1];
@@ -447,7 +445,7 @@ public abstract class RiakOperationsTest {
 
 	}
 
-	protected void testGetWithSibling(final Location location,
+	void testGetWithSibling(final Location location,
 			final List<String> testdatas) throws InterruptedException {
 		final boolean[] beginEnd = new boolean[2];
 
@@ -490,9 +488,8 @@ public abstract class RiakOperationsTest {
 
 	}
 
-	protected void testPutWithSibling(final Location location,
-			final String testdata, final List<String> testdatas)
-			throws Exception {
+	void testPutWithSibling(final Location location, final String testdata,
+			final List<String> testdatas) throws Exception {
 		final boolean[] beginEnd = new boolean[2];
 
 		DefaultRiakObject ro = new DefaultRiakObject(location);
@@ -551,7 +548,7 @@ public abstract class RiakOperationsTest {
 		}
 	}
 
-	public void testPutWithOpt(Location location, final String testdata)
+	void testPutWithOpt(Location location, final String testdata)
 			throws Exception {
 		final boolean[] beginEnd = new boolean[2];
 
@@ -600,7 +597,7 @@ public abstract class RiakOperationsTest {
 		testDeleteWithQuorum(location);
 	}
 
-	public void testDeleteWithQuorum(Location location) throws Exception {
+	void testDeleteWithQuorum(Location location) throws Exception {
 		final boolean[] is = { false };
 
 		RiakFuture waiter = this.target.delete(location, Quorum.of(2),
@@ -666,7 +663,7 @@ public abstract class RiakOperationsTest {
 		assertTrue("timeout.", latch.await(20, TimeUnit.SECONDS));
 	}
 
-	protected void delete(String bucket) throws Exception {
+	void delete(String bucket) throws Exception {
 		final List<String> keys = new ArrayList<String>();
 		RiakFuture rf = this.target.listKeys(bucket,
 				new TestingHandler<KeyResponse>() {
@@ -711,7 +708,7 @@ public abstract class RiakOperationsTest {
 		}
 	}
 
-	protected void testMapReduce(final String bucket) throws Exception {
+	void testMapReduce(final String bucket) throws Exception {
 		final boolean[] is = { false };
 
 		final int[] actual = new int[1];
@@ -762,7 +759,7 @@ public abstract class RiakOperationsTest {
 		}
 	}
 
-	public void testMapReduceByRawJson(final String path) throws Exception {
+	void testMapReduceByRawJson(final String path) throws Exception {
 		final boolean[] is = { false };
 
 		final int[] actual = new int[1];
@@ -920,7 +917,7 @@ public abstract class RiakOperationsTest {
 		testDelete(returned);
 	}
 
-	public Location testPost(final Location location, final String testdata)
+	Location testPost(final Location location, final String testdata)
 			throws Exception {
 
 		DefaultRiakObject ro = new DefaultRiakObject(location);
@@ -946,8 +943,8 @@ public abstract class RiakOperationsTest {
 		return loc[0];
 	}
 
-	public Location testPostWithReturn(final Location location,
-			final String testdata) throws Exception {
+	Location testPostWithReturn(final Location location, final String testdata)
+			throws Exception {
 		DefaultRiakObject ro = new DefaultRiakObject(location);
 		ro.setContent(testdata.getBytes());
 

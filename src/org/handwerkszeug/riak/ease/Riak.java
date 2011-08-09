@@ -2,13 +2,24 @@ package org.handwerkszeug.riak.ease;
 
 import static org.handwerkszeug.riak.util.Validation.notNull;
 
+import java.util.List;
+
+import org.codehaus.jackson.node.ArrayNode;
 import org.handwerkszeug.riak.RiakClient;
 import org.handwerkszeug.riak.ease.internal.DefaultExceptionHandler;
+import org.handwerkszeug.riak.ease.internal.MapReduceCommand;
+import org.handwerkszeug.riak.mapreduce.MapReduceQueryBuilder;
+import org.handwerkszeug.riak.mapreduce.internal.DefaultMapReduceQueryBuilder;
+import org.handwerkszeug.riak.mapreduce.internal.MapReduceQueryContext;
 import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.DefaultRiakObject;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakOperations;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBufferOutputStream;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.util.CharsetUtil;
 
 /**
  * @author taichi
@@ -81,6 +92,24 @@ public abstract class Riak<OP extends RiakOperations> {
 	public SetBucketCommand<OP> setBucket(Bucket bucket) {
 		notNull(bucket, "bucket");
 		return new SetBucketCommand<OP>(this.client, this.handler, bucket);
+	}
+
+	public MapReduceQueryBuilder<List<ArrayNode>> mapReduce() {
+		MapReduceQueryContext<List<ArrayNode>> context = new MapReduceQueryContext<List<ArrayNode>>() {
+			@Override
+			public List<ArrayNode> execute() {
+				ChannelBuffer cb = ChannelBuffers.dynamicBuffer();
+				prepare(new ChannelBufferOutputStream(cb));
+				String query = cb.toString(CharsetUtil.UTF_8);
+				MapReduceCommand<OP> cmd = new MapReduceCommand<OP>(
+						Riak.this.client, Riak.this.handler, query);
+				return cmd.execute();
+			}
+		};
+		DefaultMapReduceQueryBuilder<List<ArrayNode>> builder = new DefaultMapReduceQueryBuilder<List<ArrayNode>>(
+				context);
+		builder.initialize();
+		return builder;
 	}
 
 	public void dispose() {
