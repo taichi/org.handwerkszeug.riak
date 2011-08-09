@@ -1,5 +1,7 @@
 package org.handwerkszeug.riak.mapreduce.grammar;
 
+import org.handwerkszeug.riak.util.Executable;
+
 /**
  * @author taichi
  */

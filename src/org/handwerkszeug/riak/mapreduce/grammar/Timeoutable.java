@@ -2,6 +2,8 @@ package org.handwerkszeug.riak.mapreduce.grammar;
 
 import java.util.concurrent.TimeUnit;
 
+import org.handwerkszeug.riak.util.Executable;
+
 /**
  * @author taichi
  */

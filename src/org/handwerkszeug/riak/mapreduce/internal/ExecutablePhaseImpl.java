@@ -12,9 +12,9 @@ import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
 import org.codehaus.jackson.JsonGenerator;
-import org.handwerkszeug.riak.mapreduce.grammar.Executable;
 import org.handwerkszeug.riak.mapreduce.grammar.ExecutablePhase;
 import org.handwerkszeug.riak.model.Function;
+import org.handwerkszeug.riak.util.Executable;
 import org.handwerkszeug.riak.util.JsonAppender;
 
 public class ExecutablePhaseImpl<T> implements ExecutablePhase<T> {

@@ -1,4 +1,4 @@
-package org.handwerkszeug.riak.mapreduce.grammar;
+package org.handwerkszeug.riak.util;
 
 
 /**
