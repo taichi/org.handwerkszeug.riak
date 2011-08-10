@@ -5,7 +5,7 @@ package org.handwerkszeug.riak.transport.rest;
  */
 public class LinkCondition {
 
-	public static final String ANY = "_";
+	public static final String WILDCARD = "_";
 
 	final String bucket;
 
@@ -15,24 +15,30 @@ public class LinkCondition {
 
 	public LinkCondition(String bucket, String tag, boolean keep) {
 		if (bucket == null) {
-			this.bucket = ANY;
+			this.bucket = WILDCARD;
 		} else {
 			this.bucket = bucket;
 		}
 		if (tag == null) {
-			this.tag = ANY;
+			this.tag = WILDCARD;
 		} else {
 			this.tag = tag;
 		}
 		this.keep = keep;
 	}
 
+	public static final LinkCondition ANY = new LinkCondition(WILDCARD,
+			WILDCARD, false);
+
+	public static final LinkCondition KEEP_ANY = new LinkCondition(WILDCARD,
+			WILDCARD, true);
+
 	public static LinkCondition bucket(String bucket) {
 		return bucket(bucket, false);
 	}
 
 	public static LinkCondition bucket(String bucket, boolean keep) {
-		return new LinkCondition(bucket, ANY, keep);
+		return new LinkCondition(bucket, WILDCARD, keep);
 	}
 
 	public static LinkCondition tag(String tag) {
@@ -40,7 +46,7 @@ public class LinkCondition {
 	}
 
 	public static LinkCondition tag(String tag, boolean keep) {
-		return new LinkCondition(ANY, tag, keep);
+		return new LinkCondition(WILDCARD, tag, keep);
 	}
 
 	public String getBucket() {
