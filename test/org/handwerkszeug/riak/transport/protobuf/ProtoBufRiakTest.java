@@ -1,15 +1,18 @@
 package org.handwerkszeug.riak.transport.protobuf;
 
 import org.handwerkszeug.riak.Hosts;
-import org.handwerkszeug.riak.ease.Riak;
 import org.handwerkszeug.riak.ease.RiakTest;
 import org.junit.Ignore;
 import org.junit.Test;
 
-public class ProtoBufRiakTest extends RiakTest<ProtoBufRiakOperations> {
+/**
+ * @author taichi
+ */
+public class ProtoBufRiakTest extends
+		RiakTest<ProtoBufRiakOperations, ProtoBufRiak> {
 
 	@Override
-	protected Riak<ProtoBufRiakOperations> newTarget() {
+	protected ProtoBufRiak newTarget() {
 		return ProtoBufRiak.create(Hosts.RIAK_HOST);
 	}
 

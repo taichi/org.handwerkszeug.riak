@@ -14,7 +14,6 @@ import org.handwerkszeug.riak._;
 import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.ServerInfo;
-import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakOperationsTest;
 import org.handwerkszeug.riak.op.TestingHandler;
 import org.handwerkszeug.riak.transport.protobuf.internal.ProtoBufPipelineFactory;
@@ -26,12 +25,11 @@ import org.junit.Test;
 /**
  * @author taichi
  */
-public class ProtoBufRiakOperationsTest extends RiakOperationsTest {
+public class ProtoBufRiakOperationsTest extends
+		RiakOperationsTest<ProtoBufRiakOperations> {
 
 	static final ProtoBufRiakConfig config = ProtoBufRiakConfig.newConfig(
 			Hosts.RIAK_HOST, Hosts.RIAK_PB_PORT);
-
-	ProtoBufRiakOperations target;
 
 	@Override
 	protected ChannelPipelineFactory newChannelPipelineFactory() {
@@ -44,9 +42,8 @@ public class ProtoBufRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	@Override
-	protected RiakOperations newTarget(Channel channel) {
-		this.target = new ProtoBufRiakOperations(channel);
-		return this.target;
+	protected ProtoBufRiakOperations newTarget(Channel channel) {
+		return new ProtoBufRiakOperations(channel);
 	}
 
 	@Test

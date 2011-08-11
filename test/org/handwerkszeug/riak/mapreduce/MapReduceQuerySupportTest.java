@@ -86,6 +86,7 @@ public class MapReduceQuerySupportTest {
 
 	@After
 	public void tearDown() throws Exception {
+		deleteFromBucket();
 		this.channel.close().awaitUninterruptibly();
 		this.bootstrap.releaseExternalResources();
 	}

@@ -5,7 +5,6 @@ import java.util.List;
 import org.codehaus.jackson.node.ObjectNode;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakFuture;
-import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakResponseHandler;
 
@@ -47,7 +46,7 @@ public interface HttpRiakOperations extends RiakOperations, LuwakSupport {
 	 *      href="https://github.com/basho/riak_kv/blob/master/src/riak_kv_wm_link_walker.erl">riak_kv_wm_link_walker.erl</a>
 	 */
 	RiakFuture walk(Location walkbegin, List<LinkCondition> conditions,
-			RiakResponseHandler<List<RiakObject<byte[]>>> handler);
+			RiakResponseHandler<LinkWalkingResponse> handler);
 
 	/**
 	 * @see <a href="http://wiki.basho.com/REST-API.html#Other-operations">Other

@@ -25,9 +25,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public abstract class RiakTest<OP extends RiakOperations> {
+/**
+ * @author taichi
+ * @param <OP>
+ * @param <TGT>
+ */
+public abstract class RiakTest<OP extends RiakOperations, TGT extends Riak<OP>> {
 
-	Riak<OP> target;
+	protected TGT target;
 
 	@Before
 	public void setUp() throws Exception {
@@ -39,7 +44,7 @@ public abstract class RiakTest<OP extends RiakOperations> {
 		this.target.dispose();
 	}
 
-	protected abstract Riak<OP> newTarget();
+	protected abstract TGT newTarget();
 
 	@Test
 	public void testPing() {

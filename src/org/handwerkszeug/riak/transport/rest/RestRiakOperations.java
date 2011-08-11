@@ -4,6 +4,7 @@ import static org.handwerkszeug.riak.util.Validation.notNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -689,7 +690,7 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 
 	@Override
 	public RiakFuture walk(Location walkbegin, List<LinkCondition> conditions,
-			final RiakResponseHandler<List<RiakObject<byte[]>>> handler) {
+			final RiakResponseHandler<LinkWalkingResponse> handler) {
 		notNull(walkbegin, "walkbegin");
 		notNull(conditions, "conditions");
 		notNull(handler, "handler");
@@ -707,6 +708,18 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 					PartMessage part = (PartMessage) receive;
 					boolean done = part.isLast();
 					if (done) {
+						handler.handle(RestRiakOperations.this.support
+								.<LinkWalkingResponse> newResponse(new LinkWalkingResponse() {
+									@Override
+									public List<RiakObject<byte[]>> getResponse() {
+										return Collections.emptyList();
+									}
+
+									@Override
+									public boolean getDone() {
+										return true;
+									}
+								}));
 						future.setSuccess();
 					} else {
 						notifyStep(part, handler);
@@ -719,11 +732,10 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 	}
 
 	protected void notifyStep(PartMessage message,
-			RiakResponseHandler<List<RiakObject<byte[]>>> handler)
-			throws Exception {
+			RiakResponseHandler<LinkWalkingResponse> handler) throws Exception {
 		MultipartResponseDecoder decoder = new MultipartResponseDecoder();
 		if (decoder.setUpBoundary(message)) {
-			List<RiakObject<byte[]>> list = new ArrayList<RiakObject<byte[]>>();
+			final List<RiakObject<byte[]>> list = new ArrayList<RiakObject<byte[]>>();
 			ChannelBuffer buffer = message.getContent();
 			while (buffer.readable()) {
 				PartMessage msg = decoder.parse(buffer);
@@ -738,7 +750,18 @@ public class RestRiakOperations implements HttpRiakOperations, Completion {
 					}
 				}
 			}
-			handler.handle(this.support.newResponse(list));
+			handler.handle(this.support
+					.<LinkWalkingResponse> newResponse(new LinkWalkingResponse() {
+						@Override
+						public boolean getDone() {
+							return false;
+						}
+
+						@Override
+						public List<RiakObject<byte[]>> getResponse() {
+							return list;
+						}
+					}));
 		}
 	}
 

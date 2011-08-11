@@ -35,7 +35,6 @@ import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakFuture;
 import org.handwerkszeug.riak.model.RiakObject;
 import org.handwerkszeug.riak.model.RiakResponse;
-import org.handwerkszeug.riak.op.RiakOperations;
 import org.handwerkszeug.riak.op.RiakOperationsTest;
 import org.handwerkszeug.riak.op.TestingHandler;
 import org.handwerkszeug.riak.transport.internal.DefaultCompletionChannelHandler;
@@ -49,12 +48,11 @@ import org.junit.Test;
 /**
  * @author taichi
  */
-public class RestRiakOperationsTest extends RiakOperationsTest {
+public class RestRiakOperationsTest extends
+		RiakOperationsTest<RestRiakOperations> {
 
 	static final RestRiakConfig config = RestRiakConfig.newConfig(
 			Hosts.RIAK_HOST, Hosts.RIAK_HTTP_PORT);
-
-	public RestRiakOperations target;
 
 	@Override
 	protected ChannelPipelineFactory newChannelPipelineFactory() {
@@ -62,11 +60,9 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	}
 
 	@Override
-	protected RiakOperations newTarget(Channel channel) {
-
-		this.target = new RestRiakOperations(RestRiakClient.toRiakURI(config),
-				config, channel);
-		return this.target;
+	protected RestRiakOperations newTarget(Channel channel) {
+		return new RestRiakOperations(RestRiakClient.toRiakURI(config), config,
+				channel);
 	}
 
 	@Override
@@ -157,21 +153,24 @@ public class RestRiakOperationsTest extends RiakOperationsTest {
 	public void testWalk(Location init, List<List<byte[]>> expected)
 			throws Exception {
 		List<LinkCondition> conds = new ArrayList<LinkCondition>();
-		conds.add(LinkCondition.bucket(null, true));
-		conds.add(LinkCondition.bucket(null, false));
+		conds.add(LinkCondition.KEEP_ANY);
+		conds.add(LinkCondition.ANY);
 
 		final List<List<byte[]>> actual = new ArrayList<List<byte[]>>();
 		RiakFuture waiter = this.target.walk(init, conds,
-				new TestingHandler<List<RiakObject<byte[]>>>() {
+				new TestingHandler<LinkWalkingResponse>() {
 					@Override
 					public void handle(
-							RiakContentsResponse<List<RiakObject<byte[]>>> response)
+							RiakContentsResponse<LinkWalkingResponse> response)
 							throws Exception {
-						List<byte[]> list = new ArrayList<byte[]>();
-						for (RiakObject<byte[]> ro : response.getContents()) {
-							list.add(ro.getContent());
+						LinkWalkingResponse resp = response.getContents();
+						if (resp.getDone() == false) {
+							List<byte[]> list = new ArrayList<byte[]>();
+							for (RiakObject<byte[]> ro : resp.getResponse()) {
+								list.add(ro.getContent());
+							}
+							actual.add(list);
 						}
-						actual.add(list);
 					}
 				});
 

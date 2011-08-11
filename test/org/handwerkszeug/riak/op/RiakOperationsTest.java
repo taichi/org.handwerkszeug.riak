@@ -65,11 +65,11 @@ import org.junit.Test;
 /**
  * @author taichi
  */
-public abstract class RiakOperationsTest {
+public abstract class RiakOperationsTest<TGT extends RiakOperations> {
 
 	ClientBootstrap bootstrap;
 	Channel channel;
-	RiakOperations target;
+	protected TGT target;
 
 	@Before
 	public void setUp() throws Exception {
@@ -88,7 +88,7 @@ public abstract class RiakOperationsTest {
 
 	protected abstract SocketAddress connectTo();
 
-	protected abstract RiakOperations newTarget(Channel channel);
+	protected abstract TGT newTarget(Channel channel);
 
 	@After
 	public void tearDown() throws Exception {

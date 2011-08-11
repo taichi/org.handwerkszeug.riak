@@ -11,6 +11,7 @@ import org.handwerkszeug.riak.ease.ExceptionHandler;
 import org.handwerkszeug.riak.ease.internal.AbstractRiakCommand;
 import org.handwerkszeug.riak.ease.internal.ResultHolder;
 import org.handwerkszeug.riak.model.Location;
+import org.handwerkszeug.riak.model.RiakContentsResponse;
 import org.handwerkszeug.riak.model.RiakObject;
 
 /**
@@ -18,7 +19,7 @@ import org.handwerkszeug.riak.model.RiakObject;
  * @param <OP>
  */
 public class LinkWalkingCommand extends
-		AbstractRiakCommand<List<RiakObject<byte[]>>, RestRiakOperations> {
+		AbstractRiakCommand<List<List<RiakObject<byte[]>>>, RestRiakOperations> {
 
 	final Location begin;
 
@@ -31,31 +32,43 @@ public class LinkWalkingCommand extends
 	}
 
 	@Override
-	public List<RiakObject<byte[]>> execute() {
-		final ResultHolder<List<RiakObject<byte[]>>> holder = new ResultHolder<List<RiakObject<byte[]>>>();
+	public List<List<RiakObject<byte[]>>> execute() {
+		final List<List<RiakObject<byte[]>>> list = new ArrayList<List<RiakObject<byte[]>>>();
+		final ResultHolder<List<List<RiakObject<byte[]>>>> holder = new ResultHolder<List<List<RiakObject<byte[]>>>>();
 		this.client.execute(new RiakAction<RestRiakOperations>() {
 			@Override
 			public void execute(RestRiakOperations operations) {
-				operations
-						.walk(LinkWalkingCommand.this.begin,
-								LinkWalkingCommand.this.steps,
-								new SimpleEaseHandler<List<RiakObject<byte[]>>>(
-										holder));
+				operations.walk(LinkWalkingCommand.this.begin,
+						LinkWalkingCommand.this.steps,
+						new EaseHandler<LinkWalkingResponse>(holder) {
+							@Override
+							public void handle(
+									RiakContentsResponse<LinkWalkingResponse> response)
+									throws Exception {
+								LinkWalkingResponse contents = response
+										.getContents();
+								if (contents.getDone()) {
+									holder.setResult(list);
+								} else {
+									list.add(contents.getResponse());
+								}
+							}
+						});
 			}
 		});
 
 		return holder.getResult();
 	}
 
-	public LinkWalkingCommand add(String bucket, String tag) {
-		return this.add(bucket, tag, false);
+	public LinkWalkingCommand step(String bucket, String tag) {
+		return this.step(bucket, tag, false);
 	}
 
-	public LinkWalkingCommand add(String bucket, String tag, boolean keep) {
-		return this.add(new LinkCondition(bucket, tag, keep));
+	public LinkWalkingCommand step(String bucket, String tag, boolean keep) {
+		return this.step(new LinkCondition(bucket, tag, keep));
 	}
 
-	public LinkWalkingCommand add(LinkCondition condition) {
+	public LinkWalkingCommand step(LinkCondition condition) {
 		notNull(condition, "condition");
 		this.steps.add(condition);
 		return this;
