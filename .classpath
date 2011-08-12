@@ -2,6 +2,7 @@
 <classpath>
 	<classpathentry kind="src" output="target/test-classes" path="test"/>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="examples"/>
 	<classpathentry kind="var" path="M2_REPO/net/iharder/base64/2.3.8/base64-2.3.8.jar" sourcepath="M2_REPO/net/iharder/base64/2.3.8/base64-2.3.8-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/codehaus/jackson/jackson-core-asl/1.8.5/jackson-core-asl-1.8.5.jar" sourcepath="M2_REPO/org/codehaus/jackson/jackson-core-asl/1.8.5/jackson-core-asl-1.8.5-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/codehaus/jackson/jackson-mapper-asl/1.8.5/jackson-mapper-asl-1.8.5.jar" sourcepath="M2_REPO/org/codehaus/jackson/jackson-mapper-asl/1.8.5/jackson-mapper-asl-1.8.5-sources.jar"/>

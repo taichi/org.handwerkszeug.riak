@@ -1459,10 +1459,10 @@ public class MapReduceQuerySupport {
 		};
 	}
 
-	/**
+	/*
 	 * <b>Phase function</b>
 	 */
-	public static Function adHoc(Language lang, final String source) {
+	static Function adHoc(Language lang, final String source) {
 		return new Function(lang) {
 			@Override
 			protected void appendBody(JsonGenerator generator)
@@ -1470,6 +1470,32 @@ public class MapReduceQuerySupport {
 				generator.writeStringField("source", source);
 			}
 		};
+	}
+
+	/**
+	 * <b>Phase function</b>
+	 * <p>
+	 * adHoc javascript function<br/>
+	 * use only development.
+	 * </p>
+	 * 
+	 * @see #stored(Language, String, String)
+	 */
+	public static Function js(String source) {
+		return adHoc(Language.javascript, source);
+	}
+
+	/**
+	 * <b>Phase function</b>
+	 * <p>
+	 * adHoc erlang function<br/>
+	 * use only development.
+	 * </p>
+	 * 
+	 * @see #stored(Language, String, String)
+	 */
+	public static Function erl(String source) {
+		return adHoc(Language.erlang, source);
 	}
 
 	/**
