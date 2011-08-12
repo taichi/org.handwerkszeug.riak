@@ -8,6 +8,9 @@ import org.handwerkszeug.riak.model.Function;
 import org.handwerkszeug.riak.model.Quorum;
 import org.handwerkszeug.riak.nls.Messages;
 
+/**
+ * @author taichi
+ */
 public class ProtoBufBucket implements Bucket {
 
 	final String name;
@@ -142,6 +145,19 @@ public class ProtoBufBucket implements Bucket {
 	@Override
 	public void setBackend(String name) {
 		throw new UnsupportedOperationException(Messages.UnsupportedBucketProps);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ProtoBufBucket [name=");
+		builder.append(this.name);
+		builder.append(", n_val=");
+		builder.append(this.n_val);
+		builder.append(", allow_mult=");
+		builder.append(this.allow_mult);
+		builder.append("]");
+		return builder.toString();
 	}
 
 }

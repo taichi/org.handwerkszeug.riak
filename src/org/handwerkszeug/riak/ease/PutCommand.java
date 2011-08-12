@@ -27,8 +27,8 @@ public class PutCommand<OP extends RiakOperations> extends
 
 	protected final RiakObject<byte[]> content;
 
-	protected Quorum writeQuorum;
-	protected Quorum durableWriteQuorum;
+	protected Quorum write;
+	protected Quorum durableWrite;
 
 	protected boolean returnBody;
 
@@ -44,43 +44,43 @@ public class PutCommand<OP extends RiakOperations> extends
 		this.content = content;
 	}
 
-	public PutCommand<OP> setWriteQuorum(Quorum quorum) {
-		this.writeQuorum = quorum;
+	public PutCommand<OP> write(Quorum quorum) {
+		this.write = quorum;
 		this.delegate = optionalExecution;
 		return this;
 	}
 
-	public PutCommand<OP> setDurableWriteQuorum(Quorum quorum) {
-		this.durableWriteQuorum = quorum;
+	public PutCommand<OP> durableWrite(Quorum quorum) {
+		this.durableWrite = quorum;
 		this.delegate = optionalExecution;
 		return this;
 	}
 
-	public PutCommand<OP> setReturnBody(boolean is) {
+	public PutCommand<OP> returnBody(boolean is) {
 		this.returnBody = is;
 		this.delegate = optionalExecution;
 		return this;
 	}
 
-	public PutCommand<OP> setIfNoneMatch(String etag) {
+	public PutCommand<OP> ifNoneMatch(String etag) {
 		this.ifNoneMatch = etag;
 		this.delegate = optionalExecution;
 		return this;
 	}
 
-	public PutCommand<OP> setIfMatch(String etag) {
+	public PutCommand<OP> ifMatch(String etag) {
 		this.ifMatch = etag;
 		this.delegate = optionalExecution;
 		return this;
 	}
 
-	public PutCommand<OP> setIfModifiedSince(Date since) {
+	public PutCommand<OP> ifModifiedSince(Date since) {
 		this.ifModifiedSince = since;
 		this.delegate = optionalExecution;
 		return this;
 	}
 
-	public PutCommand<OP> setIfUnmodifiedSince(Date since) {
+	public PutCommand<OP> ifUnmodifiedSince(Date since) {
 		this.ifUnmodifiedSince = since;
 		this.delegate = optionalExecution;
 		return this;
@@ -122,12 +122,12 @@ public class PutCommand<OP extends RiakOperations> extends
 
 				@Override
 				public Quorum getWriteQuorum() {
-					return cmd.writeQuorum;
+					return cmd.write;
 				}
 
 				@Override
 				public Quorum getDurableWriteQuorum() {
-					return cmd.durableWriteQuorum;
+					return cmd.durableWrite;
 				}
 
 				@Override

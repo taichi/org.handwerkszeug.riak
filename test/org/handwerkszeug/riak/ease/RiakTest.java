@@ -80,9 +80,8 @@ public abstract class RiakTest<OP extends RiakOperations, TGT extends Riak<OP>> 
 		assertPost(bucket, data, actual);
 
 		RiakObject<byte[]> actual2 = this.target.post(bucket, data)
-				.setWriteQuorum(Quorum.Default)
-				.setDurableWriteQuorum(Quorum.Default).setReturnBody(true)
-				.execute();
+				.write(Quorum.Default).durableWrite(Quorum.Default)
+				.returnBody(true).execute();
 		assertPost(bucket, data, actual2);
 
 	}

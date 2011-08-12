@@ -26,7 +26,7 @@ public class GetCommand<OP extends RiakOperations> extends
 
 	protected final Location location;
 
-	protected Quorum readQuorum;
+	protected Quorum read;
 	protected String ifNoneMatch;
 	protected String ifMatch;
 	protected Date ifModifiedSince;
@@ -42,28 +42,28 @@ public class GetCommand<OP extends RiakOperations> extends
 	 * values include ‘default’, ‘one’, ‘quorum’, ‘all’, or any integer <= N
 	 * (default is defined per the bucket)
 	 */
-	public GetCommand<OP> setReadQuorum(Quorum quorum) {
+	public GetCommand<OP> read(Quorum quorum) {
 		notNull(quorum, "quorum");
-		this.readQuorum = quorum;
+		this.read = quorum;
 		this.delegate = optionalExecution;
 		return this;
 	}
 
-	public GetCommand<OP> setIfNoneMatch(String etag) {
+	public GetCommand<OP> ifNoneMatch(String etag) {
 		notNull(etag, "etag");
 		this.ifNoneMatch = etag;
 		this.delegate = optionalExecution;
 		return this;
 	}
 
-	public GetCommand<OP> setIfMatch(String etag) {
+	public GetCommand<OP> ifMatch(String etag) {
 		notNull(etag, "etag");
 		this.ifMatch = etag;
 		this.delegate = optionalExecution;
 		return this;
 	}
 
-	public GetCommand<OP> setIfModifiedSince(Date since) {
+	public GetCommand<OP> ifModifiedSince(Date since) {
 		notNull(since, "since");
 		this.ifModifiedSince = since;
 		this.delegate = optionalExecution;
@@ -100,7 +100,7 @@ public class GetCommand<OP extends RiakOperations> extends
 			GetOptions opt = new GetOptions() {
 				@Override
 				public Quorum getReadQuorum() {
-					return cmd.readQuorum;
+					return cmd.read;
 				}
 
 				@Override

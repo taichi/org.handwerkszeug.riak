@@ -21,9 +21,9 @@ public class PostCommand<OP extends RiakOperations> extends
 
 	protected final RiakObject<byte[]> content;
 
-	protected Quorum readQuorum;
-	protected Quorum writeQuorum;
-	protected Quorum durableWriteQuorum;
+	protected Quorum read;
+	protected Quorum write;
+	protected Quorum durableWrite;
 
 	protected boolean returnBody;
 
@@ -33,25 +33,25 @@ public class PostCommand<OP extends RiakOperations> extends
 		this.content = content;
 	}
 
-	public PostCommand<OP> setReadQuorum(Quorum quorum) {
-		this.readQuorum = quorum;
+	public PostCommand<OP> read(Quorum quorum) {
+		this.read = quorum;
 		this.delegate = optionalExecution;
 		return this;
 	}
 
-	public PostCommand<OP> setWriteQuorum(Quorum quorum) {
-		this.writeQuorum = quorum;
+	public PostCommand<OP> write(Quorum quorum) {
+		this.write = quorum;
 		this.delegate = optionalExecution;
 		return this;
 	}
 
-	public PostCommand<OP> setDurableWriteQuorum(Quorum quorum) {
-		this.durableWriteQuorum = quorum;
+	public PostCommand<OP> durableWrite(Quorum quorum) {
+		this.durableWrite = quorum;
 		this.delegate = optionalExecution;
 		return this;
 	}
 
-	public PostCommand<OP> setReturnBody(boolean is) {
+	public PostCommand<OP> returnBody(boolean is) {
 		this.returnBody = is;
 		this.delegate = optionalExecution;
 		return this;
@@ -86,12 +86,12 @@ public class PostCommand<OP extends RiakOperations> extends
 			PostOptions options = new PostOptions() {
 				@Override
 				public Quorum getWriteQuorum() {
-					return cmd.writeQuorum;
+					return cmd.write;
 				}
 
 				@Override
 				public Quorum getDurableWriteQuorum() {
-					return cmd.durableWriteQuorum;
+					return cmd.durableWrite;
 				}
 
 				@Override

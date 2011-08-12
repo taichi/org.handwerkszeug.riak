@@ -28,7 +28,7 @@ public class DeleteCommand<OP extends RiakOperations> extends
 		this.location = location;
 	}
 
-	public DeleteCommand<OP> setReadWrite(Quorum quorum) {
+	public DeleteCommand<OP> readWrite(Quorum quorum) {
 		notNull(quorum, "quorum");
 		this.readWrite = quorum;
 		return this;

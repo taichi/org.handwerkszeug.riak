@@ -214,33 +214,34 @@ public class JsonBucket implements Bucket {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("RestBucket [name=");
-		builder.append(name);
+		builder.append("JsonBucket [name=");
+		builder.append(this.name);
 		builder.append(", numberOfReplicas=");
-		builder.append(numberOfReplicas);
+		builder.append(this.numberOfReplicas);
 		builder.append(", allowMulti=");
-		builder.append(allowMulti);
+		builder.append(this.allowMulti);
 		builder.append(", lastWriteWins=");
-		builder.append(lastWriteWins);
+		builder.append(this.lastWriteWins);
 		builder.append(", precommits=");
-		builder.append(precommits);
+		builder.append(this.precommits);
 		builder.append(", postcommits=");
-		builder.append(postcommits);
+		builder.append(this.postcommits);
 		builder.append(", keyHashFunction=");
-		builder.append(keyHashFunction);
+		builder.append(this.keyHashFunction);
 		builder.append(", linkFunction=");
-		builder.append(linkFunction);
+		builder.append(this.linkFunction);
 		builder.append(", defaultReadQuorum=");
-		builder.append(defaultReadQuorum);
+		builder.append(this.defaultReadQuorum);
 		builder.append(", defaultWriteQuorum=");
-		builder.append(defaultWriteQuorum);
+		builder.append(this.defaultWriteQuorum);
 		builder.append(", defaultDurableWriteQuorum=");
-		builder.append(defaultDurableWriteQuorum);
+		builder.append(this.defaultDurableWriteQuorum);
 		builder.append(", defaultReadWriteQuorum=");
-		builder.append(defaultReadWriteQuorum);
+		builder.append(this.defaultReadWriteQuorum);
 		builder.append(", backend=");
-		builder.append(backend);
+		builder.append(this.backend);
 		builder.append("]");
 		return builder.toString();
 	}
+
 }

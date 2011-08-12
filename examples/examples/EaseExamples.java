@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.handwerkszeug.riak.model.Bucket;
 import org.handwerkszeug.riak.model.JavaScript;
 import org.handwerkszeug.riak.model.Location;
 import org.handwerkszeug.riak.model.RiakObject;
@@ -21,7 +22,7 @@ import org.handwerkszeug.riak.transport.protobuf.ProtoBufRiak;
  */
 public class EaseExamples {
 
-	static final String DEFALUT_HOST = "localhost";
+	static final String DEFALUT_HOST = "10.0.1.104";
 
 	public static void main(String[] args) {
 		String host = DEFALUT_HOST;
@@ -40,15 +41,23 @@ public class EaseExamples {
 	}
 
 	public void basicOperations(ProtoBufRiak riak) {
-		Location location = new Location("exampleBucket", "key");
-		riak.put(location, "test data").setReturnBody(false).execute();
+		Location location = new Location("myBucket", "myKey");
+		riak.put(location, "test data").returnBody(false).execute();
 
 		RiakObject<byte[]> ro = riak.get(location).execute();
 		System.out.println(new String(ro.getContent()));
 		System.out.println(ro);
 
-		riak.delete(location).execute();
+		Bucket bucket = riak.getBucket("myBucket").execute();
+		System.out.println(bucket);
+		bucket.setAllowMulti(true);
 
+		riak.setBucket(bucket).execute();
+
+		List<String> keys = riak.listKeys("myBucket").execute();
+		System.out.println(keys);
+
+		riak.delete(location).execute();
 	}
 
 	public void mapReduce(ProtoBufRiak riak) {
