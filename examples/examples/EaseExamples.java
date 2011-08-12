@@ -22,7 +22,7 @@ import org.handwerkszeug.riak.transport.protobuf.ProtoBufRiak;
  */
 public class EaseExamples {
 
-	static final String DEFALUT_HOST = "10.0.1.104";
+	static final String DEFALUT_HOST = "localhost";
 
 	public static void main(String[] args) {
 		String host = DEFALUT_HOST;
