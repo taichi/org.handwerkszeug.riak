@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -64,6 +65,10 @@ public abstract class MapReduceQueryContext<T> implements Executable<T>,
 		this.keyFilters = Collections.unmodifiableList(this.keyFilters);
 	}
 
+	public void add(PhaseType type, JsonAppender phase) {
+		this.phases.add(new MapReducePhase(type, phase));
+	}
+
 	public void add(PhaseType type, boolean keep, JsonAppender phase) {
 		this.phases.add(new MapReducePhase(type, keep, phase));
 	}
@@ -94,16 +99,19 @@ public abstract class MapReduceQueryContext<T> implements Executable<T>,
 		prepareInputs(generator);
 
 		generator.writeArrayFieldStart("query");
-		for (JsonAppender a : this.phases) {
-			a.appendTo(generator);
+		for (Iterator<MapReducePhase> i = this.phases.iterator(); i.hasNext();) {
+			MapReducePhase mrp = i.next();
+			// emulate official client
+			mrp.mayBeKeep(i.hasNext() == false);
+			mrp.appendTo(generator);
 		}
+
 		generator.writeEndArray();
 
 		if (this.timeout != null) {
 			generator.writeNumberField("timeout", this.timeout);
 		}
 		generator.writeEndObject();
-		// caller must close stream.
 		generator.flush();
 	}
 

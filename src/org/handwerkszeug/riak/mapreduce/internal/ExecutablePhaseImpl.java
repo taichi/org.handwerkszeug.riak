@@ -30,55 +30,55 @@ public class ExecutablePhaseImpl<T> implements ExecutablePhase<T> {
 
 	@Override
 	public ExecutablePhase<T> map(Function phase) {
-		this.context.add(map, false, phase);
+		this.context.add(map, phase);
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> map(final Function phase, final Object arg) {
-		this.context.add(map, false, arg(phase, arg));
+		this.context.add(map, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> map(Function phase, String arg) {
-		this.context.add(map, false, arg(phase, arg));
+		this.context.add(map, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> map(Function phase, int arg) {
-		this.context.add(map, false, arg(phase, arg));
+		this.context.add(map, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> map(Function phase, long arg) {
-		this.context.add(map, false, arg(phase, arg));
+		this.context.add(map, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> map(Function phase, double arg) {
-		this.context.add(map, false, arg(phase, arg));
+		this.context.add(map, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> map(Function phase, float arg) {
-		this.context.add(map, false, arg(phase, arg));
+		this.context.add(map, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> map(Function phase, BigInteger arg) {
-		this.context.add(map, false, arg(phase, arg));
+		this.context.add(map, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> map(Function phase, BigDecimal arg) {
-		this.context.add(map, false, arg(phase, arg));
+		this.context.add(map, arg(phase, arg));
 		return this;
 	}
 
@@ -138,55 +138,55 @@ public class ExecutablePhaseImpl<T> implements ExecutablePhase<T> {
 
 	@Override
 	public ExecutablePhase<T> reduce(Function phase) {
-		this.context.add(reduce, false, phase);
+		this.context.add(reduce, phase);
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> reduce(Function phase, Object arg) {
-		this.context.add(reduce, false, arg(phase, arg));
+		this.context.add(reduce, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> reduce(Function phase, String arg) {
-		this.context.add(reduce, false, arg(phase, arg));
+		this.context.add(reduce, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> reduce(Function phase, int arg) {
-		this.context.add(reduce, false, arg(phase, arg));
+		this.context.add(reduce, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> reduce(Function phase, long arg) {
-		this.context.add(reduce, false, arg(phase, arg));
+		this.context.add(reduce, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> reduce(Function phase, double arg) {
-		this.context.add(reduce, false, arg(phase, arg));
+		this.context.add(reduce, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> reduce(Function phase, float arg) {
-		this.context.add(reduce, false, arg(phase, arg));
+		this.context.add(reduce, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> reduce(Function phase, BigInteger arg) {
-		this.context.add(reduce, false, arg(phase, arg));
+		this.context.add(reduce, arg(phase, arg));
 		return this;
 	}
 
 	@Override
 	public ExecutablePhase<T> reduce(Function phase, BigDecimal arg) {
-		this.context.add(reduce, false, arg(phase, arg));
+		this.context.add(reduce, arg(phase, arg));
 		return this;
 	}
 
@@ -260,7 +260,7 @@ public class ExecutablePhaseImpl<T> implements ExecutablePhase<T> {
 
 	@Override
 	public ExecutablePhase<T> link(final String bucket) {
-		this.context.add(link, false, new JsonAppender() {
+		this.context.add(link, new JsonAppender() {
 			@Override
 			public void appendTo(JsonGenerator generator) throws IOException {
 				appendBucket(generator, bucket);
@@ -271,7 +271,7 @@ public class ExecutablePhaseImpl<T> implements ExecutablePhase<T> {
 
 	@Override
 	public ExecutablePhase<T> link(final String bucket, final String tag) {
-		this.context.add(link, false, new JsonAppender() {
+		this.context.add(link, new JsonAppender() {
 			@Override
 			public void appendTo(JsonGenerator generator) throws IOException {
 				appendBucket(generator, bucket);

@@ -74,7 +74,7 @@ public class EaseExamples {
 
 	void simpleMapReduce(ProtoBufRiak riak) {
 		List<ArrayNode> list = riak.mapReduce().inputs("alice")
-				.map(JavaScript.mapValues, true).execute();
+				.map(JavaScript.mapValues).execute();
 		printResult(list);
 	}
 
@@ -84,7 +84,7 @@ public class EaseExamples {
 				.inputs("alice")
 				.keyFilters(
 						and(filters(startsWith("p")), filters(endsWith("5"))))
-				.map(JavaScript.mapValues, true).execute();
+				.map(JavaScript.mapValues).execute();
 		printResult(list);
 	}
 

@@ -16,14 +16,22 @@ public class MapReducePhase implements JsonAppender {
 
 	final PhaseType phaseType;
 
-	final boolean keep;
+	Boolean keep;
 
 	final JsonAppender phase;
 
-	public MapReducePhase(PhaseType type, boolean keep, JsonAppender phase) {
+	public MapReducePhase(PhaseType type, JsonAppender phase) {
 		this.phaseType = type;
-		this.keep = keep;
 		this.phase = phase;
+	}
+
+	public MapReducePhase(PhaseType type, boolean keep, JsonAppender phase) {
+		this(type, phase);
+		this.keep = keep;
+	}
+
+	public void mayBeKeep(boolean is) {
+		this.keep = this.keep == null ? is : this.keep;
 	}
 
 	@Override
