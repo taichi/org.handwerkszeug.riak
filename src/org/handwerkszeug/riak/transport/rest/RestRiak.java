@@ -10,8 +10,12 @@ import org.handwerkszeug.riak.model.Location;
  */
 public class RestRiak extends Riak<RestRiakOperations> {
 
+	public RestRiak(RestRiakClient client) {
+		super(client);
+	}
+
 	public RestRiak(RestRiakConfig config) {
-		super(new RestRiakClient(config));
+		this(new RestRiakClient(config));
 	}
 
 	public static RestRiak create(String host) {

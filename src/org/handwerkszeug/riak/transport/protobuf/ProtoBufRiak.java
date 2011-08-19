@@ -7,8 +7,12 @@ import org.handwerkszeug.riak.ease.Riak;
  */
 public class ProtoBufRiak extends Riak<ProtoBufRiakOperations> {
 
+	public ProtoBufRiak(ProtoBufRiakClient client) {
+		super(client);
+	}
+
 	public ProtoBufRiak(ProtoBufRiakConfig config) {
-		super(new ProtoBufRiakClient(config));
+		this(new ProtoBufRiakClient(config));
 	}
 
 	public static ProtoBufRiak create(String host) {
