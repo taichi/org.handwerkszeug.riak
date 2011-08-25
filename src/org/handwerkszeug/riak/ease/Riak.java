@@ -69,8 +69,7 @@ public abstract class Riak<OP extends RiakOperations> {
 	public PutCommand<OP> put(Location location, String data) {
 		notNull(location, "location");
 		notNull(data, "data");
-		DefaultRiakObject ro = new DefaultRiakObject(location);
-		ro.setContent(data.getBytes());
+		DefaultRiakObject ro = new DefaultRiakObject(location, data);
 		return put(ro);
 	}
 

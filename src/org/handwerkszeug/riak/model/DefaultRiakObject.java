@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.netty.util.CharsetUtil;
 
 /**
  * @author taichi
@@ -17,6 +18,11 @@ public class DefaultRiakObject extends AbstractRiakObject<byte[]> {
 
 	public DefaultRiakObject(Location location) {
 		super(location);
+	}
+
+	public DefaultRiakObject(Location location, String value) {
+		super(location);
+		this.content = value.getBytes(CharsetUtil.UTF_8);
 	}
 
 	public DefaultRiakObject(RiakObject<byte[]> src) {
