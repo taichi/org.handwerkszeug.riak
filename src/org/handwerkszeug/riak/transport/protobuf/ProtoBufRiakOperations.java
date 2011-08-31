@@ -321,9 +321,7 @@ public class ProtoBufRiakOperations implements RiakOperations, Completion {
 
 							@Override
 							public int getResponseCode() {
-								// a numeric code. Currently only
-								// RIAKC_ERR_GENERAL=1 is defined.
-								return 1;
+								return 404;
 							}
 						});
 						future.setFailure();

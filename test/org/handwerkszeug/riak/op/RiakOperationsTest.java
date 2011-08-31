@@ -381,6 +381,7 @@ public abstract class RiakOperationsTest<TGT extends RiakOperations> {
 							throws RiakException {
 						assertNotNull(response.getMessage());
 						assertFalse(response.getMessage().isEmpty());
+						assertEquals(404, response.getResponseCode());
 						is[0] = true;
 					}
 
