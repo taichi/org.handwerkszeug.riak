@@ -138,12 +138,12 @@
 		<repository>
 			<id>repository.codehaus.org</id>
 			<name>Codehaus Maven2 Repository</name>
-			<url>http://repository.codehaus.org</url>
+			<url>https://repository.codehaus.org</url>
 		</repository>
 		<repository>
 			<id>public.jboss.org</id>
 			<name>JBoss Maven2 Repository</name>
-			<url>http://repository.jboss.org/nexus/content/groups/public</url>
+			<url>https://repository.jboss.org/nexus/content/groups/public</url>
 		</repository>
 	</repositories>
 	<pluginRepositories></pluginRepositories>
